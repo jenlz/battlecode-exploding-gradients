@@ -49,7 +49,7 @@ public class RobotData {
 		return pathToDestination[pathProgression];
 	}
 
-	public boolean getHasPath() {
+	public boolean hasPath() {
 		return hasPath;
 	}
 	

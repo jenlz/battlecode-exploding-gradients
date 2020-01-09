@@ -108,7 +108,7 @@ public strictfp class RobotPlayer {
     static void topographicallyAdeptMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
     	
-    	if(!robotData.getHasPath()) {
+    	if(!robotData.hasPath()) {
     		GeneralCommands.buildMapGraph(rc, robotData);
     		GeneralCommands.calculatePathTo(minerData.getSpawnerLocation().add(rc.getLocation().directionTo(minerData.getSpawnerLocation())), minerData);
     	} else {

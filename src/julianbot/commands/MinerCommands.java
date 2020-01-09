@@ -131,43 +131,9 @@ public class MinerCommands {
 			rc.move(data.getSearchDirection());
 			return;
 		}
-			data.setSearchDirection(goTo(rc, data.getSearchDirection()));
+		data.setSearchDirection(directions[(int) (Math.random() * directions.length)]);
 
-	}
 
-	/**
-	 * If can't go directly in direction, attempts to go to direction rotated
-	 * @param rc
-	 * @param dir
-	 * @return
-	 * @throws GameActionException
-	 */
-	public static Direction goTo(RobotController rc, Direction dir) throws GameActionException {
-		Direction[] dirs = {dir, dir.rotateLeft(), dir.rotateRight(), dir.rotateLeft().rotateLeft(), dir.rotateRight().rotateRight()};
-
-		for (Direction newDir : dirs) {
-			if (tryMove(rc)) {
-				return newDir;
-			};
-		}
-
-		return directions[(int) (Math.random() * directions.length)];
-
-	}
-
-	/**
-	 * Checks if robot can move without destroying itself
-	 * @param rc
-	 * @return
-	 * @throws GameActionException
-	 */
-	public static boolean tryMove(RobotController rc) throws GameActionException {
-		for (Direction dir : directions) {
-			if (rc.isReady() && rc.canMove(dir) && !rc.senseFlooding(rc.adjacentLocation(dir))) {
-				return true;
-			}
-		}
-		return false;
 	}
 	
 }
