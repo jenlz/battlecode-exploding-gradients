@@ -95,14 +95,17 @@ public strictfp class RobotPlayer {
     static void runMiner() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
 //    	topographicallyAdeptMinerProtocol();
-    	
-    	if(minerData.getCurrentRole() == MinerData.ROLE_DESIGN_BUILDER) {
-    		designMinerProtocol();
-    	} else if(rc.getSoupCarrying() == RobotType.MINER.soupLimit) {
-    		fullMinerProtocol();
-    	} else {
-    		emptyMinerProtocol();
-    	}
+
+		switch(minerData.getCurrentRole()) {
+			case MinerData.ROLE_DESIGN_BUILDER:
+				designMinerProtocol();
+				break;
+			case MinerData.ROLE_SOUP_MINER:
+				fullMinerProtocol();
+				break;
+			default:
+				emptyMinerProtocol();
+		}
     }
     
     static void topographicallyAdeptMinerProtocol() throws GameActionException {
@@ -130,24 +133,25 @@ public strictfp class RobotPlayer {
     
     static void fullMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
-    	
-    	//Start by trying to deposit into a refinery.
-    	Direction adjacentRefineryDirection = MinerCommands.getAdjacentRefineryDirection(rc);
-    	if(adjacentRefineryDirection != Direction.CENTER) {
-    		MinerCommands.depositRawSoup(rc, adjacentRefineryDirection);
-    		return;
-    	}
-    	
-    	//If no refinery is adjacent, look for one.
-    	Direction distantRefineryDirection = MinerCommands.getAnyRefineryDirection(rc);
-    	if(distantRefineryDirection != Direction.CENTER) {
-    		GeneralCommands.move(rc, distantRefineryDirection);
-    		return;
-    	}
-    	
-    	//If we can't find a refinery, build one.
-    	if(MinerCommands.attemptRefineryConstruction(rc)) return;
-    	
+
+    	if (rc.getSoupCarrying() == RobotType.MINER.soupLimit) {
+			//Start by trying to deposit into a refinery.
+			Direction adjacentRefineryDirection = MinerCommands.getAdjacentRefineryDirection(rc);
+			if (adjacentRefineryDirection != Direction.CENTER) {
+				MinerCommands.depositRawSoup(rc, adjacentRefineryDirection);
+				return;
+			}
+
+			//If no refinery is adjacent, look for one.
+			Direction distantRefineryDirection = MinerCommands.getAnyRefineryDirection(rc);
+			if (distantRefineryDirection != Direction.CENTER) {
+				GeneralCommands.move(rc, distantRefineryDirection);
+				return;
+			}
+
+			//If we can't find a refinery, build one.
+			if (MinerCommands.attemptRefineryConstruction(rc)) return;
+		}
     	//If we can't build a refinery, start searching for better ground.
     	MinerCommands.continueSearch(rc, minerData);
     }
