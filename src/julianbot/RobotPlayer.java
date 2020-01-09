@@ -103,6 +103,8 @@ public strictfp class RobotPlayer {
 			case MinerData.ROLE_SOUP_MINER:
 				fullMinerProtocol();
 				break;
+			case MinerData.ROLE_SCOUT:
+				scoutMinerProtocol();
 			default:
 				emptyMinerProtocol();
 		}
@@ -130,8 +132,12 @@ public strictfp class RobotPlayer {
     		else MinerCommands.continueSearch(rc, minerData);
     	}
     }
-    
-    static void fullMinerProtocol() throws GameActionException {
+
+	/**
+	 *
+	 * @throws GameActionException
+	 */
+	static void fullMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
 
     	if	(! MinerCommands.mineRawSoup(rc, MinerCommands.getAdjacentSoupDirection(rc))) {
@@ -162,6 +168,18 @@ public strictfp class RobotPlayer {
     	//If we can't build a refinery, start searching for better ground.
     	MinerCommands.continueSearch(rc, minerData);
     }
+
+	/**
+	 * Searches map until it finds enemy unit, then follows that unit. If enemy drone appears, avoids it. Reports enemy building locations.
+	 * @throws GameActionException
+	 */
+	static void scoutMinerProtocol() throws GameActionException {
+		MinerData minerData = (MinerData) robotData;
+
+
+
+		MinerCommands.continueSearch(rc, minerData);
+	}
     
     static void emptyMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;

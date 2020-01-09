@@ -8,6 +8,7 @@ public class MinerData extends RobotData {
 	private int currentRole;
 	public static final int ROLE_DESIGN_BUILDER = 0;
 	public static final int ROLE_SOUP_MINER = 1;
+	public static final int ROLE_SCOUT = 2;
 	
 	private Direction searchDirection;
 

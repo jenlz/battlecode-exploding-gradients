@@ -1,12 +1,6 @@
 package julianbot.commands;
 
-import battlecode.common.Clock;
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
+import battlecode.common.*;
 import julianbot.robotdata.RobotData;
 
 public class GeneralCommands {
@@ -30,6 +24,28 @@ public class GeneralCommands {
 		if(type == RobotType.REFINERY) return RobotType.MINER;
 		if(type == RobotType.LANDSCAPER) return RobotType.DESIGN_SCHOOL;
 		return RobotType.HQ;
+	}
+
+	public static boolean senseUnitType(RobotController rc, RobotType type) {
+		RobotInfo[] robots = rc.senseNearbyRobots();
+		for (RobotInfo robot : robots) {
+			if (robot.getType() == type) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public static boolean senseUnitType(RobotController rc, RobotType type, Team team) {
+		RobotInfo[] robots = rc.senseNearbyRobots();
+		for (RobotInfo robot : robots) {
+			if (robot.getType() == type && robot.getTeam() == team) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 	
 	//MOVEMENT
