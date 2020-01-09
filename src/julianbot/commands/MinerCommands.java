@@ -114,8 +114,13 @@ public class MinerCommands {
 	 * @param dir Direction
 	 * @throws GameActionException
 	 */
-	public static void mineRawSoup(RobotController rc, Direction dir) throws GameActionException {
-		if(rc.canMineSoup(dir)) rc.mineSoup(dir);
+	public static boolean mineRawSoup(RobotController rc, Direction dir) throws GameActionException {
+		if(rc.isReady() && rc.canMineSoup(dir)) {
+			rc.mineSoup(dir);
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	/**

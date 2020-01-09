@@ -134,6 +134,13 @@ public strictfp class RobotPlayer {
     static void fullMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
 
+    	if	(! MinerCommands.mineRawSoup(rc, MinerCommands.getAdjacentSoupDirection(rc))) {
+    		Direction soupDir = MinerCommands.getDistantSoupDirection(rc);
+    		if (soupDir != Direction.CENTER) {
+				minerData.setSearchDirection(soupDir);
+			}
+		}
+
     	if (rc.getSoupCarrying() == RobotType.MINER.soupLimit) {
 			//Start by trying to deposit into a refinery.
 			Direction adjacentRefineryDirection = MinerCommands.getAdjacentRefineryDirection(rc);
