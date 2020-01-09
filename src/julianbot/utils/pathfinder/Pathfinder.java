@@ -14,7 +14,6 @@ public class Pathfinder {
 	}
 	
 	public void buildGraph(RobotController rc) {
-		System.out.println("SR = " + ((int) Math.sqrt(rc.getType().sensorRadiusSquared)));
 		this.mapGraph = new MapGraph(rc, (int) Math.sqrt(rc.getType().sensorRadiusSquared) - 1);
 	}
 	
