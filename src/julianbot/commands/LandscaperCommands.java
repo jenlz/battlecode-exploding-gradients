@@ -2,7 +2,6 @@ package julianbot.commands;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
-import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.Transaction;
@@ -11,7 +10,22 @@ import julianbot.utils.NumberMath;
 
 public class LandscaperCommands {
 	
-	static Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
+	private static final int DIG_PATTERN_ARRAY_SHIFT = 2;
+	private static Direction[][] digPattern = new Direction[][]{
+		{Direction.EAST, Direction.SOUTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH},
+		{Direction.NORTHEAST, Direction.EAST, Direction.NORTHEAST, Direction.SOUTHEAST, Direction.SOUTH},
+		{Direction.NORTH, Direction.NORTHEAST, Direction.NORTH, Direction.SOUTHEAST, Direction.SOUTH},
+		{Direction.NORTH, Direction.NORTHWEST, Direction.SOUTHWEST, Direction.WEST, Direction.SOUTHWEST},
+		{Direction.NORTH, Direction.NORTHWEST, Direction.WEST, Direction.NORTHWEST, Direction.WEST}
+	};
+	
+	private static Direction[][][] buildPattern = new Direction[][][] {
+		{{}, {Direction.WEST, Direction.NORTHWEST, Direction.NORTH, Direction.NORTHEAST}, {}, {Direction.NORTHWEST, Direction.NORTH, Direction.NORTHEAST, Direction.EAST}, {}},
+		{{Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST, Direction.NORTH}, {}, {}, {}, {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST}},
+		{{Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST}, {}, {}, {}, {Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST}},
+		{{Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST}, {}, {}, {}, {Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH}},
+		{{}, {Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST}, {}, {Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST}, {}},
+	};
 	
 	public static boolean dig(RobotController rc, Direction dir) throws GameActionException {
 		if(rc.isReady() && rc.canDigDirt(dir)) {
@@ -58,42 +72,50 @@ public class LandscaperCommands {
 	}
 	
 	private static void constructWallUnits(RobotController rc, LandscaperData data) throws GameActionException {
-		Direction constructDirection = data.getHqLocation().directionTo(rc.getLocation());
-		int[] elevations = new int[]{
-				rc.senseElevation(rc.getLocation().add(constructDirection.rotateLeft())),
-				rc.senseElevation(rc.getLocation().add(constructDirection)),
-				rc.senseElevation(rc.getLocation().add(constructDirection.rotateRight()))};
+		Direction[] constructDirections = new Direction[0];
 		
-		int lowestElevation = NumberMath.indexOfLeast(elevations);
-		if(lowestElevation == 0) rc.depositDirt(constructDirection.rotateLeft());
-		if(lowestElevation == 1) rc.depositDirt(constructDirection);
-		if(lowestElevation == 2) rc.depositDirt(constructDirection.rotateRight());
+		MapLocation rcLocation = rc.getLocation();
+		MapLocation hqLocation = data.getHqLocation();
+		
+		int dx = rcLocation.x - hqLocation.x;
+		int dy = rcLocation.y - hqLocation.y;
+				
+		int gridX = dx + DIG_PATTERN_ARRAY_SHIFT;
+		int gridY = -dy + DIG_PATTERN_ARRAY_SHIFT;
+		
+		constructDirections = buildPattern[gridY][gridX];
+		if(constructDirections.length == 0) {
+			digOrMove(rc, rcLocation, digPattern[gridY][gridX]);
+			return;
+		}
+		
+		int[] constructElevations = new int[constructDirections.length];
+		for(int i = 0; i < constructElevations.length; i++) {
+			constructElevations[i] = rc.senseElevation(rcLocation.add(constructDirections[i]));
+		}
+		
+		LandscaperCommands.depositDirt(rc, constructDirections[NumberMath.indexOfLeast(constructElevations)]);
 	}
 	
 	private static void digWallDirt(RobotController rc, LandscaperData data) throws GameActionException {
 		Direction digDirection = Direction.CENTER;
-		if(rc.getLocation().distanceSquaredTo(data.getHqLocation()) == 1) {
-			//The Landscaper is not at a diagonal to the HQ.
-			digDirection = data.getHqLocation().directionTo(rc.getLocation()).rotateLeft().rotateLeft();
-		} else if(rc.getLocation().distanceSquaredTo(data.getHqLocation()) == 2) {
-			//The Landscaper is at a diagonal to the HQ.
-			digDirection = rc.getLocation().directionTo(data.getHqLocation()).rotateRight();
-		} 
 		
-		int elevationDifference = rc.senseElevation(rc.getLocation()) - rc.senseElevation(rc.getLocation().add(digDirection));
-		System.out.println("Relative to the HQ, I am " + data.getHqLocation().directionTo(rc.getLocation()));
-		System.out.println("The relative elevation is " + elevationDifference);
-		System.out.println("Going to attempt to dig in direction " + digDirection);
+		MapLocation rcLocation = rc.getLocation();
+		MapLocation hqLocation = data.getHqLocation();
 		
-		if(elevationDifference < GameConstants.MAX_DIRT_DIFFERENCE) {
-			System.out.println("Digging " + digDirection);
-			LandscaperCommands.dig(rc, digDirection);
-		} else {
-			System.out.println("Moving " + digDirection);
-			GeneralCommands.move(rc, digDirection);
-		}
+		int dx = rcLocation.x - hqLocation.x;
+		int dy = rcLocation.y - hqLocation.y;
 		
-		System.out.println("=====");
+		int gridX = dx + DIG_PATTERN_ARRAY_SHIFT;
+		int gridY = -dy + DIG_PATTERN_ARRAY_SHIFT;
+		digDirection = digPattern[gridY][gridX];
+		
+		digOrMove(rc, rcLocation, digDirection);
+	}
+	
+	private static void digOrMove(RobotController rc, MapLocation rcLocation, Direction digDirection) throws GameActionException {
+		if(rc.senseElevation(rcLocation) - rc.senseElevation(rcLocation.add(digDirection)) < 1) LandscaperCommands.dig(rc, digDirection);
+		else GeneralCommands.move(rc, digDirection);
 	}
 	
 }

@@ -2,7 +2,6 @@ package julianbot;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 import julianbot.commands.DesignSchoolCommands;
@@ -34,7 +33,6 @@ public strictfp class RobotPlayer {
 
         // This is the RobotController object. You use it to perform actions from this robot,
         // and to get information on its current status.
-        System.out.println("Initializing Robot.");
     	RobotPlayer.rc = rc;
         robotData = initializeRobotData(rc.getType());
         turnCount = 0;
@@ -70,9 +68,7 @@ public strictfp class RobotPlayer {
     
     static RobotData initializeRobotData(RobotType type) {
     	RobotData robotData = null;
-    	
-    	System.out.println("Robot Type = " + type);
-    	
+    	    	
     	switch(type) {
     		case HQ:             robotData = new HQData(rc);             break;
     		case MINER:          robotData = new MinerData(rc);          break;
