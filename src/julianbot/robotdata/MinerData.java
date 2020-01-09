@@ -10,7 +10,12 @@ public class MinerData extends RobotData {
 	public static final int ROLE_SOUP_MINER = 1;
 	
 	private Direction searchDirection;
-	
+
+	/**
+	 * Constructs MinerData
+	 * Initializes role of miner as
+	 * @param rc
+	 */
 	public MinerData(RobotController rc) {
 		super(rc);
 		currentRole = ROLE_DESIGN_BUILDER;
