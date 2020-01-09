@@ -69,9 +69,9 @@ public strictfp class RobotPlayer {
     
     static RobotData initializeRobotData(RobotType type) {
     	RobotData robotData = null;
-    	
+
     	System.out.println("Robot Type = " + type);
-    	
+
     	switch(type) {
     		case HQ:             robotData = new HQData(rc);             break;
     		case MINER:          robotData = new MinerData(rc);          break;
