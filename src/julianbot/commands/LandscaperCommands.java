@@ -57,7 +57,15 @@ public class LandscaperCommands {
 	}
 	
 	public static void approachHQ(RobotController rc, LandscaperData data) throws GameActionException {
-		GeneralCommands.move(rc, rc.getLocation().directionTo(data.getHqLocation()));
+		if(!data.hasPath()) {
+			if(GeneralCommands.move(rc, rc.getLocation().directionTo(data.getHqLocation()))) return;
+			
+			Direction direction = rc.getLocation().directionTo(data.getHqLocation());
+			GeneralCommands.buildMapGraph(rc, data);
+    		GeneralCommands.calculatePathTo(rc.getLocation().add(direction).add(direction), data);
+		} else {
+			GeneralCommands.proceedAlongPath(rc, data);
+		}
 	}
 	
 	public static void determineApproachCompletion(RobotController rc, LandscaperData data) {
