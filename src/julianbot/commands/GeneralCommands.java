@@ -64,7 +64,7 @@ public class GeneralCommands {
 	}
 	
 	public static void proceedAlongPath(RobotController rc, RobotData data) throws GameActionException {
-		if(data.hasPath()) {
+		if(data.getHasPath()) {
 			if(GeneralCommands.move(rc, data.getCurrentPathDirection())) {
 				Clock.yield();
 				data.incrementPathProgression();

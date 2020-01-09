@@ -2,7 +2,6 @@ package julianbot;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 import julianbot.commands.DesignSchoolCommands;
@@ -109,7 +108,7 @@ public strictfp class RobotPlayer {
     static void topographicallyAdeptMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
     	
-    	if(!robotData.hasPath()) {
+    	if(!robotData.getHasPath()) {
     		GeneralCommands.buildMapGraph(rc, robotData);
     		GeneralCommands.calculatePathTo(minerData.getSpawnerLocation().add(rc.getLocation().directionTo(minerData.getSpawnerLocation())), minerData);
     	} else {

@@ -10,21 +10,13 @@ public class RobotData {
 
 	protected MapLocation spawnerLocation;
 	protected Pathfinder pathfinder;
-		protected Direction[] pathToDestination;
-		protected boolean hasPath;
-		protected int pathProgression;
+	protected Direction[] pathToDestination;
+	protected boolean hasPath;
+	protected int pathProgression;
 	
 	public RobotData(RobotController rc) {
 		setSpawnerLocation(GeneralCommands.getSpawnerLocation(rc));
 		this.pathfinder = new Pathfinder();
-	}
-
-	public MapLocation getSpawnerLocation() {
-		return spawnerLocation;
-	}
-
-	public void setSpawnerLocation(MapLocation spawnerLocation) {
-		this.spawnerLocation = spawnerLocation;
 	}
 	
 	public void buildMapGraph(RobotController rc) {
@@ -36,10 +28,6 @@ public class RobotData {
 		hasPath = (pathToDestination != null && pathToDestination.length > 0);
 		pathProgression = 0;
 	}
-
-	public Direction getCurrentPathDirection() {
-		return pathToDestination[pathProgression];
-	}
 	
 	public void incrementPathProgression() {
 		pathProgression++;
@@ -49,8 +37,19 @@ public class RobotData {
 			pathProgression = 0;
 		}
 	}
-	
-	public boolean hasPath() {
+	public void setSpawnerLocation(MapLocation spawnerLocation) {
+		this.spawnerLocation = spawnerLocation;
+	}
+
+	public MapLocation getSpawnerLocation() {
+		return spawnerLocation;
+	}
+
+	public Direction getCurrentPathDirection() {
+		return pathToDestination[pathProgression];
+	}
+
+	public boolean getHasPath() {
 		return hasPath;
 	}
 	
