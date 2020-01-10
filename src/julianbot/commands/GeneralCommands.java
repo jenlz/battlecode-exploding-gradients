@@ -6,7 +6,23 @@ import julianbot.utils.pathfinder.Pathfinder;
 
 public class GeneralCommands {
 	
-	public static final int TRANSACTION_PRIME_NUMBER = 8849;
+	public enum Type{
+		TRANSACTION_SOS_AT_LOC(-104),
+		TRANSACTION_SOUP_AT_LOC(249),
+		TRANSACTION_HQ_AT_LOC(9),
+		TRANSACTION_REFINERY_AT_LOC(-477),
+		TRANSACTION_ATTACK_AT_LOC(-171);
+		
+		private int val;
+		
+		Type(int val){
+			this.val = val;
+		}
+		
+		public int getVal() {
+			return val;
+		}
+	}
 	
 	//RECONNAISSANCE
 	public static MapLocation getSpawnerLocation(RobotController rc) {
@@ -85,14 +101,33 @@ public class GeneralCommands {
 	
 	
 	//TRANSACTIONS
-	public static int getTransactionTag(int roundNumber) {
-		return TRANSACTION_PRIME_NUMBER * roundNumber;
+	public static void sendTransaction(RobotController rc, int soupBid, Type type, MapLocation loc) throws GameActionException {
+		int transactionTag = (int) Math.random()*500;
+		int[] message = new int[]{transactionTag, type.getVal()+transactionTag, loc.x+transactionTag, loc.y+transactionTag, rc.getRoundNum()+transactionTag, 0};
+		int odd = 0;
+		for (int i : message) {
+			if (i%2 == 1)
+				odd++;
+		}
+		message[5] = odd;
+		if(rc.canSubmitTransaction(message, soupBid)) rc.submitTransaction(message, soupBid);
 	}
 	
-	public static void reportLocation(RobotController rc, int soupBid) throws GameActionException {
-		int transactionTag = getTransactionTag(rc.getRoundNum());
-		int[] message = new int[]{transactionTag, rc.getLocation().x, rc.getLocation().y};
-		if(rc.canSubmitTransaction(message, soupBid)) rc.submitTransaction(message, soupBid);
+	public static int[] decodeTransaction(RobotController rc, Transaction transaction) throws GameActionException {
+		int[] message = transaction.getMessage();
+		int transactionTag = message[0];
+		int[] plaintxt = new int[6];
+		int odd = 0;
+		for (int i = 0; i<message.length-1; i++) {
+			if (i%2 == 1)
+				odd++;
+		}
+		if (odd!=message[5])
+			return new int[] {0}; //empty means message not from own team
+		for (int i = 0; i<message.length-1; i++) {
+			plaintxt[i] = message[i] - transactionTag;
+		}
+		return plaintxt;
 	}
 	
 	//PATHFINDING
@@ -120,6 +155,7 @@ public class GeneralCommands {
 		data.setPathProgression(0);
 	}
 	
+<<<<<<< HEAD
 	private static boolean proceedAlongPath(RobotController rc, RobotData data) throws GameActionException {
 		if(data.hasPath() && GeneralCommands.moveOnPath(rc, data.getNextPathDirection())) {
 			data.incrementPathProgression();
@@ -137,6 +173,16 @@ public class GeneralCommands {
 	public static void stopFollowingPath(RobotData data) {
 		data.setPath(null);
 		data.setPathProgression(0);
+=======
+	public static void proceedAlongPath(RobotController rc, RobotData data) throws GameActionException {
+		if(data.hasPath()) {
+			if(GeneralCommands.move(rc, data.getCurrentPathDirection())) {
+				Clock.yield();
+				data.incrementPathProgression();
+			}	
+		}
+	
+>>>>>>> Transaction
 	}
 	
 }

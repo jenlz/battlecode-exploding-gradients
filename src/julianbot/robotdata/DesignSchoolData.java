@@ -1,7 +1,6 @@
 package julianbot.robotdata;
 
-import battlecode.common.Direction;
-import battlecode.common.RobotController;
+import battlecode.common.*;
 
 public class DesignSchoolData extends RobotData {
 
@@ -32,5 +31,4 @@ public class DesignSchoolData extends RobotData {
 	public void setBuildDirection(Direction buildDirection) {
 		this.buildDirection = buildDirection;
 	}
-	
 }

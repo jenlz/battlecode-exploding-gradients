@@ -6,6 +6,7 @@ import battlecode.common.GameConstants;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 import battlecode.common.Transaction;
+import julianbot.commands.GeneralCommands.Type;
 import julianbot.robotdata.HQData;
 
 public class HQCommands {
@@ -14,7 +15,7 @@ public class HQCommands {
 	
 	public static void makeInitialReport(RobotController rc) throws GameActionException {
 		//Since there can be seven transactions per round, we can be guaranteed to get one message through if that message is sent with a bid of one more than a seventh of the inital soup cost.
-		GeneralCommands.reportLocation(rc, (GameConstants.INITIAL_SOUP / 7) + 1);
+		GeneralCommands.sendTransaction(rc, (GameConstants.INITIAL_SOUP / 7) + 1, Type.TRANSACTION_HQ_AT_LOC, rc.getLocation());
 	}
 	
 	public static boolean oughtReportLocation(RobotController rc) {
@@ -23,6 +24,11 @@ public class HQCommands {
 	
 	public static boolean oughtBuildMiner(RobotController rc) {
 		return rc.getTeamSoup() >= GameConstants.INITIAL_SOUP + MINER_COST || rc.getRoundNum() == 1;
+	}
+	
+	public static void sendSOS(RobotController rc) throws GameActionException {
+		//Since there can be seven transactions per round, we can be guaranteed to get one message through if that message is sent with a bid of one more than a seventh of the inital soup cost.
+		GeneralCommands.sendTransaction(rc, 10, Type.TRANSACTION_SOS_AT_LOC, rc.getLocation());
 	}
 	
 	/**
