@@ -1,9 +1,5 @@
 package julianbot;
-import battlecode.common.Clock;
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
-import battlecode.common.RobotType;
+import battlecode.common.*;
 import julianbot.commands.DesignSchoolCommands;
 import julianbot.commands.GeneralCommands;
 import julianbot.commands.HQCommands;
@@ -156,10 +152,13 @@ public strictfp class RobotPlayer {
 			}
 
 			//If no refinery is adjacent, look for one.
+			RobotInfo hq = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam());
 			Direction distantRefineryDirection = MinerCommands.getAnyRefineryDirection(rc);
 			if (distantRefineryDirection != Direction.CENTER) {
 				GeneralCommands.move(rc, distantRefineryDirection);
 				return;
+			} else if (hq != null) {
+				//TODO Pathfind towards hq
 			}
 
 			//If we can't find a refinery, build one.

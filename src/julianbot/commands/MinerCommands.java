@@ -34,23 +34,26 @@ public class MinerCommands {
 	}
 
 	//TODO Should be unnecessary once communication is fully running. Should remove if running into bytecode limit
-	public static Direction getAdjacentRefineryDirection(RobotController rc) throws GameActionException {		
-		RobotInfo[] robots = rc.senseNearbyRobots(3, rc.getTeam());
-		for(RobotInfo robot : robots) {
-			if(robot.type == RobotType.REFINERY) return rc.getLocation().directionTo(robot.getLocation());
+	public static Direction getAdjacentRefineryDirection(RobotController rc) throws GameActionException {
+		RobotInfo refinery = GeneralCommands.senseUnitType(rc, RobotType.REFINERY, rc.getTeam(), 3);
+
+		if (refinery != null) {
+			return rc.getLocation().directionTo(refinery.getLocation());
+		} else {
+			return Direction.CENTER;
 		}
-		
-		return Direction.CENTER;
 	}
 
 	//TODO Should be unnecessary once communication is fully running. Should remove if running into bytecode limit
-	public static Direction getAnyRefineryDirection(RobotController rc) throws GameActionException {		
-		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam());
-		for(RobotInfo robot : robots) {
-			if(robot.type == RobotType.REFINERY) return rc.getLocation().directionTo(robot.getLocation());
+	public static Direction getAnyRefineryDirection(RobotController rc) throws GameActionException {
+
+		RobotInfo refinery = GeneralCommands.senseUnitType(rc, RobotType.REFINERY, rc.getTeam());
+
+		if (refinery != null) {
+			return rc.getLocation().directionTo(refinery.getLocation());
+		} else {
+			return Direction.CENTER;
 		}
-		
-		return Direction.CENTER;
 	}
 	
 	public static boolean attemptRefineryConstruction(RobotController rc) throws GameActionException {

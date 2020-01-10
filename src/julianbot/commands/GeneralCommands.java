@@ -26,26 +26,39 @@ public class GeneralCommands {
 		return RobotType.HQ;
 	}
 
-	public static boolean senseUnitType(RobotController rc, RobotType type) {
-		RobotInfo[] robots = rc.senseNearbyRobots();
+	/**
+	 * Senses unit type within sensor radius.
+	 * @param rc
+	 * @param type
+	 * @param team
+	 * @return First unit of given type and team. Null if not found
+	 */
+	public static RobotInfo senseUnitType(RobotController rc, RobotType type, Team team) {
+		RobotInfo[] robots = rc.senseNearbyRobots(-1, team);
 		for (RobotInfo robot : robots) {
 			if (robot.getType() == type) {
-				return true;
+				return robot;
 			}
 		}
-
-		return false;
+		return null;
 	}
 
-	public static boolean senseUnitType(RobotController rc, RobotType type, Team team) {
-		RobotInfo[] robots = rc.senseNearbyRobots();
+	/**
+	 * Senses unit type within inputted radius
+	 * @param rc
+	 * @param type
+	 * @param team
+	 * @param radius First unit of given type and team. Null if not found.
+	 * @return
+	 */
+	public static RobotInfo senseUnitType(RobotController rc, RobotType type, Team team, int radius) {
+		RobotInfo[] robots = rc.senseNearbyRobots(radius, team);
 		for (RobotInfo robot : robots) {
-			if (robot.getType() == type && robot.getTeam() == team) {
-				return true;
+			if (robot.getType() == type) {
+				return robot;
 			}
 		}
-
-		return false;
+		return null;
 	}
 	
 	//MOVEMENT
