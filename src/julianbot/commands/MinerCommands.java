@@ -32,7 +32,8 @@ public class MinerCommands {
 		
 		return false;
 	}
-	
+
+	//TODO Should be unnecessary once communication is fully running. Should remove if running into bytecode limit
 	public static Direction getAdjacentRefineryDirection(RobotController rc) throws GameActionException {		
 		RobotInfo[] robots = rc.senseNearbyRobots(3, rc.getTeam());
 		for(RobotInfo robot : robots) {
@@ -41,7 +42,8 @@ public class MinerCommands {
 		
 		return Direction.CENTER;
 	}
-	
+
+	//TODO Should be unnecessary once communication is fully running. Should remove if running into bytecode limit
 	public static Direction getAnyRefineryDirection(RobotController rc) throws GameActionException {		
 		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam());
 		for(RobotInfo robot : robots) {

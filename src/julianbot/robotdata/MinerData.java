@@ -19,7 +19,7 @@ public class MinerData extends RobotData {
 	 */
 	public MinerData(RobotController rc) {
 		super(rc);
-		currentRole = ROLE_SOUP_MINER;
+		currentRole = ROLE_DESIGN_BUILDER;
 		searchDirection = spawnerLocation.directionTo(rc.getLocation());
 	}
 	

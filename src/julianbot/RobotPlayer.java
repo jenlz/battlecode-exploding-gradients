@@ -166,6 +166,7 @@ public strictfp class RobotPlayer {
 			if (MinerCommands.attemptRefineryConstruction(rc)) return;
 		}
     	//If we can't build a refinery, start searching for better ground.
+		//TODO check soup locations for next location to go to
     	MinerCommands.continueSearch(rc, minerData);
     }
 
