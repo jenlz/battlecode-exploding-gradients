@@ -63,7 +63,18 @@ public class GeneralCommands {
 	}
 	
 	//MOVEMENT
-	public static boolean move(RobotController rc, Direction dir) throws GameActionException {
+	public static boolean move(RobotController rc, Direction dir, RobotData data) throws GameActionException {
+		stopFollowingPath(data);
+		
+		if(rc.isReady() && rc.canMove(dir)) {
+			rc.move(dir);
+			return true;
+		}
+		
+		return false;
+	}
+	
+	private static boolean moveOnPath(RobotController rc, Direction dir) throws GameActionException {
 		if(rc.isReady() && rc.canMove(dir)) {
 			rc.move(dir);
 			return true;
@@ -101,7 +112,7 @@ public class GeneralCommands {
 	}
 	
 	private static boolean proceedAlongPath(RobotController rc, RobotData data) throws GameActionException {
-		if(data.hasPath() && GeneralCommands.move(rc, data.getNextPathDirection())) {
+		if(data.hasPath() && GeneralCommands.moveOnPath(rc, data.getNextPathDirection())) {
 			data.incrementPathProgression();
 			if(data.pathCompleted()) {
 				stopFollowingPath(data);

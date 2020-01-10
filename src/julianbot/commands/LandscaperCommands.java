@@ -58,7 +58,7 @@ public class LandscaperCommands {
 	
 	public static void approachHQ(RobotController rc, LandscaperData data) throws GameActionException {
 		if(!data.hasPath()) {
-			if(GeneralCommands.move(rc, rc.getLocation().directionTo(data.getHqLocation()))) return;
+			if(GeneralCommands.move(rc, rc.getLocation().directionTo(data.getHqLocation()), data)) return;
 			Direction direction = rc.getLocation().directionTo(data.getHqLocation());    		
     		GeneralCommands.pathfind(rc.getLocation().add(direction).add(direction), rc, data);
 		} else {
@@ -91,7 +91,7 @@ public class LandscaperCommands {
 		
 		constructDirections = buildPattern[gridY][gridX];
 		if(constructDirections.length == 0) {
-			digOrMove(rc, rcLocation, digPattern[gridY][gridX]);
+			digOrMove(rc, data, rcLocation, digPattern[gridY][gridX]);
 			return;
 		}
 		
@@ -116,12 +116,12 @@ public class LandscaperCommands {
 		int gridY = -dy + DIG_PATTERN_ARRAY_SHIFT;
 		digDirection = digPattern[gridY][gridX];
 		
-		digOrMove(rc, rcLocation, digDirection);
+		digOrMove(rc, data, rcLocation, digDirection);
 	}
 	
-	private static void digOrMove(RobotController rc, MapLocation rcLocation, Direction digDirection) throws GameActionException {
+	private static void digOrMove(RobotController rc, LandscaperData data, MapLocation rcLocation, Direction digDirection) throws GameActionException {
 		if(rc.senseElevation(rcLocation) - rc.senseElevation(rcLocation.add(digDirection)) < 1) LandscaperCommands.dig(rc, digDirection);
-		else GeneralCommands.move(rc, digDirection);
+		else GeneralCommands.move(rc, digDirection, data);
 	}
 	
 }
