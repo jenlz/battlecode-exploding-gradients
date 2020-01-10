@@ -119,7 +119,7 @@ public class GeneralCommands {
 		int[] plaintxt = new int[6];
 		int odd = 0;
 		for (int i = 0; i<message.length-1; i++) {
-			if (i%2 == 1)
+			if (message[i]%2 == 1)
 				odd++;
 		}
 		if (odd!=message[5])
