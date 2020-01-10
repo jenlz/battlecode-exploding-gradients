@@ -153,14 +153,14 @@ public strictfp class RobotPlayer {
 		}
 
 		//If no refinery is adjacent, look for one.
-		//RobotInfo hq = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam(), ((int) Math.sqrt(RobotType.MINER.sensorRadiusSquared)) - 2); For pathfind, change senseUnitType if add back in
+		//RobotInfo hq = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam(), ((int) Math.sqrt(RobotType.MINER.sensorRadiusSquared)) - 2); //For pathfind, change senseUnitType if add back in
 		RobotInfo hq = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam());
 		Direction distantRefineryDirection = MinerCommands.getAnyRefineryDirection(rc);
 		if (distantRefineryDirection != Direction.CENTER) {
-			GeneralCommands.move(rc, distantRefineryDirection);
+			GeneralCommands.move(rc, distantRefineryDirection, minerData);
 			return;
-		} else if (hq != null && false) { //TODO things get wonky w/ pathfind, add in when fixed
-			GeneralCommands.pathfind(hq.getLocation(), rc, minerData);
+		} else if (hq != null) { //TODO things get wonky w/ pathfind, add in when fixed
+			GeneralCommands.pathfind(hq.getLocation().add(hq.getLocation().directionTo(rc.getLocation())), rc, minerData);
 			return;
 		} else {
 			System.out.println("Setting direction toward hq");
