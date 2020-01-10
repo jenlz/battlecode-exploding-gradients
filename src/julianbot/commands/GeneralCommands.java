@@ -85,17 +85,31 @@ public class GeneralCommands {
 	}
 	
 	//PATHFINDING
-	public static void calculatePathTo(MapLocation destination, RobotController rc, RobotData data) {
+	public static boolean pathfind(MapLocation destination, RobotController rc, RobotData data) throws GameActionException {
+		if(!data.hasPath() && destination != null) {
+			GeneralCommands.calculatePathTo(destination, rc, data);
+			return false;
+		}
+		
+		return GeneralCommands.proceedAlongPath(rc, data);
+	}
+	
+	private static void calculatePathTo(MapLocation destination, RobotController rc, RobotData data) {
 		data.setMapGraph(Pathfinder.buildMapGraph(rc));
 		data.setPath(Pathfinder.getRoute(rc.getLocation(), destination, data.getMapGraph()));
 		data.setPathProgression(0);
 	}
 	
-	public static void proceedAlongPath(RobotController rc, RobotData data) throws GameActionException {
+	private static boolean proceedAlongPath(RobotController rc, RobotData data) throws GameActionException {
 		if(data.hasPath() && GeneralCommands.move(rc, data.getNextPathDirection())) {
 			data.incrementPathProgression();
-			if(data.pathCompleted()) stopFollowingPath(data);
+			if(data.pathCompleted()) {
+				stopFollowingPath(data);
+				return true;
+			}
 		}
+		
+		return false;
 	}
 
 
