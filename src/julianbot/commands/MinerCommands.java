@@ -120,13 +120,10 @@ public class MinerCommands {
 	
 	public static boolean routeToFulfillmentCenterSite(RobotController rc, MinerData minerData) throws GameActionException {
 		if(!minerData.hasPath()) {
-    		GeneralCommands.calculatePathTo(minerData.getSpawnerLocation().add(rc.getLocation().directionTo(minerData.getSpawnerLocation())), rc, minerData);
-    	} else {
-    		GeneralCommands.proceedAlongPath(rc, minerData);
-    		return minerData.hasPath();
+			return GeneralCommands.pathfind(minerData.getSpawnerLocation().add(rc.getLocation().directionTo(minerData.getSpawnerLocation())), rc, minerData);
     	}
-		
-		return false;
+    	
+		return GeneralCommands.pathfind(null, rc, minerData);
 	}
 	
 	public static boolean buildDefenseFulfillmentCenter(RobotController rc, MinerData minerData) throws GameActionException {
