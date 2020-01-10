@@ -1,11 +1,6 @@
 package julianbot.commands;
 
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
+import battlecode.common.*;
 import julianbot.robotdata.RobotData;
 import julianbot.utils.pathfinder.Pathfinder;
 
@@ -30,6 +25,41 @@ public class GeneralCommands {
 		if(type == RobotType.REFINERY) return RobotType.MINER;
 		if(type == RobotType.LANDSCAPER) return RobotType.DESIGN_SCHOOL;
 		return RobotType.HQ;
+	}
+
+	/**
+	 * Senses unit type within sensor radius.
+	 * @param rc
+	 * @param type
+	 * @param team
+	 * @return First unit of given type and team. Null if not found
+	 */
+	public static RobotInfo senseUnitType(RobotController rc, RobotType type, Team team) {
+		RobotInfo[] robots = rc.senseNearbyRobots(-1, team);
+		for (RobotInfo robot : robots) {
+			if (robot.getType() == type) {
+				return robot;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Senses unit type within inputted radius
+	 * @param rc
+	 * @param type
+	 * @param team
+	 * @param radius
+	 * @return First unit of given type and team. Null if not found.
+	 */
+	public static RobotInfo senseUnitType(RobotController rc, RobotType type, Team team, int radius) {
+		RobotInfo[] robots = rc.senseNearbyRobots(radius, team);
+		for (RobotInfo robot : robots) {
+			if (robot.getType() == type) {
+				return robot;
+			}
+		}
+		return null;
 	}
 	
 	//MOVEMENT
@@ -66,6 +96,15 @@ public class GeneralCommands {
 	}
 	
 	//PATHFINDING
+
+	/**
+	 *
+	 * @param destination
+	 * @param rc
+	 * @param data
+	 * @return
+	 * @throws GameActionException
+	 */
 	public static boolean pathfind(MapLocation destination, RobotController rc, RobotData data) throws GameActionException {
 		if(!data.hasPath() && destination != null) {
 			GeneralCommands.calculatePathTo(destination, rc, data);
@@ -92,6 +131,8 @@ public class GeneralCommands {
 		
 		return false;
 	}
+
+
 	
 	public static void stopFollowingPath(RobotData data) {
 		data.setPath(null);

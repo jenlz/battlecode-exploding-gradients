@@ -13,9 +13,15 @@ public class MinerData extends RobotData {
 		private boolean designSchoolBuilt;
 		private boolean fulfillmentCenterBuilt;
 		private boolean southGunBuilt;
+	public static final int ROLE_SCOUT = 3;
 	
 	private Direction searchDirection;
-	
+
+	/**
+	 * Constructs MinerData
+	 * Initializes role of miner as
+	 * @param rc
+	 */
 	public MinerData(RobotController rc) {
 		super(rc);
 		currentRole = ROLE_DESIGN_BUILDER;

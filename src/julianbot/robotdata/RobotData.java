@@ -12,7 +12,6 @@ public class RobotData {
 	protected MapGraph mapGraph;
 		protected Direction[] path;
 		protected int pathProgression;
-		
 	
 	public RobotData(RobotController rc) {
 		setSpawnerLocation(GeneralCommands.getSpawnerLocation(rc));
@@ -54,7 +53,6 @@ public class RobotData {
 		return pathProgression;
 	}
 
-	
 	public void incrementPathProgression() {
 		pathProgression++;
 	}
