@@ -147,7 +147,7 @@ public strictfp class RobotPlayer {
     	//If no refinery is adjacent, look for one.
     	Direction distantRefineryDirection = MinerCommands.getAnyRefineryDirection(rc);
     	if(distantRefineryDirection != Direction.CENTER) {
-    		GeneralCommands.move(rc, distantRefineryDirection);
+    		GeneralCommands.move(rc, distantRefineryDirection, minerData);
     		return;
     	}
     	
@@ -171,7 +171,7 @@ public strictfp class RobotPlayer {
     	//If there is no soup to mine, search for distant soup.
     	Direction distantSoupDirection = MinerCommands.getDistantSoupDirection(rc);
     	if(distantSoupDirection != Direction.CENTER) {
-    		GeneralCommands.move(rc, distantSoupDirection);
+    		GeneralCommands.move(rc, distantSoupDirection, minerData);
     		return;
     	}
     	
