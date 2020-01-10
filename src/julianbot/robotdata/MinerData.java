@@ -8,6 +8,11 @@ public class MinerData extends RobotData {
 	private int currentRole;
 	public static final int ROLE_DESIGN_BUILDER = 0;
 	public static final int ROLE_SOUP_MINER = 1;
+	public static final int ROLE_DEFENSE_BUILDER = 2;
+		private boolean northGunBuilt;
+		private boolean designSchoolBuilt;
+		private boolean fulfillmentCenterBuilt;
+		private boolean southGunBuilt;
 	
 	private Direction searchDirection;
 	
@@ -31,6 +36,38 @@ public class MinerData extends RobotData {
 
 	public void setSearchDirection(Direction searchDirection) {
 		this.searchDirection = searchDirection;
+	}
+
+	public boolean isNorthGunBuilt() {
+		return northGunBuilt;
+	}
+
+	public void setNorthGunBuilt(boolean northGunBuilt) {
+		this.northGunBuilt = northGunBuilt;
+	}
+
+	public boolean isDesignSchoolBuilt() {
+		return designSchoolBuilt;
+	}
+
+	public void setDesignSchoolBuilt(boolean designSchoolBuilt) {
+		this.designSchoolBuilt = designSchoolBuilt;
+	}
+
+	public boolean isFulfillmentCenterBuilt() {
+		return fulfillmentCenterBuilt;
+	}
+
+	public void setFulfillmentCenterBuilt(boolean fulfillmentCenterBuilt) {
+		this.fulfillmentCenterBuilt = fulfillmentCenterBuilt;
+	}
+
+	public boolean isSouthGunBuilt() {
+		return southGunBuilt;
+	}
+
+	public void setSouthGunBuilt(boolean southGunBuilt) {
+		this.southGunBuilt = southGunBuilt;
 	}
 	
 }
