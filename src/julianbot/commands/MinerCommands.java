@@ -131,7 +131,7 @@ public class MinerCommands {
 	 * @throws GameActionException
 	 */
 	public static boolean mineRawSoup(RobotController rc, Direction dir) throws GameActionException {
-		if(rc.isReady() && rc.canMineSoup(dir)) {
+		if(rc.isReady() && rc.canMineSoup(dir) && rc.getSoupCarrying() != RobotType.MINER.soupLimit) {
 			rc.mineSoup(dir);
 			return true;
 		} else {

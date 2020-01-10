@@ -1,5 +1,6 @@
 package julianbot;
 import battlecode.common.*;
+import com.sun.tools.javah.Gen;
 import julianbot.commands.DesignSchoolCommands;
 import julianbot.commands.GeneralCommands;
 import julianbot.commands.HQCommands;
@@ -97,14 +98,18 @@ public strictfp class RobotPlayer {
 				designMinerProtocol();
 				break;
 			case MinerData.ROLE_SOUP_MINER:
-				fullMinerProtocol();
+				if (rc.getSoupCarrying() == RobotType.MINER.soupLimit) {
+					fullMinerProtocol();
+				} else {
+					emptyMinerProtocol();
+				}
 				break;
 			case MinerData.ROLE_DEFENSE_BUILDER:
 				defenseMinerProtocol();
 			case MinerData.ROLE_SCOUT:
 				scoutMinerProtocol();
 			default:
-				emptyMinerProtocol();
+
 		}
     }
     
@@ -124,7 +129,7 @@ public strictfp class RobotPlayer {
     		else MinerCommands.continueSearch(rc, minerData);
     	}
     }
-    
+
     static void defenseMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
     	
@@ -139,36 +144,48 @@ public strictfp class RobotPlayer {
     static void fullMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
 
-    	if	(! MinerCommands.mineRawSoup(rc, MinerCommands.getAdjacentSoupDirection(rc))) {
-    		Direction soupDir = MinerCommands.getDistantSoupDirection(rc);
-    		if (soupDir != Direction.CENTER) {
+    	System.out.println("full protocol");
+		//Start by trying to deposit into a refinery.
+		Direction adjacentRefineryDirection = MinerCommands.getAdjacentRefineryDirection(rc);
+		if (adjacentRefineryDirection != Direction.CENTER) {
+			MinerCommands.depositRawSoup(rc, adjacentRefineryDirection);
+			return;
+		}
+
+		//If no refinery is adjacent, look for one.
+		//RobotInfo hq = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam(), ((int) Math.sqrt(RobotType.MINER.sensorRadiusSquared)) - 2); For pathfind, change senseUnitType if add back in
+		RobotInfo hq = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam());
+		Direction distantRefineryDirection = MinerCommands.getAnyRefineryDirection(rc);
+		if (distantRefineryDirection != Direction.CENTER) {
+			GeneralCommands.move(rc, distantRefineryDirection);
+			return;
+		} else if (hq != null && false) { //TODO things get wonky w/ pathfind, add in when fixed
+			GeneralCommands.pathfind(hq.getLocation(), rc, minerData);
+			return;
+		} else {
+			System.out.println("Setting direction toward hq");
+			minerData.setSearchDirection(rc.getLocation().directionTo(minerData.getSpawnerLocation()));
+			//GeneralCommands.move(rc, rc.getLocation().directionTo(minerData.getSpawnerLocation()));
+		}
+		//If we can't find a refinery, build one.
+		if (MinerCommands.attemptRefineryConstruction(rc)) return;
+
+    	//If we can't build a refinery, start searching for better ground.
+		//TODO check soup locations for next location to go to
+    	MinerCommands.continueSearch(rc, minerData);
+    }
+    
+    static void emptyMinerProtocol() throws GameActionException {
+    	MinerData minerData = (MinerData) robotData;
+		System.out.println("empty protocol");
+		if	(! MinerCommands.mineRawSoup(rc, MinerCommands.getAdjacentSoupDirection(rc))) {
+			Direction soupDir = MinerCommands.getDistantSoupDirection(rc);
+			if (soupDir != Direction.CENTER) {
 				minerData.setSearchDirection(soupDir);
 			}
 		}
-
-    	if (rc.getSoupCarrying() == RobotType.MINER.soupLimit) {
-			//Start by trying to deposit into a refinery.
-			Direction adjacentRefineryDirection = MinerCommands.getAdjacentRefineryDirection(rc);
-			if (adjacentRefineryDirection != Direction.CENTER) {
-				MinerCommands.depositRawSoup(rc, adjacentRefineryDirection);
-				return;
-			}
-
-			//If no refinery is adjacent, look for one.
-			RobotInfo hq = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam());
-			Direction distantRefineryDirection = MinerCommands.getAnyRefineryDirection(rc);
-			if (distantRefineryDirection != Direction.CENTER) {
-				GeneralCommands.move(rc, distantRefineryDirection);
-				return;
-			} else if (hq != null) {
-				//TODO Pathfind towards hq
-			}
-
-			//If we can't find a refinery, build one.
-			if (MinerCommands.attemptRefineryConstruction(rc)) return;
-		}
-    	//If we can't build a refinery, start searching for better ground.
-		//TODO check soup locations for next location to go to
+    	
+    	//If we can't find distant soup, move in the search direction.
     	MinerCommands.continueSearch(rc, minerData);
     }
 
@@ -183,28 +200,6 @@ public strictfp class RobotPlayer {
 
 		MinerCommands.continueSearch(rc, minerData);
 	}
-    
-    static void emptyMinerProtocol() throws GameActionException {
-    	MinerData minerData = (MinerData) robotData;
-    	
-    	//Start by trying to mine nearby soup.
-    	Direction adjacentSoupDirection = MinerCommands.getAdjacentSoupDirection(rc);
-    	if(adjacentSoupDirection != Direction.CENTER) {
-    		MinerCommands.mineRawSoup(rc, adjacentSoupDirection);
-    		return;
-    	}
-    	
-    	//If there is no soup to mine, search for distant soup.
-    	Direction distantSoupDirection = MinerCommands.getDistantSoupDirection(rc);
-    	if(distantSoupDirection != Direction.CENTER) {
-    		GeneralCommands.move(rc, distantSoupDirection);
-    		return;
-    	}
-    	
-    	//If we can't find distant soup, move in the search direction.
-    	MinerCommands.continueSearch(rc, minerData);
-    	return;
-    }
 
     static void runRefinery() throws GameActionException {
         // System.out.println("Pollution: " + rc.sensePollution(rc.getLocation()));
