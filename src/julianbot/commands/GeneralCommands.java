@@ -2,6 +2,7 @@ package julianbot.commands;
 
 import battlecode.common.*;
 import julianbot.robotdata.RobotData;
+import julianbot.utils.pathfinder.Pathfinder;
 
 public class GeneralCommands {
 	
@@ -84,23 +85,24 @@ public class GeneralCommands {
 	}
 	
 	//PATHFINDING
-	public static void buildMapGraph(RobotController rc, RobotData data) {
-		data.buildMapGraph(rc);
-	}
-	
-	public static void calculatePathTo(MapLocation destination, RobotData data) {
-		data.calculatePathTo(destination);
+	public static void calculatePathTo(MapLocation destination, RobotController rc, RobotData data) {
+		data.setMapGraph(Pathfinder.buildMapGraph(rc));
+		data.setPath(Pathfinder.getRoute(rc.getLocation(), destination, data.getMapGraph()));
+		data.setPathProgression(0);
 	}
 	
 	public static void proceedAlongPath(RobotController rc, RobotData data) throws GameActionException {
-		if(data.hasPath()) {
-			if(GeneralCommands.move(rc, data.getCurrentPathDirection())) {
-				Clock.yield();
-				data.incrementPathProgression();
-			}
+		if(data.hasPath() && GeneralCommands.move(rc, data.getNextPathDirection())) {
+			data.incrementPathProgression();
+			if(data.pathCompleted()) stopFollowingPath(data);
 		}
 	}
 
 
+	
+	public static void stopFollowingPath(RobotData data) {
+		data.setPath(null);
+		data.setPathProgression(0);
+	}
 	
 }
