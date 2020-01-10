@@ -1,9 +1,5 @@
 package julianbot;
-import battlecode.common.Clock;
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
-import battlecode.common.RobotType;
+import battlecode.common.*;
 import julianbot.commands.DesignSchoolCommands;
 import julianbot.commands.GeneralCommands;
 import julianbot.commands.HQCommands;
@@ -76,7 +72,7 @@ public strictfp class RobotPlayer {
     		case LANDSCAPER:     robotData = new LandscaperData(rc);     break;
     		default:             robotData = new RobotData(rc);          break;
     	}
-    	
+    	System.out.println(robotData);
     	return robotData;
     }
 
@@ -87,6 +83,15 @@ public strictfp class RobotPlayer {
         if(HQCommands.oughtBuildMiner(rc)) HQCommands.tryBuild(rc, RobotType.MINER, hqData);
         HQCommands.storeForeignTransactions(rc, hqData);
         if(rc.getRoundNum() % 100 == 0) HQCommands.repeatForeignTransaction(rc, hqData);        
+        
+        RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), hqData.getOpponent());
+    	int target = (int) (Math.random()*enemy.length);
+    	if(rc.canShootUnit(enemy[target].getID())) {
+    		rc.shootUnit(enemy[target].getID());
+    	}
+        if(enemy.length > 10) {
+        	HQCommands.sendSOS(rc);
+        }
     }
 
     static void runMiner() throws GameActionException {
@@ -173,10 +178,11 @@ public strictfp class RobotPlayer {
 
     static void runRefinery() throws GameActionException {
         // System.out.println("Pollution: " + rc.sensePollution(rc.getLocation()));
+    	
     }
 
     static void runVaporator() throws GameActionException {
-
+    	
     }
 
     static void runDesignSchool() throws GameActionException {
@@ -204,6 +210,13 @@ public strictfp class RobotPlayer {
     }
 
     static void runNetGun() throws GameActionException {
-
+    	/*
+    	NetGunData ngData = (NetGunData) robotData;
+    	RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), ngData.getOpponent());
+    	int target = (int) (Math.random()*enemy.length);
+    	if(rc.canShootUnit(enemy[target].getID())) {
+    		rc.shootUnit(enemy[target].getID());
+    	}
+    	*/
     }
 }

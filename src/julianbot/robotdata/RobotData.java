@@ -1,13 +1,13 @@
 package julianbot.robotdata;
 
-import battlecode.common.Direction;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
+import battlecode.common.*;
 import julianbot.commands.GeneralCommands;
 import julianbot.utils.pathfinder.Pathfinder;
 
 public class RobotData {
 
+	protected final Team team;
+	protected final Team opponent;
 	protected MapLocation spawnerLocation;
 	protected Pathfinder pathfinder;
 		protected Direction[] pathToDestination;
@@ -15,8 +15,18 @@ public class RobotData {
 		protected int pathProgression;
 	
 	public RobotData(RobotController rc) {
+		team = rc.getTeam();
+		opponent = team.opponent();
 		setSpawnerLocation(GeneralCommands.getSpawnerLocation(rc));
 		this.pathfinder = new Pathfinder();
+	}
+	
+	public Team getTeam() {
+		return team;
+	}
+	
+	public Team getOpponent() {
+		return opponent;
 	}
 
 	public MapLocation getSpawnerLocation() {
