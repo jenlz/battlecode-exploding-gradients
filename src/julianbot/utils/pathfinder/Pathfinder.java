@@ -6,8 +6,8 @@ import battlecode.common.RobotController;
 
 public class Pathfinder {
 	
-	public static MapGraph buildMapGraph(RobotController rc) {
-		return new MapGraph(rc, (int) Math.sqrt(rc.getType().sensorRadiusSquared) - 1);
+	public static MapGraph buildMapGraph(RobotController rc, int radius) {
+		return new MapGraph(rc, radius);
 	}
 	
 	public static Direction[] getRoute(MapLocation start, MapLocation destination, MapGraph mapGraph) {
