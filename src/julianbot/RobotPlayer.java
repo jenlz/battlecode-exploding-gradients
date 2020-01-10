@@ -93,8 +93,12 @@ public strictfp class RobotPlayer {
     	MinerData minerData = (MinerData) robotData;
 //    	topographicallyAdeptMinerProtocol();
     	
+    	if(turnCount == 1) MinerCommands.discernRole(rc, minerData);
+    	
     	if(minerData.getCurrentRole() == MinerData.ROLE_DESIGN_BUILDER) {
     		designMinerProtocol();
+    	} else if(minerData.getCurrentRole() == MinerData.ROLE_DEFENSE_BUILDER) {
+    		defenseMinerProtocol();
     	} else if(rc.getSoupCarrying() == RobotType.MINER.soupLimit) {
     		fullMinerProtocol();
     	} else {
@@ -105,12 +109,8 @@ public strictfp class RobotPlayer {
     static void topographicallyAdeptMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
     	
-    	if(!robotData.hasPath()) {
-    		GeneralCommands.buildMapGraph(rc, robotData);
-    		GeneralCommands.calculatePathTo(minerData.getSpawnerLocation().add(rc.getLocation().directionTo(minerData.getSpawnerLocation())), minerData);
-    	} else {
-    		GeneralCommands.proceedAlongPath(rc, minerData);
-    	}
+    	if(!robotData.hasPath()) GeneralCommands.calculatePathTo(minerData.getSpawnerLocation().add(rc.getLocation().directionTo(minerData.getSpawnerLocation())), rc, minerData);
+    	else GeneralCommands.proceedAlongPath(rc, minerData);
     }
     
     static void designMinerProtocol() throws GameActionException {
@@ -122,6 +122,17 @@ public strictfp class RobotPlayer {
     	} else {
     		if(MinerCommands.attemptDesignSchoolConstruction(rc)) minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
     		else MinerCommands.continueSearch(rc, minerData);
+    	}
+    }
+    
+    static void defenseMinerProtocol() throws GameActionException {
+    	MinerData minerData = (MinerData) robotData;
+    	
+    	if(!minerData.isFulfillmentCenterBuilt()) {
+    		if(MinerCommands.routeToFulfillmentCenterSite(rc, minerData)) {
+    			MinerCommands.buildDefenseFulfillmentCenter(rc, minerData);
+    			return;
+    		}
     	}
     }
     
@@ -180,7 +191,8 @@ public strictfp class RobotPlayer {
     }
 
     static void runDesignSchool() throws GameActionException {
-    	if(DesignSchoolCommands.oughtBuildLandscaper(rc)) DesignSchoolCommands.tryBuild(rc, RobotType.LANDSCAPER, (DesignSchoolData) robotData);
+    	DesignSchoolData designSchoolData = (DesignSchoolData) robotData;
+    	if(DesignSchoolCommands.oughtBuildLandscaper(rc, designSchoolData)) DesignSchoolCommands.tryBuild(rc, RobotType.LANDSCAPER, designSchoolData);
     }
 
     static void runFulfillmentCenter() throws GameActionException {

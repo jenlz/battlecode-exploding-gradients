@@ -75,8 +75,8 @@ public class MapGraph {
 		adj[v].add(w);
 	}
 	
-	public Direction[] BFS(MapLocation mapDestination) {
-		int source = getLocationCode(sourceLocation);
+	public Direction[] BFS(MapLocation start, MapLocation mapDestination) {
+		int source = getLocationCode(start);
 		int destination = getLocationCode(mapDestination);
 		
 		boolean visited[] = new boolean[nodeCount];

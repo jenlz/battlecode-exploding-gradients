@@ -60,11 +60,9 @@ public class HQCommands {
     public static void repeatForeignTransaction(RobotController rc, HQData data) throws GameActionException {
     	Transaction interceptedTransaction = data.getRandomForeignTransaction();
     	if(interceptedTransaction == null || interceptedTransaction.getMessage().length == 0) return;
-    	
-    	System.out.println("Attempting to wreak havoc.");
-    	
-    	if(rc.canSubmitTransaction(interceptedTransaction.getMessage(), 10)) {
-    		rc.submitTransaction(interceptedTransaction.getMessage(), 10);
+    	    	
+    	if(rc.canSubmitTransaction(interceptedTransaction.getMessage(), 1)) {
+    		rc.submitTransaction(interceptedTransaction.getMessage(), 1);
     	}
     }
 }

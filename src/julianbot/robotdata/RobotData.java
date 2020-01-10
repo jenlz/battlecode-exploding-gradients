@@ -4,19 +4,18 @@ import battlecode.common.Direction;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import julianbot.commands.GeneralCommands;
-import julianbot.utils.pathfinder.Pathfinder;
+import julianbot.utils.pathfinder.MapGraph;
 
 public class RobotData {
 
 	protected MapLocation spawnerLocation;
-	protected Pathfinder pathfinder;
-		protected Direction[] pathToDestination;
-		protected boolean hasPath;
+	protected MapGraph mapGraph;
+		protected Direction[] path;
 		protected int pathProgression;
+		
 	
 	public RobotData(RobotController rc) {
 		setSpawnerLocation(GeneralCommands.getSpawnerLocation(rc));
-		this.pathfinder = new Pathfinder();
 	}
 
 	public MapLocation getSpawnerLocation() {
@@ -26,32 +25,46 @@ public class RobotData {
 	public void setSpawnerLocation(MapLocation spawnerLocation) {
 		this.spawnerLocation = spawnerLocation;
 	}
-	
-	public void buildMapGraph(RobotController rc) {
-		pathfinder.buildGraph(rc);
-	}
-	
-	public void calculatePathTo(MapLocation destination) {
-		pathToDestination = pathfinder.getRouteTo(destination);
-		hasPath = (pathToDestination != null && pathToDestination.length > 0);
-		pathProgression = 0;
+
+	public MapGraph getMapGraph() {
+		return mapGraph;
 	}
 
-	public Direction getCurrentPathDirection() {
-		return pathToDestination[pathProgression];
+	public void setMapGraph(MapGraph mapGraph) {
+		this.mapGraph = mapGraph;
 	}
-	
-	public void incrementPathProgression() {
-		pathProgression++;
-		if(pathProgression >= pathToDestination.length) {
-			pathToDestination = null;
-			hasPath = false;
-			pathProgression = 0;
-		}
+
+	public Direction[] getPath() {
+		return path;
 	}
 	
 	public boolean hasPath() {
-		return hasPath;
+		return path != null && path.length > 0;
+	}
+
+	public void setPath(Direction[] path) {
+		this.path = path;
+	}
+	
+	public Direction getNextPathDirection() {
+		return path[pathProgression];
+	}
+
+	public int getPathProgression() {
+		return pathProgression;
+	}
+
+	
+	public void incrementPathProgression() {
+		pathProgression++;
+	}
+	
+	public void setPathProgression(int pathProgression) {
+		this.pathProgression = pathProgression;
+	}
+	
+	public boolean pathCompleted() {
+		return pathProgression >= path.length;
 	}
 	
 }

@@ -2,6 +2,7 @@ package julianbot.commands;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
@@ -10,6 +11,16 @@ import julianbot.robotdata.MinerData;
 public class MinerCommands {
 	
 	static Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
+	
+	public static void discernRole(RobotController rc, MinerData data) throws GameActionException {
+		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam());
+		for(RobotInfo robot : robots) {
+			if(robot.type == RobotType.LANDSCAPER) {
+				data.setCurrentRole(MinerData.ROLE_DEFENSE_BUILDER);
+				return;
+			}
+		}
+	}
 	
 	public static boolean locateNearbyDesignSchool(RobotController rc) throws GameActionException {
 		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam());
@@ -105,6 +116,30 @@ public class MinerCommands {
 		}
 		
 		data.setSearchDirection(directions[(int) (Math.random() * directions.length)]);
+	}
+	
+	public static boolean routeToFulfillmentCenterSite(RobotController rc, MinerData minerData) throws GameActionException {
+		if(!minerData.hasPath()) {
+    		GeneralCommands.calculatePathTo(minerData.getSpawnerLocation().add(rc.getLocation().directionTo(minerData.getSpawnerLocation())), rc, minerData);
+    	} else {
+    		GeneralCommands.proceedAlongPath(rc, minerData);
+    		return minerData.hasPath();
+    	}
+		
+		return false;
+	}
+	
+	public static boolean buildDefenseFulfillmentCenter(RobotController rc, MinerData minerData) throws GameActionException {
+		MapLocation hqLocation = minerData.getSpawnerLocation().add(Direction.EAST);
+		Direction buildDirection = rc.getLocation().directionTo(hqLocation);
+		if(rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, buildDirection)) {
+			rc.buildRobot(RobotType.FULFILLMENT_CENTER, buildDirection);
+			return true;
+		}
+		
+		System.out.println("Failed to build fulfillment center.");
+		
+		return false;
 	}
 	
 }
