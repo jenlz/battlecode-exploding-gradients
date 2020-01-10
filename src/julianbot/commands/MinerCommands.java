@@ -47,9 +47,12 @@ public class MinerCommands {
 	//TODO Should be unnecessary once communication is fully running. Should remove if running into bytecode limit
 	public static Direction getAdjacentRefineryDirection(RobotController rc) throws GameActionException {
 		RobotInfo refinery = GeneralCommands.senseUnitType(rc, RobotType.REFINERY, rc.getTeam(), 3);
+		RobotInfo hq = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam(), 3);
 
 		if (refinery != null) {
 			return rc.getLocation().directionTo(refinery.getLocation());
+		} else if (hq != null) {
+			return rc.getLocation().directionTo(hq.getLocation());
 		} else {
 			return Direction.CENTER;
 		}
@@ -57,12 +60,15 @@ public class MinerCommands {
 
 	//TODO Should be unnecessary once communication is fully running. Should remove if running into bytecode limit
 	public static Direction getAnyRefineryDirection(RobotController rc) throws GameActionException {
-
 		RobotInfo refinery = GeneralCommands.senseUnitType(rc, RobotType.REFINERY, rc.getTeam());
+		RobotInfo hq = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam());
 
 		if (refinery != null) {
 			return rc.getLocation().directionTo(refinery.getLocation());
-		} else {
+		} else if (hq != null) {
+			return rc.getLocation().directionTo(hq.getLocation());
+		}
+		else {
 			return Direction.CENTER;
 		}
 	}

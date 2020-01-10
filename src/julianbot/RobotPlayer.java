@@ -159,13 +159,19 @@ public strictfp class RobotPlayer {
 		if (distantRefineryDirection != Direction.CENTER) {
 			GeneralCommands.move(rc, distantRefineryDirection, minerData);
 			return;
-		} else if (hq != null) { //TODO things get wonky w/ pathfind, add in when fixed
+		} else if (hq != null) {
 			GeneralCommands.pathfind(hq.getLocation().add(hq.getLocation().directionTo(rc.getLocation())), rc, minerData);
 			return;
 		} else {
-			System.out.println("Setting direction toward hq");
-			minerData.setSearchDirection(rc.getLocation().directionTo(minerData.getSpawnerLocation()));
-			//GeneralCommands.move(rc, rc.getLocation().directionTo(minerData.getSpawnerLocation()));
+			System.out.println("Moving toward hq");
+			if (!GeneralCommands.move(rc, rc.getLocation().directionTo(minerData.getSpawnerLocation()), minerData)) {
+				Direction canMoveDir = rc.getLocation().directionTo(minerData.getSpawnerLocation()).rotateRight();
+				int rotateLimit = 8;
+				while (!GeneralCommands.move(rc, canMoveDir, minerData) && rotateLimit > 0) {
+					canMoveDir.rotateRight();
+					rotateLimit--;
+				}
+			}
 		}
 		//If we can't find a refinery, build one.
 		if (MinerCommands.attemptRefineryConstruction(rc)) return;

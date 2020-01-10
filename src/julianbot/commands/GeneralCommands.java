@@ -49,7 +49,7 @@ public class GeneralCommands {
 	 * @param rc
 	 * @param type
 	 * @param team
-	 * @param radius not squared
+	 * @param radius
 	 * @return First unit of given type and team. Null if not found.
 	 */
 	public static RobotInfo senseUnitType(RobotController rc, RobotType type, Team team, int radius) {
