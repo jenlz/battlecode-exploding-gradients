@@ -1,6 +1,10 @@
 package julianbot;
-import battlecode.common.*;
-import com.sun.tools.javah.Gen;
+import battlecode.common.Clock;
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
 import julianbot.commands.DesignSchoolCommands;
 import julianbot.commands.GeneralCommands;
 import julianbot.commands.HQCommands;
@@ -34,6 +38,7 @@ public strictfp class RobotPlayer {
     	RobotPlayer.rc = rc;
         robotData = initializeRobotData(rc.getType());
         turnCount = 0;
+        
         
         while (true) {
             turnCount += 1;
@@ -89,12 +94,15 @@ public strictfp class RobotPlayer {
         if(rc.getRoundNum() % 100 == 0) HQCommands.repeatForeignTransaction(rc, hqData);        
         
         RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), hqData.getOpponent());
-    	int target = (int) (Math.random()*enemy.length);
-    	if(rc.canShootUnit(enemy[target].getID())) {
-    		rc.shootUnit(enemy[target].getID());
-    	}
-        if(enemy.length > 10) {
-        	HQCommands.sendSOS(rc);
+        
+        if(enemy.length > 0) {
+	        int target = (int) (Math.random()*enemy.length);
+	    	if(rc.canShootUnit(enemy[target].getID())) {
+	    		rc.shootUnit(enemy[target].getID());
+	    	}
+	        if(enemy.length > 10) {
+	        	HQCommands.sendSOS(rc);
+	        }
         }
     }
 

@@ -78,13 +78,6 @@ public class GeneralCommands {
 		return null;
 	}
 	
-	public static int getEffectiveSensorRadiusSquared(RobotController rc) throws GameActionException {
-		double pollution = (double) rc.sensePollution(rc.getLocation());
-		double pollutionFactor = 1 + (pollution / 4000f);
-		double doubleSRS = (double) rc.getType().sensorRadiusSquared;
-		return (int) Math.ceil(doubleSRS / (pollutionFactor * pollutionFactor));
-	}
-	
 	//MOVEMENT
 	public static boolean move(RobotController rc, Direction dir, RobotData data) throws GameActionException {
 		stopFollowingPath(data);
@@ -109,7 +102,7 @@ public class GeneralCommands {
 	
 	//TRANSACTIONS
 	public static void sendTransaction(RobotController rc, int soupBid, Type type, MapLocation loc) throws GameActionException {
-		int transactionTag = (int) Math.random()*500;
+		int transactionTag = (int) (Math.random()*500); //This use of parentheses will prevent truncation of the random number.
 		int[] message = new int[]{transactionTag, type.getVal()+transactionTag, loc.x+transactionTag, loc.y+transactionTag, rc.getRoundNum()+transactionTag, 0};
 		int odd = 0;
 		for (int i : message) {
@@ -157,7 +150,7 @@ public class GeneralCommands {
 	}
 	
 	private static void calculatePathTo(MapLocation destination, RobotController rc, RobotData data) throws GameActionException {
-		data.setMapGraph(Pathfinder.buildMapGraph(rc, (int) Math.sqrt(GeneralCommands.getEffectiveSensorRadiusSquared(rc))));
+		data.setMapGraph(Pathfinder.buildMapGraph(rc, rc.getCurrentSensorRadiusSquared()));
 		data.setPath(Pathfinder.getRoute(rc.getLocation(), destination, data.getMapGraph()));
 		data.setPathProgression(0);
 	}

@@ -49,10 +49,9 @@ public class LandscaperCommands {
 	public static void learnHQLocation(RobotController rc, LandscaperData data) throws GameActionException {
 		for(Transaction transaction : rc.getBlock(1)) {
 			int[] message = GeneralCommands.decodeTransaction(rc, transaction);			
-			if(message.length != 1 && message[1] == Type.TRANSACTION_HQ_AT_LOC.getVal()) {
-				MapLocation landscaperLocation = rc.getLocation();
-				MapLocation origin = landscaperLocation.translate(-landscaperLocation.x, -landscaperLocation.y);
-				data.setHqLocation(origin.translate(message[2], message[3]));
+			if(message.length > 1 && message[1] == Type.TRANSACTION_HQ_AT_LOC.getVal()) {
+				data.setHqLocation(new MapLocation(message[2], message[3]));
+				return;
 			}
 		}
 	}
