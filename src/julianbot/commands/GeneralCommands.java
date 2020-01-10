@@ -155,7 +155,6 @@ public class GeneralCommands {
 		data.setPathProgression(0);
 	}
 	
-<<<<<<< HEAD
 	private static boolean proceedAlongPath(RobotController rc, RobotData data) throws GameActionException {
 		if(data.hasPath() && GeneralCommands.moveOnPath(rc, data.getNextPathDirection())) {
 			data.incrementPathProgression();
@@ -167,22 +166,9 @@ public class GeneralCommands {
 		
 		return false;
 	}
-
-
 	
 	public static void stopFollowingPath(RobotData data) {
 		data.setPath(null);
 		data.setPathProgression(0);
-=======
-	public static void proceedAlongPath(RobotController rc, RobotData data) throws GameActionException {
-		if(data.hasPath()) {
-			if(GeneralCommands.move(rc, data.getCurrentPathDirection())) {
-				Clock.yield();
-				data.incrementPathProgression();
-			}	
-		}
-	
->>>>>>> Transaction
 	}
-	
 }

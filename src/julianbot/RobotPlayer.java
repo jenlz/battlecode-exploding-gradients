@@ -1,9 +1,6 @@
 package julianbot;
 import battlecode.common.*;
-<<<<<<< HEAD
 import com.sun.tools.javah.Gen;
-=======
->>>>>>> Transaction
 import julianbot.commands.DesignSchoolCommands;
 import julianbot.commands.GeneralCommands;
 import julianbot.commands.HQCommands;
