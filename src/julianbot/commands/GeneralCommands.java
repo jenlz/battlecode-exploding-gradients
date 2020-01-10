@@ -78,6 +78,13 @@ public class GeneralCommands {
 		return null;
 	}
 	
+	public static int getEffectiveSensorRadiusSquared(RobotController rc) throws GameActionException {
+		double pollution = (double) rc.sensePollution(rc.getLocation());
+		double pollutionFactor = 1 + (pollution / 4000f);
+		double doubleSRS = (double) rc.getType().sensorRadiusSquared;
+		return (int) Math.ceil(doubleSRS / (pollutionFactor * pollutionFactor));
+	}
+	
 	//MOVEMENT
 	public static boolean move(RobotController rc, Direction dir, RobotData data) throws GameActionException {
 		stopFollowingPath(data);
@@ -149,8 +156,8 @@ public class GeneralCommands {
 		return GeneralCommands.proceedAlongPath(rc, data);
 	}
 	
-	private static void calculatePathTo(MapLocation destination, RobotController rc, RobotData data) {
-		data.setMapGraph(Pathfinder.buildMapGraph(rc));
+	private static void calculatePathTo(MapLocation destination, RobotController rc, RobotData data) throws GameActionException {
+		data.setMapGraph(Pathfinder.buildMapGraph(rc, (int) Math.sqrt(GeneralCommands.getEffectiveSensorRadiusSquared(rc))));
 		data.setPath(Pathfinder.getRoute(rc.getLocation(), destination, data.getMapGraph()));
 		data.setPathProgression(0);
 	}
