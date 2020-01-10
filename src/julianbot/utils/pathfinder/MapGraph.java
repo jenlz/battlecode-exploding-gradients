@@ -12,7 +12,8 @@ public class MapGraph {
 
 	private static Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
 	
-	private int chainLength;
+	private int lengthToEdge;
+	private int radiusSquared;
 	private int dimension;
 	
 	private int nodeCount;
@@ -21,11 +22,10 @@ public class MapGraph {
 	
 	private MapLocation sourceLocation;
 	
-	public MapGraph(RobotController rc, int chainLength) {
-		int dimension = 1 + 2 * chainLength;
-		
-		this.chainLength = chainLength;
-		this.dimension = dimension;
+	public MapGraph(RobotController rc, int radiusSquared) {
+		this.lengthToEdge = (int) Math.sqrt(radiusSquared);
+		this.radiusSquared = radiusSquared;
+		this.dimension = 1 + 2 * lengthToEdge;
 		
 		this.nodeCount = dimension * dimension;
 		this.adj = new LinkedList[nodeCount];
@@ -37,33 +37,40 @@ public class MapGraph {
 			this.adj[i] = new LinkedList<>();
 		}
 		
-		for(int i = -chainLength + 1; i <= chainLength - 1; i++) {
-			for(int j = -chainLength + 1; j <= chainLength - 1; j++) {
-				MapLocation mapLocation = sourceLocation.translate(i, j);
-				connectAllAdjacencies(rc, mapLocation);
+		for(int i = -lengthToEdge; i <= lengthToEdge; i++) {
+			for(int j = -lengthToEdge; j <= lengthToEdge; j++) {
+				if(i * i + j * j > radiusSquared) continue;				
+				connectAllAdjacencies(rc, i, j);
 			}
 		}
 	}
 	
 	private int getLocationCode(MapLocation testLocation) {
-		int graphX = testLocation.x - sourceLocation.x + chainLength;
-		int graphY = testLocation.y - sourceLocation.y + chainLength;
+		int graphX = testLocation.x - sourceLocation.x + lengthToEdge;
+		int graphY = testLocation.y - sourceLocation.y + lengthToEdge;
 		return graphY * dimension + graphX;
 	}
 	
 	private MapLocation getLocation(int locationCode) {
 		int graphX = locationCode % dimension;
 		int graphY = locationCode / dimension;
-		return sourceLocation.translate(graphX - chainLength, graphY - chainLength);
+		return sourceLocation.translate(graphX - lengthToEdge, graphY - lengthToEdge);
 	}
 	
-	private void connectAllAdjacencies(RobotController rc, MapLocation location) {	
+	private void connectAllAdjacencies(RobotController rc, int dx, int dy) {
+		MapLocation location = sourceLocation.translate(dx, dy);
 		int locationCode = getLocationCode(location);
 		
 		try {
 			for(Direction direction : directions) {
-				if(rc.onTheMap(location.add(direction)) && !rc.isLocationOccupied(location.add(direction))) {
-					addEdge(locationCode, getLocationCode(location.add(direction)));
+				int totalDX = dx + direction.dx;
+				int totalDY = dy + direction.dy;
+				
+				if(totalDX * totalDX + totalDY * totalDY > radiusSquared) continue;
+				
+				MapLocation adjacentLocation = location.add(direction);
+				if(rc.canSenseLocation(adjacentLocation) && !rc.isLocationOccupied(adjacentLocation)) {
+					addEdge(locationCode, getLocationCode(adjacentLocation));
 				}
 			}
 		} catch(GameActionException e) {
