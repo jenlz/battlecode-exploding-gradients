@@ -130,8 +130,12 @@ public strictfp class RobotPlayer {
     	MinerData minerData = (MinerData) robotData;
     	GeneralCommands.pathfind(minerData.getSpawnerLocation().add(rc.getLocation().directionTo(minerData.getSpawnerLocation())), rc, minerData);
     }
-    
-    static void designMinerProtocol() throws GameActionException {
+
+	/**
+	 * Builds a design school and then switches to a soup miner
+	 * @throws GameActionException
+	 */
+	static void designMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
     	if(MinerCommands.locateNearbyDesignSchool(rc)) {
     		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
@@ -143,7 +147,11 @@ public strictfp class RobotPlayer {
     	}
     }
 
-    static void defenseMinerProtocol() throws GameActionException {
+	/**
+	 * Builds fulfillment center near HQ
+	 * @throws GameActionException
+	 */
+	static void defenseMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
     	
     	if(!minerData.isFulfillmentCenterBuilt()) {
@@ -153,8 +161,12 @@ public strictfp class RobotPlayer {
     		}
     	}
     }
-    
-    static void fullMinerProtocol() throws GameActionException {
+
+	/**
+	 * Miner whose soup carrying capacity is full
+	 * @throws GameActionException
+	 */
+	static void fullMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
 
     	System.out.println("full protocol");
@@ -193,8 +205,12 @@ public strictfp class RobotPlayer {
 		//TODO check soup locations for next location to go to
     	MinerCommands.continueSearch(rc, minerData);
     }
-    
-    static void emptyMinerProtocol() throws GameActionException {
+
+	/**
+	 * Miner under soup carrying limit
+	 * @throws GameActionException
+	 */
+	static void emptyMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
 		System.out.println("empty protocol");
 		if	(! MinerCommands.mineRawSoup(rc, MinerCommands.getAdjacentSoupDirection(rc))) {
