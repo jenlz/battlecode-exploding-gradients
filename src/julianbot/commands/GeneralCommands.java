@@ -9,8 +9,14 @@ public class GeneralCommands {
 	public enum Type{
 		TRANSACTION_SOS_AT_LOC(-104),
 		TRANSACTION_SOUP_AT_LOC(249),
-		TRANSACTION_HQ_AT_LOC(9),
-		TRANSACTION_REFINERY_AT_LOC(-477),
+		TRANSACTION_FRIENDLY_HQ_AT_LOC(9),
+		TRANSACTION_ENEMY_HQ_AT_LOC(29),
+		TRANSACTION_FRIENDLY_REFINERY_AT_LOC(-477),
+		TRANSACTION_ENEMY_REFINERY_AT_LOC(-443),
+		TRANSACTION_FRIENDLY_DESIGN_SCHOOL_AT_LOC(793), // Not sure if we'd ever need this, but putting it just in case
+		TRANSACTION_ENEMY_DESIGN_SCHOOL_AT_LOC(740),
+		TRANSACTION_FRIENDLY_FULFILLMENT_CENTER_AT_LOC(117), // Not sure if we'd ever need this, but putting it just in case
+		TRANSACTION_ENEMY_FULFILLMENT_CENTER_AT_LOC(177),
 		TRANSACTION_ATTACK_AT_LOC(-171);
 		
 		private int val;
@@ -22,6 +28,7 @@ public class GeneralCommands {
 		public int getVal() {
 			return val;
 		}
+
 	}
 	
 	//RECONNAISSANCE
@@ -128,6 +135,48 @@ public class GeneralCommands {
 			plaintxt[i] = message[i] - transactionTag;
 		}
 		return plaintxt;
+	}
+
+	/**
+	 * Returns the corresponding Transaction type of locating inputted RobotType
+	 * @param rc
+	 * @param unitType
+	 * @param unitTeam
+	 * @return
+	 */
+	public static Type getLocationType(RobotController rc, RobotType unitType, Team unitTeam) {
+		if (unitTeam == rc.getTeam()) {
+			switch (unitType) {
+				case HQ:
+					return Type.TRANSACTION_FRIENDLY_HQ_AT_LOC;
+				break;
+				case REFINERY:
+					return Type.TRANSACTION_FRIENDLY_REFINERY_AT_LOC;
+				break;
+				case DESIGN_SCHOOL:
+					return Type.TRANSACTION_FRIENDLY_DESIGN_SCHOOL_AT_LOC;
+				break;
+				case FULFILLMENT_CENTER:
+					return Type.TRANSACTION_FRIENDLY_FULFILLMENT_CENTER_AT_LOC;
+				break;
+			}
+		} else {
+			switch (unitType) {
+				case HQ:
+					return Type.TRANSACTION_ENEMY_HQ_AT_LOC;
+				break;
+				case REFINERY:
+					return Type.TRANSACTION_ENEMY_REFINERY_AT_LOC;
+				break;
+				case DESIGN_SCHOOL:
+					return Type.TRANSACTION_ENEMY_DESIGN_SCHOOL_AT_LOC;
+				break;
+				case FULFILLMENT_CENTER:
+					return Type.TRANSACTION_ENEMY_FULFILLMENT_CENTER_AT_LOC;
+				break;
+			}
+		}
+		return null;
 	}
 	
 	//PATHFINDING

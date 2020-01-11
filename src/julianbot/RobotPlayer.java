@@ -1,10 +1,6 @@
 package julianbot;
-import battlecode.common.Clock;
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
+import battlecode.common.*;
+import com.sun.tools.javah.Gen;
 import julianbot.commands.DesignSchoolCommands;
 import julianbot.commands.GeneralCommands;
 import julianbot.commands.HQCommands;
@@ -218,8 +214,21 @@ public strictfp class RobotPlayer {
 	 */
 	static void scoutMinerProtocol() throws GameActionException {
 		MinerData minerData = (MinerData) robotData;
-
-
+		RobotInfo targetRobot = null;
+		if (targetRobot == null) {
+			RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+			for (RobotInfo robot : robots) {
+				RobotType unitType = robot.getType();
+				if (unitType.isBuilding()) {
+					int soupBid = (robot.getType() == RobotType.HQ) ? 10 : 5;
+					GeneralCommands.sendTransaction(rc, soupBid, GeneralCommands.getLocationType(rc, unitType, robot.getTeam()), robot.getLocation());
+				} else {
+					if (targetRobot == null) {
+						targetRobot = robot;
+					}
+				}
+			}
+		}
 
 		MinerCommands.continueSearch(rc, minerData);
 	}
