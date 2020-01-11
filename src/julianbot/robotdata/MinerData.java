@@ -18,6 +18,7 @@ public class MinerData extends RobotData {
 		private RobotInfo targetRobot;
 		private RobotInfo previousTarget;
 		private int turnsScouted;
+		//private int turnsTargetLost;
 	
 	private Direction searchDirection;
 
@@ -135,5 +136,18 @@ public class MinerData extends RobotData {
 	public void resetTurnsScouted() {
 		this.turnsScouted = 0;
 	}
-	
+
+/* Breaks previousTarget if used
+	public int getTurnsTargetLost() {
+		return this.turnsTargetLost;
+	}
+
+	public void incrementTurnsTargetLost() {
+		this.turnsTargetLost++;
+	}
+
+	public void resetTurnsTargetLost() {
+		this.turnsTargetLost = 0;
+	}
+	*/
 }

@@ -215,6 +215,7 @@ public strictfp class RobotPlayer {
 		MinerData minerData = (MinerData) robotData;
 		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
 		// Scans for enemy robots, if it's a building, reports it and if it's a unit, sets it as unit to follow.
+		//boolean targetSensed = false;
 		for (RobotInfo robot : robots) {
 			RobotType unitType = robot.getType();
 			if (unitType.isBuilding()) {
@@ -222,32 +223,54 @@ public strictfp class RobotPlayer {
 				// Add check here if location already reported
 				GeneralCommands.sendTransaction(rc, soupBid, GeneralCommands.getLocationType(rc, unitType, robot.getTeam()), robot.getLocation());
 			} else {
-				if (minerData.getTargetRobot() == null && robot.getID() != minerData.getPreviousTarget().getID()) {
-					//Sets new target if no target before and robot scanned wasn't followed before
-					minerData.setTargetRobot(robot);
-					System.out.println("Target acquired. Loc: " + minerData.getTargetRobot().getLocation());
-				}
-				else if (minerData.getTargetRobot().getID() == robot.getID() && minerData.getTurnsScouted() < 50) {
-					//If the bot scanned is the same bot it was following the turn before and it has been following it for over 50 turns
-					minerData.setTargetRobot(robot); // To update robot's location
-					minerData.incrementTurnsScouted();
-					System.out.println("Following target. Loc: " + minerData.getTargetRobot().getLocation());
-				} else if (minerData.getTurnsScouted() > 5) {
-					//If it has been a long time following the same bot and it is not within sensor range
-					minerData.setPreviousTarget(minerData.getTargetRobot());
-					minerData.setTargetRobot(null);
-					minerData.resetTurnsScouted();
-					System.out.println("Switching target...");
+				if (minerData.getTargetRobot() == null) {
+					if (minerData.getPreviousTarget() == null) {
+						// Sets as target if there was no previous target
+						minerData.setTargetRobot(robot);
+						//minerData.resetTurnsTargetLost();
+						System.out.println("Target acquired. Loc: " + minerData.getTargetRobot().getLocation());
+					} else if (robot.getID() != minerData.getPreviousTarget().getID()) {
+						// If there was previous target, checks to ensure it is not that previous target
+						minerData.setTargetRobot(robot);
+						//minerData.resetTurnsTargetLost();
+						System.out.println("Target acquired. Loc: " + minerData.getTargetRobot().getLocation());
+					}
+				} else if (minerData.getTargetRobot().getID() == robot.getID()) {
+					//If the bot scanned is the same bot it was following the turn before and it has been following it for some turns
+					if (minerData.getTurnsScouted() < 100) {
+						minerData.setTargetRobot(robot); // To update robot's location
+						minerData.incrementTurnsScouted();
+						//Target sensed so reset counter
+						targetSensed = true;
+						//minerData.resetTurnsTargetLost();
+						System.out.println("Following target. Loc: " + minerData.getTargetRobot().getLocation());
+					} else {
+						minerData.setPreviousTarget(minerData.getTargetRobot());
+						minerData.setTargetRobot(null);
+						minerData.resetTurnsScouted();
+						System.out.println("Switching target...");
+					}
 				}
 			}
 		}
-
-		if (minerData.getTargetRobot() != null) {
-
-				//GeneralCommands.pathfind(minerData.getTargetRobot().getLocation(), rc, minerData);
-				minerData.setSearchDirection(rc.getLocation().directionTo(minerData.getTargetRobot().getLocation()));
+		/*
+		if (!targetSensed) {
+			//Outside for loop so non-target bots don't trigger increment
+			minerData.incrementTurnsTargetLost();
 		}
 
+		if (minerData.getTurnsTargetLost() > 5) {
+			//If it has been a long time searching for a bot and it cannot be found
+			minerData.setPreviousTarget(minerData.getTargetRobot());
+			minerData.setTargetRobot(null);
+			minerData.resetTurnsScouted();
+			System.out.println("Switching target...");
+		}*/
+
+		if (minerData.getTargetRobot() != null) {
+				minerData.setSearchDirection(rc.getLocation().directionTo(minerData.getTargetRobot().getLocation()));
+		}
+		// Either searches in direction of target or last known position of target
 		MinerCommands.continueSearch(rc, minerData);
 
 	}
