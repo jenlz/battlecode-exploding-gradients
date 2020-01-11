@@ -215,7 +215,6 @@ public strictfp class RobotPlayer {
 		MinerData minerData = (MinerData) robotData;
 		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
 		// Scans for enemy robots, if it's a building, reports it and if it's a unit, sets it as unit to follow.
-		//boolean targetSensed = false;
 		for (RobotInfo robot : robots) {
 			RobotType unitType = robot.getType();
 			if (unitType.isBuilding()) {
@@ -227,12 +226,10 @@ public strictfp class RobotPlayer {
 					if (minerData.getPreviousTarget() == null) {
 						// Sets as target if there was no previous target
 						minerData.setTargetRobot(robot);
-						//minerData.resetTurnsTargetLost();
 						System.out.println("Target acquired. Loc: " + minerData.getTargetRobot().getLocation());
 					} else if (robot.getID() != minerData.getPreviousTarget().getID()) {
 						// If there was previous target, checks to ensure it is not that previous target
 						minerData.setTargetRobot(robot);
-						//minerData.resetTurnsTargetLost();
 						System.out.println("Target acquired. Loc: " + minerData.getTargetRobot().getLocation());
 					}
 				} else if (minerData.getTargetRobot().getID() == robot.getID()) {
@@ -240,9 +237,6 @@ public strictfp class RobotPlayer {
 					if (minerData.getTurnsScouted() < 100) {
 						minerData.setTargetRobot(robot); // To update robot's location
 						minerData.incrementTurnsScouted();
-						//Target sensed so reset counter
-						targetSensed = true;
-						//minerData.resetTurnsTargetLost();
 						System.out.println("Following target. Loc: " + minerData.getTargetRobot().getLocation());
 					} else {
 						minerData.setPreviousTarget(minerData.getTargetRobot());
@@ -253,19 +247,6 @@ public strictfp class RobotPlayer {
 				}
 			}
 		}
-		/*
-		if (!targetSensed) {
-			//Outside for loop so non-target bots don't trigger increment
-			minerData.incrementTurnsTargetLost();
-		}
-
-		if (minerData.getTurnsTargetLost() > 5) {
-			//If it has been a long time searching for a bot and it cannot be found
-			minerData.setPreviousTarget(minerData.getTargetRobot());
-			minerData.setTargetRobot(null);
-			minerData.resetTurnsScouted();
-			System.out.println("Switching target...");
-		}*/
 
 		if (minerData.getTargetRobot() != null) {
 				minerData.setSearchDirection(rc.getLocation().directionTo(minerData.getTargetRobot().getLocation()));
