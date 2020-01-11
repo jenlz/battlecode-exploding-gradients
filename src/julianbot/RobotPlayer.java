@@ -249,7 +249,10 @@ public strictfp class RobotPlayer {
 		}
 
 		if (minerData.getTargetRobot() != null) {
-				minerData.setSearchDirection(rc.getLocation().directionTo(minerData.getTargetRobot().getLocation()));
+			MapLocation scoutLoc = rc.getLocation();
+			MapLocation targetLoc = minerData.getTargetRobot().getLocation();
+			Direction targetToScout = targetLoc.directionTo(scoutLoc);
+			minerData.setSearchDirection(scoutLoc.directionTo(targetLoc.add(targetToScout).add(targetToScout)));
 		}
 		// Either searches in direction of target or last known position of target
 		MinerCommands.continueSearch(rc, minerData);
