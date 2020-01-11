@@ -234,11 +234,12 @@ public strictfp class RobotPlayer {
 
 		if (minerData.getTargetRobot() != null) {
 				System.out.println("Following target. Loc: " + minerData.getTargetRobot().getLocation());
-				GeneralCommands.pathfind(minerData.getTargetRobot().getLocation(), rc, minerData);
-		} else {
-			System.out.println("Continuing search");
-			MinerCommands.continueSearch(rc, minerData);
+				//GeneralCommands.pathfind(minerData.getTargetRobot().getLocation(), rc, minerData);
+				minerData.setSearchDirection(rc.getLocation().directionTo(minerData.getTargetRobot().getLocation().translate(1, 1)));
 		}
+		System.out.println("Continuing search");
+		MinerCommands.continueSearch(rc, minerData);
+
 	}
 
     static void runRefinery() throws GameActionException {
