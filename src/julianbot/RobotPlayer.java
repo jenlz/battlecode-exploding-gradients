@@ -213,7 +213,6 @@ public strictfp class RobotPlayer {
 	 */
 	static void scoutMinerProtocol() throws GameActionException {
 		MinerData minerData = (MinerData) robotData;
-		System.out.println("Own Location: " + rc.getLocation());
 		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
 		// Scans for enemy robots, if it's a building, reports it and if it's a unit, sets it as unit to follow.
 		for (RobotInfo robot : robots) {
@@ -223,21 +222,32 @@ public strictfp class RobotPlayer {
 				// Add check here if location already reported
 				GeneralCommands.sendTransaction(rc, soupBid, GeneralCommands.getLocationType(rc, unitType, robot.getTeam()), robot.getLocation());
 			} else {
-				if (minerData.getTargetRobot() == null) {
+				if (minerData.getTargetRobot() == null && robot.getID() != minerData.getPreviousTarget().getID()) {
+					//Sets new target if no target before and robot scanned wasn't followed before
 					minerData.setTargetRobot(robot);
 					System.out.println("Target acquired. Loc: " + minerData.getTargetRobot().getLocation());
-				} else if (minerData.getTargetRobot().getID() == robot.getID()) {
-					minerData.setTargetRobot(robot);
+				}
+				else if (minerData.getTargetRobot().getID() == robot.getID() && minerData.getTurnsScouted() < 50) {
+					//If the bot scanned is the same bot it was following the turn before and it has been following it for over 50 turns
+					minerData.setTargetRobot(robot); // To update robot's location
+					minerData.incrementTurnsScouted();
+					System.out.println("Following target. Loc: " + minerData.getTargetRobot().getLocation());
+				} else if (minerData.getTurnsScouted() > 5) {
+					//If it has been a long time following the same bot and it is not within sensor range
+					minerData.setPreviousTarget(minerData.getTargetRobot());
+					minerData.setTargetRobot(null);
+					minerData.resetTurnsScouted();
+					System.out.println("Switching target...");
 				}
 			}
 		}
 
 		if (minerData.getTargetRobot() != null) {
-				System.out.println("Following target. Loc: " + minerData.getTargetRobot().getLocation());
+
 				//GeneralCommands.pathfind(minerData.getTargetRobot().getLocation(), rc, minerData);
-				minerData.setSearchDirection(rc.getLocation().directionTo(minerData.getTargetRobot().getLocation().translate(1, 1)));
+				minerData.setSearchDirection(rc.getLocation().directionTo(minerData.getTargetRobot().getLocation()));
 		}
-		System.out.println("Continuing search");
+
 		MinerCommands.continueSearch(rc, minerData);
 
 	}

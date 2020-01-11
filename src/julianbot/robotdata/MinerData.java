@@ -16,6 +16,8 @@ public class MinerData extends RobotData {
 		private boolean southGunBuilt;
 	public static final int ROLE_SCOUT = 3;
 		private RobotInfo targetRobot;
+		private RobotInfo previousTarget;
+		private int turnsScouted;
 	
 	private Direction searchDirection;
 
@@ -94,6 +96,44 @@ public class MinerData extends RobotData {
 	 */
 	public void setTargetRobot(RobotInfo robot) {
 		this.targetRobot = robot;
+	}
+
+	/**
+	 * Gets target before current target to avoid following again
+	 * @return
+	 */
+	public RobotInfo getPreviousTarget() {
+		return this.previousTarget;
+	}
+
+	/**
+	 * Sets target before current target to avoid following again
+	 * @param robot
+	 */
+	public void setPreviousTarget(RobotInfo robot) {
+		this.previousTarget = robot;
+	}
+
+	/**
+	 * Returns number of turns scouting a specific unit
+	 * @return
+	 */
+	public int getTurnsScouted() {
+		return this.turnsScouted;
+	}
+
+	/**
+	 * Increments turnsScouted by one
+	 */
+	public void incrementTurnsScouted() {
+		turnsScouted++;
+	}
+
+	/**
+	 * Resets turnsScouted back to 0. Used when changing target to follow
+	 */
+	public void resetTurnsScouted() {
+		this.turnsScouted = 0;
 	}
 	
 }
