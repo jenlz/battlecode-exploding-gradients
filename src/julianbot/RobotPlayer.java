@@ -203,7 +203,6 @@ public strictfp class RobotPlayer {
 				minerData.setSearchDirection(soupDir);
 			}
 		}
-    	
     	//If we can't find distant soup, move in the search direction.
     	MinerCommands.continueSearch(rc, minerData);
     }
@@ -214,23 +213,32 @@ public strictfp class RobotPlayer {
 	 */
 	static void scoutMinerProtocol() throws GameActionException {
 		MinerData minerData = (MinerData) robotData;
-		RobotInfo targetRobot = null;
-		if (targetRobot == null) {
-			RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-			for (RobotInfo robot : robots) {
-				RobotType unitType = robot.getType();
-				if (unitType.isBuilding()) {
-					int soupBid = (robot.getType() == RobotType.HQ) ? 10 : 5;
-					GeneralCommands.sendTransaction(rc, soupBid, GeneralCommands.getLocationType(rc, unitType, robot.getTeam()), robot.getLocation());
-				} else {
-					if (targetRobot == null) {
-						targetRobot = robot;
-					}
+		System.out.println("Own Location: " + rc.getLocation());
+		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+		// Scans for enemy robots, if it's a building, reports it and if it's a unit, sets it as unit to follow.
+		for (RobotInfo robot : robots) {
+			RobotType unitType = robot.getType();
+			if (unitType.isBuilding()) {
+				int soupBid = (robot.getType() == RobotType.HQ) ? 10 : 5; //HQ Location is more important than other buildings hence higher cost
+				// Add check here if location already reported
+				GeneralCommands.sendTransaction(rc, soupBid, GeneralCommands.getLocationType(rc, unitType, robot.getTeam()), robot.getLocation());
+			} else {
+				if (minerData.getTargetRobot() == null) {
+					minerData.setTargetRobot(robot);
+					System.out.println("Target acquired. Loc: " + minerData.getTargetRobot().getLocation());
+				} else if (minerData.getTargetRobot().getID() == robot.getID()) {
+					minerData.setTargetRobot(robot);
 				}
 			}
 		}
 
-		MinerCommands.continueSearch(rc, minerData);
+		if (minerData.getTargetRobot() != null) {
+				System.out.println("Following target. Loc: " + minerData.getTargetRobot().getLocation());
+				GeneralCommands.pathfind(minerData.getTargetRobot().getLocation(), rc, minerData);
+		} else {
+			System.out.println("Continuing search");
+			MinerCommands.continueSearch(rc, minerData);
+		}
 	}
 
     static void runRefinery() throws GameActionException {

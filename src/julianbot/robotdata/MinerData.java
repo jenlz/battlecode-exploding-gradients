@@ -2,6 +2,7 @@ package julianbot.robotdata;
 
 import battlecode.common.Direction;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
 
 public class MinerData extends RobotData {
 
@@ -14,6 +15,7 @@ public class MinerData extends RobotData {
 		private boolean fulfillmentCenterBuilt;
 		private boolean southGunBuilt;
 	public static final int ROLE_SCOUT = 3;
+		private RobotInfo targetRobot;
 	
 	private Direction searchDirection;
 
@@ -24,7 +26,7 @@ public class MinerData extends RobotData {
 	 */
 	public MinerData(RobotController rc) {
 		super(rc);
-		currentRole = ROLE_DESIGN_BUILDER;
+		currentRole = ROLE_SCOUT;
 		searchDirection = spawnerLocation.directionTo(rc.getLocation());
 	}
 	
@@ -74,6 +76,24 @@ public class MinerData extends RobotData {
 
 	public void setSouthGunBuilt(boolean southGunBuilt) {
 		this.southGunBuilt = southGunBuilt;
+	}
+
+	// Scout
+
+	/**
+	 * Returns target robot
+	 * @return Target robot scout is monitoring
+	 */
+	public RobotInfo getTargetRobot() {
+		return this.targetRobot;
+	}
+
+	/**
+	 * Sets target robot
+	 * @param robot Robot to monitor
+	 */
+	public void setTargetRobot(RobotInfo robot) {
+		this.targetRobot = robot;
 	}
 	
 }

@@ -149,34 +149,29 @@ public class GeneralCommands {
 			switch (unitType) {
 				case HQ:
 					return Type.TRANSACTION_FRIENDLY_HQ_AT_LOC;
-				break;
 				case REFINERY:
 					return Type.TRANSACTION_FRIENDLY_REFINERY_AT_LOC;
-				break;
 				case DESIGN_SCHOOL:
 					return Type.TRANSACTION_FRIENDLY_DESIGN_SCHOOL_AT_LOC;
-				break;
 				case FULFILLMENT_CENTER:
 					return Type.TRANSACTION_FRIENDLY_FULFILLMENT_CENTER_AT_LOC;
-				break;
+				default:
+					return null;
 			}
 		} else {
 			switch (unitType) {
 				case HQ:
 					return Type.TRANSACTION_ENEMY_HQ_AT_LOC;
-				break;
 				case REFINERY:
 					return Type.TRANSACTION_ENEMY_REFINERY_AT_LOC;
-				break;
 				case DESIGN_SCHOOL:
 					return Type.TRANSACTION_ENEMY_DESIGN_SCHOOL_AT_LOC;
-				break;
 				case FULFILLMENT_CENTER:
 					return Type.TRANSACTION_ENEMY_FULFILLMENT_CENTER_AT_LOC;
-				break;
+				default:
+					return null;
 			}
 		}
-		return null;
 	}
 	
 	//PATHFINDING
