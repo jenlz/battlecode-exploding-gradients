@@ -489,7 +489,7 @@ public strictfp class RobotPlayer {
     			data.calculateSearchDestinations(rc);
     		}
     		
-    		DroneCommands.continueSearch(rc, data);
+    		GeneralCommands.routeTo(data.getActiveSearchDestination(), rc, data);
     		DroneCommands.attemptEnemyHQDetection(rc, data);
     	}
     }

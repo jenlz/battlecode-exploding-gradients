@@ -112,6 +112,7 @@ public class GeneralCommands {
 		waitUntilReady(rc);
 		
 		if(rc.isReady() && rc.canMove(dir)) {
+			data.setPreviousLocation(rc.getLocation());
 			rc.move(dir);
 			return true;
 		}
@@ -119,10 +120,11 @@ public class GeneralCommands {
 		return false;
 	}
 	
-	private static boolean moveOnPath(RobotController rc, Direction dir) throws GameActionException {
+	private static boolean moveOnPath(RobotController rc, Direction dir, RobotData data) throws GameActionException {
 		waitUntilReady(rc);
 		
 		if(rc.isReady() && rc.canMove(dir)) {
+			data.setPreviousLocation(rc.getLocation());
 			rc.move(dir);
 			return true;
 		}
@@ -143,6 +145,7 @@ public class GeneralCommands {
 			rotateLimit--;
 		}
 		
+		if(rotateLimit > 0) data.setPreviousLocation(rc.getLocation().add(dir.opposite()));
 		return rotateLimit > 0;
 	}	
 	
@@ -238,16 +241,23 @@ public class GeneralCommands {
 		Direction initialDirectionLeft = initialDirection.rotateLeft();
 		Direction initialDirectionRight = initialDirection.rotateRight();
 		
+		Direction[] nextDirections = new Direction[4];
+		
 		if(rcLocation.add(initialDirectionLeft).distanceSquaredTo(destination) < rcLocation.add(initialDirectionRight).distanceSquaredTo(destination)) {
-			if(GeneralCommands.move(rc, initialDirectionLeft, data)) return;
-			if(GeneralCommands.move(rc, initialDirectionLeft.rotateLeft(), data)) return;
-			if(GeneralCommands.move(rc, initialDirectionRight, data)) return;
-			if(GeneralCommands.move(rc, initialDirectionRight.rotateRight(), data)) return;
+			nextDirections[0] = initialDirectionLeft;
+			nextDirections[1] = initialDirectionLeft.rotateLeft();
+			nextDirections[2] = initialDirectionRight;
+			nextDirections[3] = initialDirectionRight.rotateRight();
 		} else {
-			if(GeneralCommands.move(rc, initialDirectionRight, data)) return;
-			if(GeneralCommands.move(rc, initialDirectionRight.rotateRight(), data)) return;
-			if(GeneralCommands.move(rc, initialDirectionLeft, data)) return;
-			if(GeneralCommands.move(rc, initialDirectionLeft.rotateLeft(), data)) return;
+			nextDirections[0] = initialDirectionRight;
+			nextDirections[1] = initialDirectionRight.rotateRight();
+			nextDirections[2] = initialDirectionLeft;
+			nextDirections[3] = initialDirectionLeft.rotateLeft();
+		}
+		
+		for(Direction direction : nextDirections) {
+			if(rcLocation.add(direction).equals(data.getPreviousLocation())) continue;
+			if(GeneralCommands.move(rc, direction, data)) return;
 		}
 		
 		/*
@@ -288,7 +298,7 @@ public class GeneralCommands {
 	}
 	
 	private static boolean proceedAlongPath(RobotController rc, RobotData data) throws GameActionException {
-		if(data.hasPath() && GeneralCommands.moveOnPath(rc, data.getNextPathDirection())) {
+		if(data.hasPath() && GeneralCommands.moveOnPath(rc, data.getNextPathDirection(), data)) {
 			data.incrementPathProgression();
 			if(data.pathCompleted()) {
 				stopFollowingPath(data);

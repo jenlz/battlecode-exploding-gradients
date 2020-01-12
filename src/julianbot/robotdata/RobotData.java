@@ -12,6 +12,7 @@ public class RobotData {
 	protected final Team team;
 	protected final Team opponent;
 	protected MapLocation spawnerLocation;
+	private MapLocation previousLocation;
 	protected MapGraph mapGraph;
 		protected Direction[] path;
 		protected int pathProgression;
@@ -19,6 +20,7 @@ public class RobotData {
 	public RobotData(RobotController rc) {
 		team = rc.getTeam();
 		opponent = team.opponent();
+		previousLocation = rc.getLocation();
 		setSpawnerLocation(GeneralCommands.getSpawnerLocation(rc));		
 	}
 	
@@ -36,6 +38,14 @@ public class RobotData {
 
 	public void setSpawnerLocation(MapLocation spawnerLocation) {
 		this.spawnerLocation = spawnerLocation;
+	}
+
+	public MapLocation getPreviousLocation() {
+		return previousLocation;
+	}
+
+	public void setPreviousLocation(MapLocation previousLocation) {
+		this.previousLocation = previousLocation;
 	}
 
 	public MapGraph getMapGraph() {

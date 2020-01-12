@@ -24,11 +24,6 @@ public class DroneCommands {
 		}
 	}
 	
-	public static void continueSearch(RobotController rc, DroneData data) throws GameActionException {
-		//The move function is deliberately unused here.
-		GeneralCommands.routeTo(data.getActiveSearchDestination(), rc, data);
-	}
-	
 	public static void attemptEnemyHQDetection(RobotController rc, DroneData data) {
 		RobotInfo enemyHQ = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam().opponent());
 		if(enemyHQ != null) {
