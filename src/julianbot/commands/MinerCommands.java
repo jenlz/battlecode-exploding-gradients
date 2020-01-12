@@ -1,12 +1,11 @@
 package julianbot.commands;
 
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
+import battlecode.common.*;
+import com.sun.tools.javah.Gen;
 import julianbot.robotdata.MinerData;
+import testplayer.Miner;
+
+import java.util.Map;
 
 public class MinerCommands {
 	
@@ -230,5 +229,37 @@ public class MinerCommands {
 		
 		return false;
 	}
-	
+
+	/**
+	 * Reads block and uses useful information such as refinery and soup locations
+	 * @param rc
+	 * @param minerdata
+	 * @param block
+	 * @throws GameActionException
+	 */
+	public static void readTransaction(RobotController rc, MinerData minerdata, Transaction[] block) throws GameActionException {
+
+		for (Transaction message : block) {
+			int[] decodedMessage = GeneralCommands.decodeTransaction(rc, message);
+			if (decodedMessage.length == 7) {
+				GeneralCommands.Type category = GeneralCommands.getTypeFromVal(rc, decodedMessage[1]);
+				MapLocation loc = new MapLocation(decodedMessage[2], decodedMessage[3]);
+
+				if (category == null) {
+					System.out.println("Something is terribly wrong. getTypeFromVal returns null");
+				}
+
+				switch(category) {
+					case TRANSACTION_SOUP_AT_LOC:
+						minerdata.addSoupLoc(loc);
+						break;
+					case TRANSACTION_FRIENDLY_REFINERY_AT_LOC:
+						minerdata.addRefineryLoc(loc);
+						break;
+				}
+			}
+
+		}
+	}
+
 }

@@ -114,6 +114,8 @@ public strictfp class RobotPlayer {
     	
 //    	topographicallyAdeptMinerProtocol();
 
+		MinerCommands.readTransaction(rc, minerData, rc.getBlock(rc.getRoundNum() - 1));
+
 		switch(minerData.getCurrentRole()) {
 			case MinerData.ROLE_DESIGN_BUILDER:
 				designMinerProtocol();
@@ -260,11 +262,11 @@ public strictfp class RobotPlayer {
 	    		return;
 	    	}
 		}
-		
+
 		if (distantRefineryDirection != Direction.CENTER) {
 			GeneralCommands.move(rc, distantRefineryDirection, minerData);
 			return;
-		} else {
+		} else if (minerData.getSpawnerLocation().distanceSquaredTo(rc.getLocation()) < 45) {
 			System.out.println("Moving toward hq");
 			if (!GeneralCommands.move(rc, rc.getLocation().directionTo(minerData.getSpawnerLocation()), minerData)) {
 				Direction canMoveDir = rc.getLocation().directionTo(minerData.getSpawnerLocation()).rotateRight();
@@ -274,6 +276,8 @@ public strictfp class RobotPlayer {
 					rotateLimit--;
 				}
 			}
+		} else {
+			MinerCommands.attemptRefineryConstruction(rc);
 		}
     }
 

@@ -134,7 +134,14 @@ public class GeneralCommands {
 		message[5] = odd;
 		if(rc.canSubmitTransaction(message, soupBid)) rc.submitTransaction(message, soupBid);
 	}
-	
+
+	/**
+	 * Decodes transaction. Returns empty array if message is from enemy team.
+	 * @param rc
+	 * @param transaction
+	 * @return
+	 * @throws GameActionException
+	 */
 	public static int[] decodeTransaction(RobotController rc, Transaction transaction) throws GameActionException {
 		int[] message = transaction.getMessage();
 		int transactionTag = message[0];
@@ -187,6 +194,16 @@ public class GeneralCommands {
 					return null;
 			}
 		}
+	}
+
+	public static Type getTypeFromVal(RobotController rc, int value) {
+		Type[] categories = Type.values();
+		for (Type category : categories) {
+			if (category.getVal() == value) {
+				return category;
+			}
+		}
+		return null;
 	}
 	
 	//PATHFINDING
