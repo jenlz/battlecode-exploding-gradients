@@ -14,7 +14,8 @@ public class DroneCommands {
 	
 	public static void continueSearch(RobotController rc, DroneData data) throws GameActionException {
 		//The move function is deliberately unused here.
-		if(!rc.isReady()) return;
+		GeneralCommands.waitUntilReady(rc);
+		
 		if(rc.canMove(data.getSearchDirection())) {
 			rc.move(data.getSearchDirection());
 			return;
@@ -33,6 +34,8 @@ public class DroneCommands {
 	public static boolean pickUpUnit(RobotController rc, DroneData data, RobotType targetType) throws GameActionException {
 		RobotInfo info = GeneralCommands.senseUnitType(rc, targetType, rc.getTeam());
 		if(info != null) {
+			GeneralCommands.waitUntilReady(rc);
+			
 			if(rc.canPickUpUnit(info.ID)) {
 				rc.pickUpUnit(info.ID);
 				return true;
@@ -44,6 +47,8 @@ public class DroneCommands {
 	
 	public static boolean dropUnitNextToHQ(RobotController rc, DroneData data) throws GameActionException {
 		Direction directionToHQ = rc.getLocation().directionTo(data.getEnemyHQLocation());
+		
+		GeneralCommands.waitUntilReady(rc);
 		if(rc.canDropUnit(directionToHQ.rotateLeft())) {
 			rc.dropUnit(directionToHQ.rotateLeft());
 			return true;

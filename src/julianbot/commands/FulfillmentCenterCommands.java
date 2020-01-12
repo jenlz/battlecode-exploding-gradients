@@ -9,7 +9,7 @@ import julianbot.robotdata.FulfillmentCenterData;
 public class FulfillmentCenterCommands {
 	
 	public static boolean oughtBuildDrone(RobotController rc, FulfillmentCenterData data) {
-		return rc.getTeamSoup() >= RobotType.DELIVERY_DRONE.cost;
+		return rc.getTeamSoup() >= RobotType.DELIVERY_DRONE.cost + data.getDronesBuilt() * Math.abs(RobotType.LANDSCAPER.cost - RobotType.DELIVERY_DRONE.cost) + 1;
 	}
 	
 	/**
@@ -23,9 +23,10 @@ public class FulfillmentCenterCommands {
     public static boolean tryBuild(RobotController rc, RobotType type, FulfillmentCenterData data) throws GameActionException {
     	Direction buildDirection = data.getBuildDirection();
     	
+    	GeneralCommands.waitUntilReady(rc);
         if (rc.isReady() && rc.canBuildRobot(type, buildDirection)) {
             rc.buildRobot(type, buildDirection);
-            if(type == RobotType.DELIVERY_DRONE) data.incrementLandscapersBuilt();
+            if(type == RobotType.DELIVERY_DRONE) data.incrementDronesBuilt();
             return true;
         } 
         

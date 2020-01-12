@@ -13,12 +13,13 @@ public class MinerData extends RobotData {
 	public static final int ROLE_DESIGN_BUILDER = 0;
 	public static final int ROLE_FULFILLMENT_BUILDER = 1;
 	public static final int ROLE_SOUP_MINER = 2;
-	public static final int ROLE_DEFENSE_BUILDER = 3;
+	public static final int ROLE_REFINERY_BUILDER = 3;
+	public static final int ROLE_DEFENSE_BUILDER = 4;
 		private boolean northGunBuilt;
 		private boolean designSchoolBuilt;
 		private boolean fulfillmentCenterBuilt;
 		private boolean southGunBuilt;
-	public static final int ROLE_SCOUT = 4;
+	public static final int ROLE_SCOUT = 5;
 		private RobotInfo targetRobot;
 		private RobotInfo previousTarget;
 		private int turnsScouted;
@@ -38,6 +39,7 @@ public class MinerData extends RobotData {
 		searchDirection = spawnerLocation.directionTo(rc.getLocation());
 		soupLocs = new ArrayList<MapLocation>();
 		refineryLocs = new ArrayList<MapLocation>();
+		refineryLocs.add(spawnerLocation);
 	}
 	
 	public int getCurrentRole() {
@@ -170,14 +172,14 @@ public class MinerData extends RobotData {
 	public boolean addSoupLoc(MapLocation loc) {
 		for (MapLocation soupLoc : soupLocs) {
 			//21 is default sensor radius besides miner and hq.
-			if (soupLoc.distanceSquaredTo(loc) < 21 || soupLoc == loc) {
+			if (/*soupLoc.distanceSquaredTo(loc) < 21 || */soupLoc == loc) {
 				return false;
 			}
 		}
 		soupLocs.add(loc);
 		return true;
 	}
-
+	
 	/**
 	 * Adds Refinery Location if not added before
 	 * @param loc
