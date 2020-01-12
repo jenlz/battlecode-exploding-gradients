@@ -5,7 +5,6 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.Team;
 import julianbot.commands.GeneralCommands;
-import julianbot.robotdata.routedata.RouteData;
 import julianbot.utils.pathfinder.MapGraph;
 
 public class RobotData {
