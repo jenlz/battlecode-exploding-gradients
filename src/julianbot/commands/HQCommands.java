@@ -31,6 +31,10 @@ public class HQCommands {
 		//Since there can be seven transactions per round, we can be guaranteed to get one message through if that message is sent with a bid of one more than a seventh of the inital soup cost.
 		GeneralCommands.sendTransaction(rc, 10, Type.TRANSACTION_SOS_AT_LOC, rc.getLocation());
 	}
+
+	public static void sendAllClear(RobotController rc) throws GameActionException {
+		// TODO Make allClear func and have miners recognize it
+	}
 	
 	/**
      * Attempts to build a given robot in a given direction.

@@ -266,6 +266,10 @@ public class MinerCommands {
 					case TRANSACTION_FRIENDLY_REFINERY_AT_LOC:
 						minerdata.addRefineryLoc(loc);
 						break;
+					case TRANSACTION_SOS_AT_LOC:
+						minerdata.setCurrentRole(MinerData.ROLE_SOS);
+						minerdata.setSOSLoc(loc);
+						break;
 				}
 			}
 

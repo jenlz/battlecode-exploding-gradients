@@ -1,10 +1,10 @@
 package julianbot;
 import battlecode.common.*;
+import com.sun.tools.javah.Gen;
 import julianbot.commands.DesignSchoolCommands;
 import julianbot.commands.DroneCommands;
 import julianbot.commands.FulfillmentCenterCommands;
 import julianbot.commands.GeneralCommands;
-import julianbot.commands.GeneralCommands.Type;
 import julianbot.commands.HQCommands;
 import julianbot.commands.LandscaperCommands;
 import julianbot.commands.MinerCommands;
@@ -86,7 +86,7 @@ public strictfp class RobotPlayer {
 
     static void runHQ() throws GameActionException {
     	HQData hqData = (HQData) robotData;
-    	
+    	if(rc.getRoundNum() == 100) HQCommands.sendSOS(rc);
     	if(rc.getRoundNum() == 1) {
     		HQCommands.makeInitialReport(rc);
     		HQCommands.setBuildDirectionTowardsSoup(rc, hqData);
@@ -149,6 +149,9 @@ public strictfp class RobotPlayer {
 				break;
 			case MinerData.ROLE_SCOUT:
 				scoutMinerProtocol();
+				break;
+			case MinerData.ROLE_SOS:
+				sosMinerProtocol();
 				break;
 			default:
 				break;
@@ -376,6 +379,30 @@ public strictfp class RobotPlayer {
 
 		// Either searches in direction of target or last known position of target
 		MinerCommands.continueSearch(rc, minerData);
+
+	}
+
+	/**
+	 * Protocol for miners in times of SOS. Surrounds HQ when it sends SOS.
+	 * @throws GameActionException
+	 */
+	static void sosMinerProtocol() throws GameActionException{
+		MinerData minerData = (MinerData) robotData;
+
+		if (minerData.getSosLoc().equals(minerData.getSpawnerLocation())) {
+			if (GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam()) != null) {
+				System.out.println("Entered Pathfind. Hq != null");
+				for (Direction dir : Direction.allDirections()) {
+					if (GeneralCommands.pathfind(minerData.getSosLoc().add(dir), rc, minerData)) {
+						break;
+					}
+				}
+			} else {
+				System.out.println(rc.getLocation().directionTo(minerData.getSosLoc()));
+				minerData.setSearchDirection(rc.getLocation().directionTo(minerData.getSosLoc()));
+			}
+			MinerCommands.continueSearch(rc, minerData);
+		}
 
 	}
 

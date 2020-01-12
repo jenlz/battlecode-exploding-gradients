@@ -22,8 +22,10 @@ public class MinerData extends RobotData {
 		private RobotInfo targetRobot;
 		private RobotInfo previousTarget;
 		private int turnsScouted;
+	public static final int ROLE_SOS = 5;
 	
 	private Direction searchDirection;
+	private MapLocation sosLoc;
 	private ArrayList<MapLocation> soupLocs;
 	private ArrayList<MapLocation> refineryLocs;
 
@@ -209,6 +211,22 @@ public class MinerData extends RobotData {
 	 */
 	public boolean removeRefineryLoc(MapLocation loc) {
 		return refineryLocs.remove(loc);
+	}
+
+	/**
+	 *
+	 * @param loc
+	 */
+	public void setSOSLoc(MapLocation loc) {
+		sosLoc = loc;
+	}
+
+	/**
+	 *
+	 * @return
+	 */
+	public MapLocation getSosLoc() {
+		return sosLoc;
 	}
 
 }
