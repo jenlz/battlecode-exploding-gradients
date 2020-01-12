@@ -2,11 +2,16 @@ package julianbot;
 import battlecode.common.*;
 import com.sun.tools.javah.Gen;
 import julianbot.commands.DesignSchoolCommands;
+import julianbot.commands.DroneCommands;
+import julianbot.commands.FulfillmentCenterCommands;
 import julianbot.commands.GeneralCommands;
+import julianbot.commands.GeneralCommands.Type;
 import julianbot.commands.HQCommands;
 import julianbot.commands.LandscaperCommands;
 import julianbot.commands.MinerCommands;
 import julianbot.robotdata.DesignSchoolData;
+import julianbot.robotdata.DroneData;
+import julianbot.robotdata.FulfillmentCenterData;
 import julianbot.robotdata.HQData;
 import julianbot.robotdata.LandscaperData;
 import julianbot.robotdata.MinerData;
@@ -30,12 +35,11 @@ public strictfp class RobotPlayer {
     public static void run(RobotController rc) throws GameActionException {
 
         // This is the RobotController object. You use it to perform actions from this robot,
-        // and to get information on its current status.
+        // and to get information on its current status.	
         System.out.println("Initializing Robot.");
     	RobotPlayer.rc = rc;
         robotData = initializeRobotData(rc.getType());
         turnCount = 0;
-        
         
         while (true) {
             turnCount += 1;
@@ -70,11 +74,13 @@ public strictfp class RobotPlayer {
     	RobotData robotData = null;
 
     	switch(type) {
-    		case HQ:             robotData = new HQData(rc);             break;
-    		case MINER:          robotData = new MinerData(rc);          break;
-    		case DESIGN_SCHOOL:  robotData = new DesignSchoolData(rc);   break;
-    		case LANDSCAPER:     robotData = new LandscaperData(rc);     break;
-    		default:             robotData = new RobotData(rc);          break;
+    		case HQ:                 robotData = new HQData(rc);                 break;
+    		case MINER:              robotData = new MinerData(rc);              break;
+    		case DESIGN_SCHOOL:      robotData = new DesignSchoolData(rc);       break;
+    		case LANDSCAPER:         robotData = new LandscaperData(rc);         break;
+    		case FULFILLMENT_CENTER: robotData = new FulfillmentCenterData(rc);  break;
+    		case DELIVERY_DRONE:     robotData = new DroneData(rc);              break;
+    		default:                 robotData = new RobotData(rc);              break;
     	}
 
     	return robotData;
@@ -411,14 +417,17 @@ public strictfp class RobotPlayer {
     }
 
     static void runFulfillmentCenter() throws GameActionException {
-    	
+    	FulfillmentCenterData fulfillmentCenterData = (FulfillmentCenterData) robotData;
+    	if(FulfillmentCenterCommands.oughtBuildDrone(rc, fulfillmentCenterData)) FulfillmentCenterCommands.tryBuild(rc, RobotType.DELIVERY_DRONE, fulfillmentCenterData);
     }
 
     static void runLandscaper() throws GameActionException {
     	LandscaperData data = (LandscaperData) robotData;
     	if(turnCount == 1) LandscaperCommands.learnHQLocation(rc, data);
     	
-    	if(data.getCurrentRole() == LandscaperData.TRAVEL_TO_HQ) {
+    	if(LandscaperCommands.buryEnemyHQ(rc, data)) {
+    		/*Do nothing else*/
+    	} else if(data.getCurrentRole() == LandscaperData.TRAVEL_TO_HQ) {
     		if(!LandscaperCommands.approachComplete(rc, data)) {
     			LandscaperCommands.approachHQ(rc, data);
     		} else {
@@ -430,7 +439,26 @@ public strictfp class RobotPlayer {
     }
 
     static void runDeliveryDrone() throws GameActionException {
-       
+    	DroneData data = (DroneData) robotData;
+    	
+    	if(data.getEnemyHQLocation() != null) {
+    		if(rc.isCurrentlyHoldingUnit()) {
+    			if(rc.getLocation().isWithinDistanceSquared(data.getEnemyHQLocation(), 3)) {
+    				DroneCommands.dropUnitNextToHQ(rc, data);
+    			} else {
+    				GeneralCommands.move(rc, rc.getLocation().directionTo(data.getEnemyHQLocation()), data);
+    			}
+    		} else if(DroneCommands.oughtPickUpUnit(rc, data)){
+    			if(!DroneCommands.pickUpUnit(rc, data, RobotType.LANDSCAPER)) {
+    				GeneralCommands.move(rc, rc.getLocation().directionTo(data.getSpawnerLocation()), data);
+    			}
+    		} else {
+    			GeneralCommands.move(rc, rc.getLocation().directionTo(data.getSpawnerLocation()), data);
+    		}
+    	} else {
+    		DroneCommands.continueSearch(rc, data);
+    		DroneCommands.searchForEnemyHQ(rc, data);
+    	}
     }
 
     static void runNetGun() throws GameActionException {

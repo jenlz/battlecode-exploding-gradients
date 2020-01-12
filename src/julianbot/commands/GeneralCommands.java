@@ -32,7 +32,16 @@ public class GeneralCommands {
 		public int getVal() {
 			return val;
 		}
-
+		
+		public static Type enumOfValue(int value) {
+		    for (Type e : values()) {
+		        if (e.val==value) {
+		            return e;
+		        }
+		    }
+		    return null;
+		}
+		//Call Type.enumOfValue(plaintxt[1]) to get enum from value
 	}
 	
 	//RECONNAISSANCE
