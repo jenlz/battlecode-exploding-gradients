@@ -33,7 +33,7 @@ public class MinerData extends RobotData {
 	 */
 	public MinerData(RobotController rc) {
 		super(rc);
-		currentRole = ROLE_SCOUT;
+		currentRole = ROLE_SOUP_MINER;
 		searchDirection = spawnerLocation.directionTo(rc.getLocation());
 		soupLocs = new ArrayList<MapLocation>();
 		refineryLocs = new ArrayList<MapLocation>();

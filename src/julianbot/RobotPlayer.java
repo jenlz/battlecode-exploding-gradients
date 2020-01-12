@@ -276,8 +276,10 @@ public strictfp class RobotPlayer {
 		// Sensing and reporting Soup
 		MapLocation soupLoc = MinerCommands.getSoupLocation(rc);
 		if (soupLoc != null) {
-			System.out.println("Found Soup! Loc: " + soupLoc);
-			GeneralCommands.sendTransaction(rc, 5, GeneralCommands.Type.TRANSACTION_SOUP_AT_LOC, soupLoc);
+			if (minerData.addSoupLoc(soupLoc)) {
+				System.out.println("Found Soup! Loc: " + soupLoc);
+				GeneralCommands.sendTransaction(rc, 5, GeneralCommands.Type.TRANSACTION_SOUP_AT_LOC, soupLoc);
+			}
 		}
 
 
