@@ -5,6 +5,7 @@ import julianbot.commands.DesignSchoolCommands;
 import julianbot.commands.DroneCommands;
 import julianbot.commands.FulfillmentCenterCommands;
 import julianbot.commands.GeneralCommands;
+import julianbot.commands.GeneralCommands.Type;
 import julianbot.commands.HQCommands;
 import julianbot.commands.LandscaperCommands;
 import julianbot.commands.MinerCommands;
@@ -34,12 +35,11 @@ public strictfp class RobotPlayer {
     public static void run(RobotController rc) throws GameActionException {
 
         // This is the RobotController object. You use it to perform actions from this robot,
-        // and to get information on its current status.
+        // and to get information on its current status.	
         System.out.println("Initializing Robot.");
     	RobotPlayer.rc = rc;
         robotData = initializeRobotData(rc.getType());
         turnCount = 0;
-        
         
         while (true) {
             turnCount += 1;
