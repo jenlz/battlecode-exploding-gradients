@@ -14,7 +14,7 @@ public class HQCommands {
 	
 	public static void makeInitialReport(RobotController rc) throws GameActionException {
 		//Since there can be seven transactions per round, we can be guaranteed to get one message through on the first round if that message is sent with a bid of one more than a seventh of the inital soup cost.
-		GeneralCommands.sendTransaction(rc, (GameConstants.INITIAL_SOUP / 7) + 1, Type.TRANSACTION_HQ_AT_LOC, rc.getLocation());
+		GeneralCommands.sendTransaction(rc, (GameConstants.INITIAL_SOUP / 7) + 1, Type.TRANSACTION_FRIENDLY_HQ_AT_LOC, rc.getLocation());
 	}
 	
 	public static boolean oughtReportLocation(RobotController rc) {

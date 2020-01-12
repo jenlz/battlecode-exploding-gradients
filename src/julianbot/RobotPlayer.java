@@ -1,11 +1,6 @@
 package julianbot;
-import battlecode.common.Clock;
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
+import battlecode.common.*;
+import com.sun.tools.javah.Gen;
 import julianbot.commands.DesignSchoolCommands;
 import julianbot.commands.GeneralCommands;
 import julianbot.commands.HQCommands;
@@ -16,6 +11,7 @@ import julianbot.robotdata.HQData;
 import julianbot.robotdata.LandscaperData;
 import julianbot.robotdata.MinerData;
 import julianbot.robotdata.RobotData;
+import testplayer.Miner;
 
 public strictfp class RobotPlayer {
     static RobotController rc;
@@ -147,8 +143,12 @@ public strictfp class RobotPlayer {
     	MinerData minerData = (MinerData) robotData;
     	GeneralCommands.pathfind(minerData.getSpawnerLocation().add(rc.getLocation().directionTo(minerData.getSpawnerLocation())), rc, minerData);
     }
-    
-    static void designMinerProtocol() throws GameActionException {
+
+	/**
+	 * Builds a design school and then switches to a soup miner
+	 * @throws GameActionException
+	 */
+	static void designMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
     	MapLocation designSchoolBuildSite = minerData.getSpawnerLocation().translate(-1, 0);
     	
@@ -201,7 +201,11 @@ public strictfp class RobotPlayer {
     	}
     }
 
-    static void defenseMinerProtocol() throws GameActionException {
+	/**
+	 * Builds fulfillment center near HQ
+	 * @throws GameActionException
+	 */
+	static void defenseMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
     	
     	if(!minerData.isFulfillmentCenterBuilt()) {
@@ -211,8 +215,12 @@ public strictfp class RobotPlayer {
     		}
     	}
     }
-    
-    static void fullMinerProtocol() throws GameActionException {
+
+	/**
+	 * Miner whose soup carrying capacity is full
+	 * @throws GameActionException
+	 */
+	static void fullMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
 
     	System.out.println("full protocol");
@@ -268,8 +276,12 @@ public strictfp class RobotPlayer {
 			}
 		}
     }
-    
-    static void emptyMinerProtocol() throws GameActionException {
+
+	/**
+	 * Miner under soup carrying limit
+	 * @throws GameActionException
+	 */
+	static void emptyMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
     	
     	System.out.println("empty protocol");
@@ -294,7 +306,6 @@ public strictfp class RobotPlayer {
 				minerData.setSearchDirection(soupDir);
 			}
 		}
-    	
     	//If we can't find distant soup, move in the search direction.
     	MinerCommands.continueSearch(rc, minerData);
     }
@@ -313,10 +324,62 @@ public strictfp class RobotPlayer {
 	 */
 	static void scoutMinerProtocol() throws GameActionException {
 		MinerData minerData = (MinerData) robotData;
+		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+		// Scans for enemy robots, if it's a building, reports it and if it's a unit, sets it as unit to follow.
+		for (RobotInfo robot : robots) {
+			RobotType unitType = robot.getType();
+			if (unitType.isBuilding()) {
+				int soupBid = (robot.getType() == RobotType.HQ) ? 10 : 5; //HQ Location is more important than other buildings hence higher cost
+				// Add check here if location already reported
+				GeneralCommands.sendTransaction(rc, soupBid, GeneralCommands.getLocationType(rc, unitType, robot.getTeam()), robot.getLocation());
+			} else {
+				if (minerData.getTargetRobot() == null) {
+					if (minerData.getPreviousTarget() == null) {
+						// Sets as target if there was no previous target
+						minerData.setTargetRobot(robot);
+						System.out.println("Target acquired. Loc: " + minerData.getTargetRobot().getLocation());
+					} else if (robot.getID() != minerData.getPreviousTarget().getID()) {
+						// If there was previous target, checks to ensure it is not that previous target
+						minerData.setTargetRobot(robot);
+						System.out.println("Target acquired. Loc: " + minerData.getTargetRobot().getLocation());
+					}
+				} else if (minerData.getTargetRobot().getID() == robot.getID()) {
+					//If the bot scanned is the same bot it was following the turn before and it has been following it for some turns
+					if (minerData.getTurnsScouted() < 100) {
+						minerData.setTargetRobot(robot); // To update robot's location
+						minerData.incrementTurnsScouted();
+						System.out.println("Following target. Loc: " + minerData.getTargetRobot().getLocation());
+					} else {
+						minerData.setPreviousTarget(minerData.getTargetRobot());
+						minerData.setTargetRobot(null);
+						minerData.resetTurnsScouted();
+						System.out.println("Switching target...");
+					}
+				}
+			}
+		}
+
+		if (minerData.getTargetRobot() != null) {
+			//Sets search direction to be two spaces away from where the target robot is
+			MapLocation scoutLoc = rc.getLocation();
+			MapLocation targetLoc = minerData.getTargetRobot().getLocation();
+			Direction targetToScout = targetLoc.directionTo(scoutLoc);
+			minerData.setSearchDirection(scoutLoc.directionTo(targetLoc.add(targetToScout).add(targetToScout)));
+		}
+
+		// Sensing and reporting Soup
+		MapLocation soupLoc = MinerCommands.getSoupLocation(rc);
+		if (soupLoc != null) {
+			if (minerData.addSoupLoc(soupLoc)) {
+				System.out.println("Found Soup! Loc: " + soupLoc);
+				GeneralCommands.sendTransaction(rc, 5, GeneralCommands.Type.TRANSACTION_SOUP_AT_LOC, soupLoc);
+			}
+		}
 
 
-
+		// Either searches in direction of target or last known position of target
 		MinerCommands.continueSearch(rc, minerData);
+
 	}
 
     static void runRefinery() throws GameActionException {
