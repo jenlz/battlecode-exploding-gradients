@@ -86,7 +86,7 @@ public strictfp class RobotPlayer {
 
     static void runHQ() throws GameActionException {
     	HQData hqData = (HQData) robotData;
-    	if(rc.getRoundNum() == 100) HQCommands.sendSOS(rc);
+    	// if(rc.getRoundNum() == 100) HQCommands.sendSOS(rc); // Bugtesting SOS
     	if(rc.getRoundNum() == 1) {
     		HQCommands.makeInitialReport(rc);
     		HQCommands.setBuildDirectionTowardsSoup(rc, hqData);
