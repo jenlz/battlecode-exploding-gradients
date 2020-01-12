@@ -390,18 +390,20 @@ public strictfp class RobotPlayer {
 		MinerData minerData = (MinerData) robotData;
 
 		if (minerData.getSosLoc().equals(minerData.getSpawnerLocation())) {
-			if (GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam()) != null) {
-				System.out.println("Entered Pathfind. Hq != null");
+			boolean inPosition = false;
+			if (GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam()) != null && !inPosition) {
 				for (Direction dir : Direction.allDirections()) {
-					if (GeneralCommands.pathfind(minerData.getSosLoc().add(dir), rc, minerData)) {
+					MapLocation adjacentToHQ = minerData.getSosLoc().add(dir);
+					if (rc.getLocation().equals(adjacentToHQ)) {
+						System.out.println("In position: " + rc.getLocation());
+						inPosition = true;
 						break;
 					}
+					GeneralCommands.pathfind(adjacentToHQ, rc, minerData);
 				}
-			} else {
-				System.out.println(rc.getLocation().directionTo(minerData.getSosLoc()));
-				minerData.setSearchDirection(rc.getLocation().directionTo(minerData.getSosLoc()));
+			} else if (!inPosition) {
+				GeneralCommands.routeTo(minerData.getSosLoc(), rc, minerData);
 			}
-			MinerCommands.continueSearch(rc, minerData);
 		}
 
 	}
