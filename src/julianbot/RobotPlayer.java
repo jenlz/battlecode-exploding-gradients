@@ -127,6 +127,9 @@ public strictfp class RobotPlayer {
 
 		MinerCommands.readTransaction(rc, minerData, rc.getBlock(rc.getRoundNum() - 1));
 
+    	//System.out.println(minerData.getSoupLocs().toString());
+
+
 		switch(minerData.getCurrentRole()) {
 			case MinerData.ROLE_DESIGN_BUILDER:
 				designMinerProtocol();

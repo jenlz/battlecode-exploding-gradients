@@ -241,14 +241,14 @@ public class MinerCommands {
 
 		for (Transaction message : block) {
 			int[] decodedMessage = GeneralCommands.decodeTransaction(rc, message);
-			if (decodedMessage.length == 7) {
+			if (decodedMessage != new int[] {0}) {
 				GeneralCommands.Type category = GeneralCommands.Type.enumOfValue(decodedMessage[1]);
 				MapLocation loc = new MapLocation(decodedMessage[2], decodedMessage[3]);
 
 				if (category == null) {
 					System.out.println("Something is terribly wrong. enumOfValue returns null");
 				}
-
+				//System.out.println("Category of message: " + category);
 				switch(category) {
 					case TRANSACTION_SOUP_AT_LOC:
 						minerdata.addSoupLoc(loc);
