@@ -117,8 +117,18 @@ public strictfp class RobotPlayer {
     static void runMiner() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
     	if(turnCount == 1) MinerCommands.discernRole(rc, minerData);
+    	if(turnCount < GameConstants.INITIAL_COOLDOWN_TURNS) {
+    		for (int i = 1; i < rc.getRoundNum(); i++) {
+				MinerCommands.readTransaction(rc, minerData, rc.getBlock(i));
+			}
+		}
     	
 //    	topographicallyAdeptMinerProtocol();
+
+		MinerCommands.readTransaction(rc, minerData, rc.getBlock(rc.getRoundNum() - 1));
+
+    	//System.out.println(minerData.getSoupLocs().toString());
+
 
 		switch(minerData.getCurrentRole()) {
 			case MinerData.ROLE_DESIGN_BUILDER:
@@ -266,7 +276,7 @@ public strictfp class RobotPlayer {
 	    		return;
 	    	}
 		}
-		
+
 		if (distantRefineryDirection != Direction.CENTER) {
 			GeneralCommands.move(rc, distantRefineryDirection, minerData);
 			return;
@@ -310,8 +320,13 @@ public strictfp class RobotPlayer {
 			Direction soupDir = MinerCommands.getDistantSoupDirection(rc);
 			if (soupDir != Direction.CENTER) {
 				minerData.setSearchDirection(soupDir);
+			} else if (minerData.getSoupLocs().size() > 0) {
+				MapLocation closestLoc = GeneralCommands.locateClosestLocation(rc, minerData.getSoupLocs(), rc.getLocation());
+				System.out.println("Going to reported soup loc: " + closestLoc);
+				minerData.setSearchDirection(rc.getLocation().directionTo(closestLoc));
 			}
 		}
+
     	//If we can't find distant soup, move in the search direction.
     	MinerCommands.continueSearch(rc, minerData);
     }
