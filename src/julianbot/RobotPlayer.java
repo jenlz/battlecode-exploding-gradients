@@ -396,18 +396,22 @@ public strictfp class RobotPlayer {
 		MinerData minerData = (MinerData) robotData;
 
 		if (minerData.getSosLoc().equals(minerData.getSpawnerLocation())) {
-			boolean inPosition = false;
-			if (GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam()) != null && !inPosition) {
+			if (GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam()) != null ) {
 				for (Direction dir : Direction.allDirections()) {
 					MapLocation adjacentToHQ = minerData.getSosLoc().add(dir);
-					if (rc.getLocation().equals(adjacentToHQ)) {
-						System.out.println("In position: " + rc.getLocation());
-						inPosition = true;
+					if (minerData.getInPosition()) {
 						break;
+					} else {
+						GeneralCommands.routeTo(adjacentToHQ, rc, minerData);
+						if (rc.getLocation().equals(adjacentToHQ)) {
+							System.out.println("In position: " + rc.getLocation());
+							minerData.setInPosition(true);
+							break;
+						}
 					}
-					GeneralCommands.pathfind(adjacentToHQ, rc, minerData);
+
 				}
-			} else if (!inPosition) {
+			} else if (!minerData.getInPosition()) {
 				GeneralCommands.routeTo(minerData.getSosLoc(), rc, minerData);
 			}
 		}

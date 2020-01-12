@@ -23,6 +23,7 @@ public class MinerData extends RobotData {
 		private RobotInfo previousTarget;
 		private int turnsScouted;
 	public static final int ROLE_SOS = 5;
+		private boolean inPosition;
 	
 	private Direction searchDirection;
 	private MapLocation sosLoc;
@@ -40,6 +41,7 @@ public class MinerData extends RobotData {
 		searchDirection = spawnerLocation.directionTo(rc.getLocation());
 		soupLocs = new ArrayList<MapLocation>();
 		refineryLocs = new ArrayList<MapLocation>();
+		inPosition = false;
 	}
 	
 	public int getCurrentRole() {
@@ -229,4 +231,13 @@ public class MinerData extends RobotData {
 		return sosLoc;
 	}
 
+	// SOS Miner
+
+	public boolean getInPosition() {
+		return inPosition;
+	}
+
+	public void setInPosition(boolean bool) {
+		inPosition = bool;
+	}
 }
