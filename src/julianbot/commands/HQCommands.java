@@ -33,7 +33,7 @@ public class HQCommands {
 	}
 
 	public static void sendAllClear(RobotController rc) throws GameActionException {
-		// TODO Make allClear func and have miners recognize it
+		GeneralCommands.sendTransaction(rc, 10, Type.TRANSACTION_ALL_CLEAR, rc.getLocation());
 	}
 	
 	/**

@@ -270,6 +270,10 @@ public class MinerCommands {
 						minerdata.setCurrentRole(MinerData.ROLE_SOS);
 						minerdata.setSOSLoc(loc);
 						break;
+					case TRANSACTION_ALL_CLEAR:
+						minerdata.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+						minerdata.setSOSLoc(null);
+						break;
 				}
 			}
 
