@@ -22,7 +22,7 @@ public class MapGraph {
 	
 	private MapLocation sourceLocation;
 	
-	public MapGraph(RobotController rc, int radiusSquared) {
+	public MapGraph(RobotController rc, int radiusSquared) throws GameActionException {
 		this.lengthToEdge = (int) Math.sqrt(radiusSquared);
 		this.radiusSquared = radiusSquared;
 		this.dimension = 1 + 2 * lengthToEdge;
@@ -57,24 +57,18 @@ public class MapGraph {
 		return sourceLocation.translate(graphX - lengthToEdge, graphY - lengthToEdge);
 	}
 	
-	private void connectAllAdjacencies(RobotController rc, int dx, int dy) {
+	private void connectAllAdjacencies(RobotController rc, int dx, int dy) throws GameActionException {
 		MapLocation location = sourceLocation.translate(dx, dy);
 		int locationCode = getLocationCode(location);
 		
-		try {
-			for(Direction direction : directions) {
-				int totalDX = dx + direction.dx;
-				int totalDY = dy + direction.dy;
-				
-				if(totalDX * totalDX + totalDY * totalDY > radiusSquared) continue;
-				
-				MapLocation adjacentLocation = location.add(direction);
-				if(rc.canSenseLocation(adjacentLocation) && !rc.isLocationOccupied(adjacentLocation)) {
-					addEdge(locationCode, getLocationCode(adjacentLocation));
-				}
-			}
-		} catch(GameActionException e) {
-			e.printStackTrace();
+		for(Direction direction : directions) {
+			int totalDX = dx + direction.dx;
+			int totalDY = dy + direction.dy;
+			
+			if(totalDX * totalDX + totalDY * totalDY > radiusSquared) continue;
+			
+			MapLocation adjacentLocation = location.add(direction);
+			if(rc.canSenseLocation(adjacentLocation) && !rc.isLocationOccupied(adjacentLocation)) addEdge(locationCode, getLocationCode(adjacentLocation));
 		}
 	}
 	

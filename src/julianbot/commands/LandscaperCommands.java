@@ -66,18 +66,22 @@ public class LandscaperCommands {
 		}
 	}
 	
-	public static void determineApproachCompletion(RobotController rc, LandscaperData data) {
-		if(Math.abs(rc.getLocation().x - data.getHqLocation().x) <= 1 && Math.abs(rc.getLocation().y - data.getHqLocation().y) <= 1) {
-			data.setCurrentRole(LandscaperData.DEFEND_HQ_FROM_FLOOD);
-		}
+	public static boolean approachComplete(RobotController rc, LandscaperData data) {
+		MapLocation rcLocation = rc.getLocation();
+		MapLocation hqLocation = data.getHqLocation();
+		
+		return Math.abs(rcLocation.x - hqLocation.x) <= 2 && Math.abs(rcLocation.y - hqLocation.y) <= 2;
 	}
 	
 	public static void buildHQWall(RobotController rc, LandscaperData data) throws GameActionException {
+		System.out.println("---Building wall---");
 		if(rc.getDirtCarrying() > 0) constructWallUnits(rc, data);
 		else digWallDirt(rc, data);
+		System.out.println("=====");
 	}
 	
 	private static void constructWallUnits(RobotController rc, LandscaperData data) throws GameActionException {
+		System.out.println("Constructing!");
 		Direction[] constructDirections = new Direction[0];
 		
 		MapLocation rcLocation = rc.getLocation();
@@ -91,6 +95,7 @@ public class LandscaperCommands {
 		
 		constructDirections = buildPattern[gridY][gridX];
 		if(constructDirections.length == 0) {
+			System.out.println("Nowhere to build!");
 			digOrMove(rc, data, rcLocation, digPattern[gridY][gridX]);
 			return;
 		}
@@ -104,6 +109,7 @@ public class LandscaperCommands {
 	}
 	
 	private static void digWallDirt(RobotController rc, LandscaperData data) throws GameActionException {
+		System.out.println("Digging!");
 		Direction digDirection = Direction.CENTER;
 		
 		MapLocation rcLocation = rc.getLocation();
@@ -116,6 +122,7 @@ public class LandscaperCommands {
 		int gridY = -dy + DIG_PATTERN_ARRAY_SHIFT;
 		digDirection = digPattern[gridY][gridX];
 		
+		System.out.println("Continuing " + digDirection);
 		digOrMove(rc, data, rcLocation, digDirection);
 	}
 	

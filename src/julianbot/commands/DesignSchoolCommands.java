@@ -5,14 +5,11 @@ import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 import julianbot.robotdata.DesignSchoolData;
-import julianbot.robotdata.LandscaperData;
 
 public class DesignSchoolCommands {
-
-	private static final int LANDSCAPER_COST = 150;
 	
 	public static boolean oughtBuildLandscaper(RobotController rc, DesignSchoolData data) {
-		return rc.getTeamSoup() >= LANDSCAPER_COST + data.getLandscapersBuilt() * LANDSCAPER_COST;
+		return rc.getTeamSoup() >= RobotType.LANDSCAPER.cost && GeneralCommands.senseUnitType(rc, RobotType.FULFILLMENT_CENTER, rc.getTeam()) != null;
 	}
 	
 	/**
@@ -29,11 +26,9 @@ public class DesignSchoolCommands {
         if (rc.isReady() && rc.canBuildRobot(type, buildDirection)) {
             rc.buildRobot(type, buildDirection);
             if(type == RobotType.LANDSCAPER) data.incrementLandscapersBuilt();
-            data.setBuildDirection(buildDirection.rotateRight());
             return true;
         } 
         
-        data.setBuildDirection(buildDirection.rotateRight());
         return false;
     }
 }
