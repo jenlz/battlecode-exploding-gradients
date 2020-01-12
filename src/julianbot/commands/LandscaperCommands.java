@@ -4,10 +4,12 @@ import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
 import battlecode.common.Transaction;
+import julianbot.commands.GeneralCommands.Type;
 import julianbot.robotdata.LandscaperData;
 import julianbot.utils.NumberMath;
-import julianbot.commands.GeneralCommands.Type;
 
 public class LandscaperCommands {
 	
@@ -129,6 +131,33 @@ public class LandscaperCommands {
 	private static void digOrMove(RobotController rc, LandscaperData data, MapLocation rcLocation, Direction digDirection) throws GameActionException {
 		if(rc.senseElevation(rcLocation) - rc.senseElevation(rcLocation.add(digDirection)) < 1) LandscaperCommands.dig(rc, digDirection);
 		else GeneralCommands.move(rc, digDirection, data);
+	}
+	
+	public static boolean buryEnemyHQ(RobotController rc, LandscaperData data) throws GameActionException {
+		if(data.getEnemyHQLocation() != null) {
+			if(rc.getDirtCarrying() > 0) LandscaperCommands.depositDirt(rc, rc.getLocation().directionTo(data.getEnemyHQLocation()));
+			else LandscaperCommands.dig(rc, data.getEnemyHQBuryDigDirection());
+			
+			return true;
+		}
+		
+		RobotInfo enemyHQ = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam().opponent());
+		if(enemyHQ != null) {
+			data.setEnemyHQLocation(enemyHQ.getLocation());
+			determineDigDirection(rc, data);
+			return true;
+		}
+		
+		return false;
+	}
+	
+	private static void determineDigDirection(RobotController rc, LandscaperData data) {
+		Direction enemyHQDirection = rc.getLocation().directionTo(data.getEnemyHQLocation());
+		if(rc.canDigDirt(enemyHQDirection.rotateLeft())) data.setEnemyHQBuryDigDirection(enemyHQDirection.rotateLeft());
+		else if(rc.canDigDirt(enemyHQDirection.rotateRight())) data.setEnemyHQBuryDigDirection(enemyHQDirection.rotateRight());
+		else if(rc.canDigDirt(enemyHQDirection.rotateLeft().rotateLeft())) data.setEnemyHQBuryDigDirection(enemyHQDirection.rotateLeft().rotateLeft());
+		else if(rc.canDigDirt(enemyHQDirection.rotateRight().rotateRight())) data.setEnemyHQBuryDigDirection(enemyHQDirection.rotateRight().rotateRight());
+		else data.setEnemyHQBuryDigDirection(enemyHQDirection);
 	}
 	
 }
