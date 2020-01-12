@@ -495,13 +495,11 @@ public strictfp class RobotPlayer {
     }
 
     static void runNetGun() throws GameActionException {
-    	/*
-    	NetGunData ngData = (NetGunData) robotData;
+    	RobotData ngData = robotData;
     	RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), ngData.getOpponent());
     	int target = (int) (Math.random()*enemy.length);
     	if(rc.canShootUnit(enemy[target].getID())) {
     		rc.shootUnit(enemy[target].getID());
     	}
-    	*/
     }
 }
