@@ -4,6 +4,8 @@ import battlecode.common.*;
 import julianbot.robotdata.RobotData;
 import julianbot.utils.pathfinder.Pathfinder;
 
+import java.util.ArrayList;
+
 public class GeneralCommands {
 	
 	static Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
@@ -246,5 +248,25 @@ public class GeneralCommands {
 	public static void stopFollowingPath(RobotData data) {
 		data.setPath(null);
 		data.setPathProgression(0);
+	}
+
+	/**
+	 * Returns closest location of array to target location
+	 * @param rc
+	 * @param locs
+	 * @param targetLoc
+	 * @return
+	 */
+	public static MapLocation locateClosestLocation(RobotController rc, ArrayList<MapLocation> locs, MapLocation targetLoc) {
+		MapLocation closestLoc = null;
+		int closestDistance = 999999999;
+		for (MapLocation loc : locs) {
+			int dist = loc.distanceSquaredTo(targetLoc);
+			if (dist < closestDistance) {
+				closestLoc = loc;
+				closestDistance = dist;
+			}
+		}
+		return closestLoc;
 	}
 }
