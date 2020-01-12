@@ -131,6 +131,25 @@ public class MinerCommands {
 	}
 
 	/**
+	 * Returns location of soup within two radius of robot. If not found, will return null.
+	 * @param rc
+	 * @return
+	 * @throws GameActionException
+	 */
+	public static MapLocation getSoupLocation(RobotController rc) throws GameActionException{
+		Direction soupDir = MinerCommands.getAdjacentSoupDirection(rc);
+		MapLocation soupLoc = rc.adjacentLocation(soupDir);
+		if (soupDir == Direction.CENTER) {
+			soupDir = MinerCommands.getDistantSoupDirection(rc);
+			if (soupDir != Direction.CENTER) {
+				//Now checks non-adjacent tiles
+				soupLoc = rc.adjacentLocation(soupDir).add(soupDir);
+			}
+		}
+		return (rc.senseSoup(soupLoc) > 0) ? soupLoc : null;
+	}
+
+	/**
 	 * Mines soup if able
 	 * @param rc Robot Controller
 	 * @param dir Direction

@@ -11,6 +11,7 @@ import julianbot.robotdata.HQData;
 import julianbot.robotdata.LandscaperData;
 import julianbot.robotdata.MinerData;
 import julianbot.robotdata.RobotData;
+import testplayer.Miner;
 
 public strictfp class RobotPlayer {
     static RobotController rc;
@@ -265,11 +266,21 @@ public strictfp class RobotPlayer {
 		}
 
 		if (minerData.getTargetRobot() != null) {
+			//Sets search direction to be two spaces away from where the target robot is
 			MapLocation scoutLoc = rc.getLocation();
 			MapLocation targetLoc = minerData.getTargetRobot().getLocation();
 			Direction targetToScout = targetLoc.directionTo(scoutLoc);
 			minerData.setSearchDirection(scoutLoc.directionTo(targetLoc.add(targetToScout).add(targetToScout)));
 		}
+
+		// Sensing and reporting Soup
+		MapLocation soupLoc = MinerCommands.getSoupLocation(rc);
+		if (soupLoc != null) {
+			System.out.println("Found Soup! Loc: " + soupLoc);
+			GeneralCommands.sendTransaction(rc, 5, GeneralCommands.Type.TRANSACTION_SOUP_AT_LOC, soupLoc);
+		}
+
+
 		// Either searches in direction of target or last known position of target
 		MinerCommands.continueSearch(rc, minerData);
 
