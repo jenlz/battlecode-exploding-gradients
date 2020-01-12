@@ -1,11 +1,5 @@
 package julianbot;
-import battlecode.common.Clock;
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
+import battlecode.common.*;
 import julianbot.commands.DesignSchoolCommands;
 import julianbot.commands.DroneCommands;
 import julianbot.commands.FulfillmentCenterCommands;
@@ -108,11 +102,17 @@ public strictfp class RobotPlayer {
         RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), hqData.getOpponent());
         
         if(enemy.length > 0) {
-	        int target = (int) (Math.random()*enemy.length);
-	    	if(rc.canShootUnit(enemy[target].getID())) {
-	    		rc.shootUnit(enemy[target].getID());
+	        RobotInfo target = enemy[0];
+	        for (RobotInfo unit : enemy) {
+	        	if (unit.getType() == RobotType.DELIVERY_DRONE) {
+	        		target = unit;
+				}
+			}
+
+	    	if(rc.canShootUnit(target.getID())) {
+	    		rc.shootUnit(target.getID());
 	    	}
-	        if(enemy.length > 10) {
+	        if(enemy.length > 3) {
 	        	HQCommands.sendSOS(rc);
 	        }
         }
