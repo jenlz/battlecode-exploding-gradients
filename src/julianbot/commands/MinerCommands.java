@@ -25,6 +25,7 @@ public class MinerCommands {
 		if(fulfillmentCenterBuilt) data.setCurrentRole(MinerData.ROLE_DEFENSE_BUILDER);
 		else if(designSchoolBuilt) data.setCurrentRole(MinerData.ROLE_FULFILLMENT_BUILDER);
 		else if(rc.getTeamSoup() >= ((float) RobotType.DESIGN_SCHOOL.cost / 0.8f)) data.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
+		else if (rc.getRoundNum() % 3 == 0) data.setCurrentRole(MinerData.ROLE_SCOUT);
 		else data.setCurrentRole(MinerData.ROLE_SOUP_MINER);
 	}
 	
