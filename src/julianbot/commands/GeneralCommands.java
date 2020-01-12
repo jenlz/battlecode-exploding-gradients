@@ -206,16 +206,6 @@ public class GeneralCommands {
 			}
 		}
 	}
-
-	public static Type getTypeFromVal(RobotController rc, int value) {
-		Type[] categories = Type.values();
-		for (Type category : categories) {
-			if (category.getVal() == value) {
-				return category;
-			}
-		}
-		return null;
-	}
 	
 	//PATHFINDING
 

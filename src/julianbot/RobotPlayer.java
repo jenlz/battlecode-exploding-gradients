@@ -287,8 +287,6 @@ public strictfp class RobotPlayer {
 					rotateLimit--;
 				}
 			}
-		} else {
-			MinerCommands.attemptRefineryConstruction(rc);
 		}
     }
 

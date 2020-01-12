@@ -242,11 +242,11 @@ public class MinerCommands {
 		for (Transaction message : block) {
 			int[] decodedMessage = GeneralCommands.decodeTransaction(rc, message);
 			if (decodedMessage.length == 7) {
-				GeneralCommands.Type category = GeneralCommands.getTypeFromVal(rc, decodedMessage[1]);
+				GeneralCommands.Type category = GeneralCommands.Type.enumOfValue(decodedMessage[1]);
 				MapLocation loc = new MapLocation(decodedMessage[2], decodedMessage[3]);
 
 				if (category == null) {
-					System.out.println("Something is terribly wrong. getTypeFromVal returns null");
+					System.out.println("Something is terribly wrong. enumOfValue returns null");
 				}
 
 				switch(category) {
