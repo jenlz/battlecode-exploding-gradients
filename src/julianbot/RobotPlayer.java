@@ -10,6 +10,7 @@ import julianbot.commands.DesignSchoolCommands;
 import julianbot.commands.DroneCommands;
 import julianbot.commands.FulfillmentCenterCommands;
 import julianbot.commands.GeneralCommands;
+import julianbot.commands.GeneralCommands.Type;
 import julianbot.commands.HQCommands;
 import julianbot.commands.LandscaperCommands;
 import julianbot.commands.MinerCommands;
@@ -38,12 +39,11 @@ public strictfp class RobotPlayer {
     public static void run(RobotController rc) throws GameActionException {
 
         // This is the RobotController object. You use it to perform actions from this robot,
-        // and to get information on its current status.
+        // and to get information on its current status.	
         System.out.println("Initializing Robot.");
     	RobotPlayer.rc = rc;
         robotData = initializeRobotData(rc.getType());
         turnCount = 0;
-        
         
         while (true) {
             turnCount += 1;
@@ -121,7 +121,15 @@ public strictfp class RobotPlayer {
     static void runMiner() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
     	if(turnCount == 1) MinerCommands.discernRole(rc, minerData);
-    	    	
+
+    	if(turnCount < GameConstants.INITIAL_COOLDOWN_TURNS) {
+    		for (int i = 1; i < rc.getRoundNum(); i++) {
+				MinerCommands.readTransaction(rc, minerData, rc.getBlock(i));
+			}
+		}
+    	
+		MinerCommands.readTransaction(rc, minerData, rc.getBlock(rc.getRoundNum() - 1));
+      
 		switch(minerData.getCurrentRole()) {
 			case MinerData.ROLE_DESIGN_BUILDER:
 				designMinerProtocol();
@@ -258,7 +266,7 @@ public strictfp class RobotPlayer {
 	    		return;
 	    	}
 		}
-		
+
 		if (distantRefineryDirection != Direction.CENTER) {
 			GeneralCommands.move(rc, distantRefineryDirection, minerData);
 			return;
@@ -292,8 +300,9 @@ public strictfp class RobotPlayer {
     	}
     	
     	if(!MinerCommands.mineRawSoup(rc, MinerCommands.getAdjacentSoupDirection(rc))) {
-			//TODO: Redo distant soup finding
+
 		}
+
     	//If we can't find distant soup, move in the search direction.
     	MinerCommands.continueSearch(rc, minerData);
     }

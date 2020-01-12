@@ -1,12 +1,11 @@
 package julianbot.commands;
 
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
+import battlecode.common.*;
+import com.sun.tools.javah.Gen;
 import julianbot.robotdata.MinerData;
+import testplayer.Miner;
+
+import java.util.Map;
 
 public class MinerCommands {
 	
@@ -26,6 +25,7 @@ public class MinerCommands {
 		if(fulfillmentCenterBuilt) data.setCurrentRole(MinerData.ROLE_DEFENSE_BUILDER);
 		else if(designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.FULFILLMENT_CENTER.cost * 0.8f)) data.setCurrentRole(MinerData.ROLE_FULFILLMENT_BUILDER);
 		else if(!designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.DESIGN_SCHOOL.cost * 0.8f)) data.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
+		else if (rc.getRoundNum() % 3 == 0) data.setCurrentRole(MinerData.ROLE_SCOUT);
 		else data.setCurrentRole(MinerData.ROLE_SOUP_MINER);
 	}
 	
@@ -239,5 +239,37 @@ public class MinerCommands {
 		
 		return false;
 	}
-	
+
+	/**
+	 * Reads block and uses useful information such as refinery and soup locations
+	 * @param rc
+	 * @param minerdata
+	 * @param block
+	 * @throws GameActionException
+	 */
+	public static void readTransaction(RobotController rc, MinerData minerdata, Transaction[] block) throws GameActionException {
+
+		for (Transaction message : block) {
+			int[] decodedMessage = GeneralCommands.decodeTransaction(rc, message);
+			if (decodedMessage != new int[] {0}) {
+				GeneralCommands.Type category = GeneralCommands.Type.enumOfValue(decodedMessage[1]);
+				MapLocation loc = new MapLocation(decodedMessage[2], decodedMessage[3]);
+
+				if (category == null) {
+					System.out.println("Something is terribly wrong. enumOfValue returns null");
+				}
+				//System.out.println("Category of message: " + category);
+				switch(category) {
+					case TRANSACTION_SOUP_AT_LOC:
+						minerdata.addSoupLoc(loc);
+						break;
+					case TRANSACTION_FRIENDLY_REFINERY_AT_LOC:
+						minerdata.addRefineryLoc(loc);
+						break;
+				}
+			}
+
+		}
+	}
+
 }
