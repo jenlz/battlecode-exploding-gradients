@@ -6,28 +6,35 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
+import battlecode.common.Transaction;
+import julianbot.commands.GeneralCommands.Type;
 import julianbot.robotdata.DroneData;
 
 public class DroneCommands {
 
 	static Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
 	
-	public static void continueSearch(RobotController rc, DroneData data) throws GameActionException {
-		//The move function is deliberately unused here.
-		GeneralCommands.waitUntilReady(rc);
-		
-		if(rc.canMove(data.getSearchDirection())) {
-			rc.move(data.getSearchDirection());
-			return;
+	public static void learnHQLocation(RobotController rc, DroneData data) throws GameActionException {
+		for(Transaction transaction : rc.getBlock(1)) {
+			int[] message = GeneralCommands.decodeTransaction(rc, transaction);
+			if(message.length > 1 && message[1] == Type.TRANSACTION_FRIENDLY_HQ_AT_LOC.getVal()) {
+				data.setHqLocation(new MapLocation(message[2], message[3]));
+				return;
+			}
 		}
-		
-		data.setSearchDirection(directions[(int) (Math.random() * directions.length)]);
 	}
 	
-	public static void searchForEnemyHQ(RobotController rc, DroneData data) {
+	public static void continueSearch(RobotController rc, DroneData data) throws GameActionException {
+		//The move function is deliberately unused here.
+		GeneralCommands.routeTo(data.getActiveSearchDestination(), rc, data);
+	}
+	
+	public static void attemptEnemyHQDetection(RobotController rc, DroneData data) {
 		RobotInfo enemyHQ = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam().opponent());
 		if(enemyHQ != null) {
 			data.setEnemyHQLocation(enemyHQ.getLocation());
+		} else if(rc.canSenseLocation(data.getActiveSearchDestination())){
+			data.proceedToNextSearchDestination();
 		}
 	}
 	

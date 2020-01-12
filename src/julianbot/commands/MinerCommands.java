@@ -1,11 +1,13 @@
 package julianbot.commands;
 
-import battlecode.common.*;
-import com.sun.tools.javah.Gen;
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
+import battlecode.common.Transaction;
 import julianbot.robotdata.MinerData;
-import testplayer.Miner;
-
-import java.util.Map;
 
 public class MinerCommands {
 	
@@ -25,7 +27,7 @@ public class MinerCommands {
 		if(fulfillmentCenterBuilt) data.setCurrentRole(MinerData.ROLE_DEFENSE_BUILDER);
 		else if(designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.FULFILLMENT_CENTER.cost * 0.8f)) data.setCurrentRole(MinerData.ROLE_FULFILLMENT_BUILDER);
 		else if(!designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.DESIGN_SCHOOL.cost * 0.8f)) data.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
-		else if (rc.getRoundNum() % 3 == 0) data.setCurrentRole(MinerData.ROLE_SCOUT);
+//		else if (rc.getRoundNum() % 3 == 0) data.setCurrentRole(MinerData.ROLE_SCOUT);
 		else data.setCurrentRole(MinerData.ROLE_SOUP_MINER);
 	}
 	

@@ -468,6 +468,8 @@ public strictfp class RobotPlayer {
     static void runDeliveryDrone() throws GameActionException {
     	DroneData data = (DroneData) robotData;
     	
+    	if(turnCount == 1) DroneCommands.learnHQLocation(rc, data);
+    	
     	if(data.getEnemyHQLocation() != null) {
     		if(rc.isCurrentlyHoldingUnit()) {
     			if(rc.getLocation().isWithinDistanceSquared(data.getEnemyHQLocation(), 3)) {
@@ -483,8 +485,12 @@ public strictfp class RobotPlayer {
     			GeneralCommands.move(rc, rc.getLocation().directionTo(data.getSpawnerLocation()), data);
     		}
     	} else {
+    		if(!data.searchDestinationsDetermined()) {
+    			data.calculateSearchDestinations(rc);
+    		}
+    		
     		DroneCommands.continueSearch(rc, data);
-    		DroneCommands.searchForEnemyHQ(rc, data);
+    		DroneCommands.attemptEnemyHQDetection(rc, data);
     	}
     }
 
