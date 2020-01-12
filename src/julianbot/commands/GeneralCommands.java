@@ -190,7 +190,49 @@ public class GeneralCommands {
 	}
 	
 	//PATHFINDING
-
+	public static void routeTo(MapLocation destination, RobotController rc, RobotData data) throws GameActionException {
+		//If we're already pathfinding, continue on.
+		if(data.hasPath()) {
+			GeneralCommands.pathfind(destination, rc, data);
+			return;
+		}
+		
+		//Otherwise, simply try to move directly towards the destination.
+		MapLocation rcLocation = rc.getLocation();
+		Direction initialDirection = rc.getLocation().directionTo(destination);
+		if(GeneralCommands.move(rc, initialDirection, data)) return;
+		
+		//If this isn't possible, try to move around whatever is blocking us.
+		//Directions closer to the destination will be favored.
+		Direction initialDirectionLeft = initialDirection.rotateLeft();
+		Direction initialDirectionRight = initialDirection.rotateRight();
+		
+		if(rcLocation.add(initialDirectionLeft).distanceSquaredTo(destination) < rcLocation.add(initialDirectionRight).distanceSquaredTo(destination)) {
+			if(GeneralCommands.move(rc, initialDirectionLeft, data)) return;
+			if(GeneralCommands.move(rc, initialDirectionLeft.rotateLeft(), data)) return;
+			if(GeneralCommands.move(rc, initialDirectionRight, data)) return;
+			if(GeneralCommands.move(rc, initialDirectionRight.rotateRight(), data)) return;
+		} else {
+			if(GeneralCommands.move(rc, initialDirectionRight, data)) return;
+			if(GeneralCommands.move(rc, initialDirectionRight.rotateRight(), data)) return;
+			if(GeneralCommands.move(rc, initialDirectionLeft, data)) return;
+			if(GeneralCommands.move(rc, initialDirectionLeft.rotateLeft(), data)) return;
+		}
+		
+		/*
+		Direction canMoveDir = initialDirection.rotateRight();
+		int rotateLimit = 8;
+		while (rotateLimit > 0) {
+			if(GeneralCommands.move(rc, canMoveDir, data)) return;
+			canMoveDir.rotateRight();
+			rotateLimit--;
+		}
+		*/
+		
+		//If all of these measures have failed, we'll need to use pathfinding to get around.
+		GeneralCommands.pathfind(destination, rc, data);
+	}
+	
 	/**
 	 *
 	 * @param destination

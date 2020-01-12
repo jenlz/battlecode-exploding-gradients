@@ -11,6 +11,7 @@ import julianbot.robotdata.MinerData;
 public class MinerCommands {
 	
 	static Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
+	private static final int SENSOR_RADIUS = (int) Math.ceil(Math.sqrt(RobotType.MINER.sensorRadiusSquared));
 	
 	public static void discernRole(RobotController rc, MinerData data) throws GameActionException {
 		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam());
@@ -23,8 +24,8 @@ public class MinerCommands {
 		}
 		
 		if(fulfillmentCenterBuilt) data.setCurrentRole(MinerData.ROLE_DEFENSE_BUILDER);
-		else if(designSchoolBuilt) data.setCurrentRole(MinerData.ROLE_FULFILLMENT_BUILDER);
-		else if(rc.getTeamSoup() >= ((float) RobotType.DESIGN_SCHOOL.cost / 0.8f)) data.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
+		else if(designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.FULFILLMENT_CENTER.cost * 0.8f)) data.setCurrentRole(MinerData.ROLE_FULFILLMENT_BUILDER);
+		else if(!designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.DESIGN_SCHOOL.cost * 0.8f)) data.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
 		else data.setCurrentRole(MinerData.ROLE_SOUP_MINER);
 	}
 	
@@ -137,18 +138,27 @@ public class MinerCommands {
 	 * @return
 	 * @throws GameActionException
 	 */
-	public static Direction getDistantSoupDirection(RobotController rc) throws GameActionException {
+	public static MapLocation calculateTargetSoupLocation(RobotController rc, MinerData data) throws GameActionException {
+		MapLocation targetSoupLocation = null;
+		MapLocation rcLocation = rc.getLocation();
 		Direction mostSoupDirection = Direction.CENTER;
 		int mostSoupLocated = 0;
 		
-		for(Direction searchDirection : directions) {
-			if (rc.canSenseLocation(rc.adjacentLocation(searchDirection).add(searchDirection))) {
-				int foundSoup = rc.senseSoup(rc.adjacentLocation(searchDirection).add(searchDirection));
-				mostSoupDirection = foundSoup > mostSoupLocated ? searchDirection : mostSoupDirection;
+		for(int dx = -SENSOR_RADIUS; dx <= SENSOR_RADIUS; dx++) {
+			for(int dy = -SENSOR_RADIUS; dy <= SENSOR_RADIUS; dy++) {
+				MapLocation potentialSoupLocation = rcLocation.translate(dx, dy);
+				if(rc.canSenseLocation(potentialSoupLocation)) {
+					int soupAtLocation = rc.senseSoup(potentialSoupLocation);
+					if(soupAtLocation > mostSoupLocated) {
+						mostSoupLocated = soupAtLocation;
+						targetSoupLocation = potentialSoupLocation;
+						
+					}
+				}
 			}
 		}
 		
-		return mostSoupDirection;
+		return targetSoupLocation;
 	}
 
 	/**
@@ -161,7 +171,7 @@ public class MinerCommands {
 		Direction soupDir = MinerCommands.getAdjacentSoupDirection(rc);
 		MapLocation soupLoc = rc.adjacentLocation(soupDir);
 		if (soupDir == Direction.CENTER) {
-			soupDir = MinerCommands.getDistantSoupDirection(rc);
+//			soupDir = MinerCommands.getDistantSoupDirection(rc);
 			if (soupDir != Direction.CENTER) {
 				//Now checks non-adjacent tiles
 				soupLoc = rc.adjacentLocation(soupDir).add(soupDir);
