@@ -120,18 +120,15 @@ public strictfp class RobotPlayer {
 
     static void runMiner() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
-    	if(turnCount == 1) MinerCommands.discernRole(rc, minerData);
-
-    	if(turnCount < GameConstants.INITIAL_COOLDOWN_TURNS) {
-    		System.out.println("Initial Reading through Blocks");
-    		for (int i = rc.getRoundNum() - 1; i > 0; i--) {
+    	if(turnCount == 1) {
+    		MinerCommands.discernRole(rc, minerData);
+			for (int i = rc.getRoundNum() - 1; i > 0; i--) {
 				MinerCommands.readTransaction(rc, minerData, rc.getBlock(i));
 				if (turnCount >= GameConstants.INITIAL_COOLDOWN_TURNS) {
 					// So miner doesn't spend longer than initial cooldown turns to check blockChain
 					break;
 				}
 			}
-    	System.out.println("Finished reading through blocks");
 		}
     	
 		MinerCommands.readTransaction(rc, minerData, rc.getBlock(rc.getRoundNum() - 1));
