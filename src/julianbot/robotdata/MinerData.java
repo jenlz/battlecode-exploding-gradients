@@ -7,13 +7,14 @@ public class MinerData extends RobotData {
 
 	private int currentRole;
 	public static final int ROLE_DESIGN_BUILDER = 0;
-	public static final int ROLE_SOUP_MINER = 1;
-	public static final int ROLE_DEFENSE_BUILDER = 2;
+	public static final int ROLE_FULFILLMENT_BUILDER = 1;
+	public static final int ROLE_SOUP_MINER = 2;
+	public static final int ROLE_DEFENSE_BUILDER = 3;
 		private boolean northGunBuilt;
 		private boolean designSchoolBuilt;
 		private boolean fulfillmentCenterBuilt;
 		private boolean southGunBuilt;
-	public static final int ROLE_SCOUT = 3;
+	public static final int ROLE_SCOUT = 4;
 	
 	private Direction searchDirection;
 
@@ -24,7 +25,7 @@ public class MinerData extends RobotData {
 	 */
 	public MinerData(RobotController rc) {
 		super(rc);
-		currentRole = ROLE_DESIGN_BUILDER;
+		currentRole = ROLE_SOUP_MINER;
 		searchDirection = spawnerLocation.directionTo(rc.getLocation());
 	}
 	
