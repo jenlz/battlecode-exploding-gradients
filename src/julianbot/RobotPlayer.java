@@ -271,7 +271,7 @@ public strictfp class RobotPlayer {
 		if (distantRefineryDirection != Direction.CENTER) {
 			GeneralCommands.move(rc, distantRefineryDirection, minerData);
 			return;
-		} else if (minerData.getSpawnerLocation().distanceSquaredTo(rc.getLocation()) < 45) {
+		} else {
 			System.out.println("Moving toward hq");
 			if (!GeneralCommands.move(rc, rc.getLocation().directionTo(minerData.getSpawnerLocation()), minerData)) {
 				Direction canMoveDir = rc.getLocation().directionTo(minerData.getSpawnerLocation()).rotateRight();
