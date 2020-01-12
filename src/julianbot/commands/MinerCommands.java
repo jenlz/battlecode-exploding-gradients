@@ -14,12 +14,24 @@ public class MinerCommands {
 	
 	public static void discernRole(RobotController rc, MinerData data) throws GameActionException {
 		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam());
+		boolean fulfillmentCenterBuilt = false;
+		boolean designSchoolBuilt = false;
+		
 		for(RobotInfo robot : robots) {
-			if(robot.type == RobotType.LANDSCAPER) {
-				data.setCurrentRole(MinerData.ROLE_DEFENSE_BUILDER);
-				return;
-			}
+			if(robot.type == RobotType.FULFILLMENT_CENTER) fulfillmentCenterBuilt = true;
+			else if(robot.type == RobotType.DESIGN_SCHOOL) designSchoolBuilt = true;
 		}
+		
+		if(fulfillmentCenterBuilt) data.setCurrentRole(MinerData.ROLE_DEFENSE_BUILDER);
+		else if(designSchoolBuilt) data.setCurrentRole(MinerData.ROLE_FULFILLMENT_BUILDER);
+		else if(rc.getTeamSoup() >= ((float) RobotType.DESIGN_SCHOOL.cost / 0.8f)) data.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
+		else data.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+	}
+	
+	public static boolean canSenseHubDesignSchool(RobotController rc, MinerData data) throws GameActionException {
+		RobotInfo designSchoolInfo = rc.senseRobotAtLocation(data.getSpawnerLocation().translate(-1, 0));
+		if(designSchoolInfo == null) return false;
+		return designSchoolInfo.type == RobotType.DESIGN_SCHOOL;
 	}
 	
 	public static boolean locateNearbyDesignSchool(RobotController rc) throws GameActionException {
@@ -31,15 +43,24 @@ public class MinerCommands {
 		return false;
 	}
 	
-	public static boolean attemptDesignSchoolConstruction(RobotController rc) throws GameActionException {
-		for(Direction buildDirection : directions) {
-			if(rc.canBuildRobot(RobotType.DESIGN_SCHOOL, buildDirection)) {
-				rc.buildRobot(RobotType.DESIGN_SCHOOL, buildDirection);
-				return true;
-			}
+	public static boolean attemptDesignSchoolConstruction(RobotController rc, Direction buildDirection) throws GameActionException {		
+		if(rc.canBuildRobot(RobotType.DESIGN_SCHOOL, buildDirection)) {
+			rc.buildRobot(RobotType.DESIGN_SCHOOL, buildDirection);
+			return true;
 		}
 		
 		System.out.println("Failed to build design school...");
+		
+		return false;
+	}
+	
+	public static boolean attemptFulfillmentCenterConstruction(RobotController rc, Direction buildDirection) throws GameActionException {		
+		if(rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, buildDirection)) {
+			rc.buildRobot(RobotType.FULFILLMENT_CENTER, buildDirection);
+			return true;
+		}
+		
+		System.out.println("Failed to build fulfillment center...");
 		
 		return false;
 	}
@@ -188,6 +209,12 @@ public class MinerCommands {
     	}
     	
 		return GeneralCommands.pathfind(null, rc, minerData);
+	}
+	
+	public static boolean canSenseHubFulfillmentCenter(RobotController rc, MinerData data) throws GameActionException {
+		RobotInfo designSchoolInfo = rc.senseRobotAtLocation(data.getSpawnerLocation().translate(1, 0));
+		if(designSchoolInfo == null) return false;
+		return designSchoolInfo.type == RobotType.FULFILLMENT_CENTER;
 	}
 	
 	public static boolean buildDefenseFulfillmentCenter(RobotController rc, MinerData minerData) throws GameActionException {

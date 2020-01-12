@@ -6,6 +6,8 @@ import julianbot.utils.pathfinder.Pathfinder;
 
 public class GeneralCommands {
 	
+	static Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
+	
 	public enum Type{
 		TRANSACTION_SOS_AT_LOC(-104),
 		TRANSACTION_SOUP_AT_LOC(249),
@@ -106,6 +108,19 @@ public class GeneralCommands {
 		return false;
 	}
 	
+	public static boolean moveAnywhere(RobotController rc, RobotData data) throws GameActionException {
+		stopFollowingPath(data);
+		
+		Direction dir = directions[(int)(Math.random() * directions.length)];
+		int rotateLimit = 8;
+		
+		while (!GeneralCommands.move(rc, dir, data) && rotateLimit > 0) {
+			dir.rotateRight();
+			rotateLimit--;
+		}
+		
+		return rotateLimit > 0;
+	}	
 	
 	//TRANSACTIONS
 	public static void sendTransaction(RobotController rc, int soupBid, Type type, MapLocation loc) throws GameActionException {

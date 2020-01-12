@@ -9,7 +9,7 @@ public class DesignSchoolData extends RobotData {
 	
 	public DesignSchoolData(RobotController rc) {
 		super(rc);
-		buildDirection = Direction.NORTH;
+		buildDirection = Direction.WEST;
 	}
 	
 	public int getLandscapersBuilt() {

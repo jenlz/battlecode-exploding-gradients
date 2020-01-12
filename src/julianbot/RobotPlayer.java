@@ -69,8 +69,6 @@ public strictfp class RobotPlayer {
     static RobotData initializeRobotData(RobotType type) {
     	RobotData robotData = null;
 
-    	System.out.println("Robot Type = " + type);
-
     	switch(type) {
     		case HQ:             robotData = new HQData(rc);             break;
     		case MINER:          robotData = new MinerData(rc);          break;
@@ -78,15 +76,22 @@ public strictfp class RobotPlayer {
     		case LANDSCAPER:     robotData = new LandscaperData(rc);     break;
     		default:             robotData = new RobotData(rc);          break;
     	}
-    	System.out.println(robotData);
+
     	return robotData;
     }
 
     static void runHQ() throws GameActionException {
     	HQData hqData = (HQData) robotData;
     	
-    	if(rc.getRoundNum() == 1) HQCommands.makeInitialReport(rc);
-        if(HQCommands.oughtBuildMiner(rc)) HQCommands.tryBuild(rc, RobotType.MINER, hqData);
+    	if(rc.getRoundNum() == 1) {
+    		HQCommands.makeInitialReport(rc);
+    		HQCommands.setBuildDirectionTowardsSoup(rc, hqData);
+    	}
+    	    	
+        if(HQCommands.oughtBuildMiner(rc, hqData)) {        	
+        	HQCommands.tryBuild(rc, RobotType.MINER, hqData);
+        }
+                
         HQCommands.storeForeignTransactions(rc, hqData);
         if(rc.getRoundNum() % 100 == 0) HQCommands.repeatForeignTransaction(rc, hqData);        
         
@@ -105,11 +110,16 @@ public strictfp class RobotPlayer {
 
     static void runMiner() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
+    	if(turnCount == 1) MinerCommands.discernRole(rc, minerData);
+    	
 //    	topographicallyAdeptMinerProtocol();
 
 		switch(minerData.getCurrentRole()) {
 			case MinerData.ROLE_DESIGN_BUILDER:
 				designMinerProtocol();
+				break;
+			case MinerData.ROLE_FULFILLMENT_BUILDER:
+				fulfillmentMinerProtocol();
 				break;
 			case MinerData.ROLE_SOUP_MINER:
 				if (rc.getSoupCarrying() == RobotType.MINER.soupLimit) {
@@ -120,10 +130,12 @@ public strictfp class RobotPlayer {
 				break;
 			case MinerData.ROLE_DEFENSE_BUILDER:
 				defenseMinerProtocol();
+				break;
 			case MinerData.ROLE_SCOUT:
 				scoutMinerProtocol();
+				break;
 			default:
-
+				break;
 		}
     }
     
@@ -138,13 +150,54 @@ public strictfp class RobotPlayer {
 	 */
 	static void designMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
-    	if(MinerCommands.locateNearbyDesignSchool(rc)) {
-    		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
-    	} else if(rc.getLocation().isWithinDistanceSquared(robotData.getSpawnerLocation(), 15)) {
-    		MinerCommands.continueSearch(rc, minerData);
+    	MapLocation designSchoolBuildSite = minerData.getSpawnerLocation().translate(-1, 0);
+    	
+    	RobotInfo designSchool = GeneralCommands.senseUnitType(rc, RobotType.DESIGN_SCHOOL, rc.getTeam());
+    	
+    	if(designSchool != null) {
+    		RobotInfo fulfillmentCenter = GeneralCommands.senseUnitType(rc, RobotType.FULFILLMENT_CENTER, rc.getTeam());
+    		minerData.setCurrentRole((fulfillmentCenter != null) ? MinerData.ROLE_SOUP_MINER : MinerData.ROLE_FULFILLMENT_BUILDER);
+    		return;
+    	} else if(rc.getLocation().equals(designSchoolBuildSite)) {
+    		//Move off of design school build site.
+    		GeneralCommands.moveAnywhere(rc, minerData);
+    		return;
+    	} else if(rc.getLocation().isWithinDistanceSquared(designSchoolBuildSite, 3)) {
+    		if(MinerCommands.attemptDesignSchoolConstruction(rc, rc.getLocation().directionTo(designSchoolBuildSite))) minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+    		return;
+    	} else if(GeneralCommands.move(rc, rc.getLocation().directionTo(designSchoolBuildSite), minerData)) {
+    		return;
     	} else {
-    		if(MinerCommands.attemptDesignSchoolConstruction(rc)) minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
-    		else MinerCommands.continueSearch(rc, minerData);
+    		//TODO: Improved, longer-range general pathfinding calls here. We need to navigate around obstacles intelligently, but I expect that that will end up being a protocol nested in a function.
+    		GeneralCommands.pathfind(designSchoolBuildSite, rc, minerData);
+    		if(!minerData.hasPath()) minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+    		return;
+    	}
+    }
+    
+    static void fulfillmentMinerProtocol() throws GameActionException {
+    	MinerData minerData = (MinerData) robotData;
+    	MapLocation fulfillmentCenterBuildSite = minerData.getSpawnerLocation().translate(1, 0);
+    	    	
+    	RobotInfo fulfillmentCenter = GeneralCommands.senseUnitType(rc, RobotType.FULFILLMENT_CENTER, rc.getTeam());
+    	
+    	if(fulfillmentCenter != null) {
+    		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+    		return;
+    	} else if(rc.getLocation().equals(fulfillmentCenterBuildSite)) {
+    		//Move off of design school build site.
+    		GeneralCommands.moveAnywhere(rc, minerData);
+    		return;
+    	} else if(rc.getLocation().isWithinDistanceSquared(fulfillmentCenterBuildSite, 3)) {
+    		if(MinerCommands.attemptFulfillmentCenterConstruction(rc, rc.getLocation().directionTo(fulfillmentCenterBuildSite))) minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+    		return;
+    	} else if(GeneralCommands.move(rc, rc.getLocation().directionTo(fulfillmentCenterBuildSite), minerData)) {
+    		return;
+    	} else {
+    		//TODO: Improved, longer-range general pathfinding calls here. We need to navigate around obstacles intelligently, but I expect that that will end up being a protocol nested in a function.
+    		GeneralCommands.pathfind(fulfillmentCenterBuildSite, rc, minerData);
+    		if(!minerData.hasPath()) minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+    		return;
     	}
     }
 
@@ -171,22 +224,45 @@ public strictfp class RobotPlayer {
     	MinerData minerData = (MinerData) robotData;
 
     	System.out.println("full protocol");
+    	
 		//Start by trying to deposit into a refinery.
 		Direction adjacentRefineryDirection = MinerCommands.getAdjacentRefineryDirection(rc);
+		
 		if (adjacentRefineryDirection != Direction.CENTER) {
 			MinerCommands.depositRawSoup(rc, adjacentRefineryDirection);
+			if(rc.getTeamSoup() >= RobotType.DESIGN_SCHOOL.cost && !MinerCommands.canSenseHubDesignSchool(rc, minerData)) minerData.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
+			else if(rc.getTeamSoup() >= RobotType.FULFILLMENT_CENTER.cost && !MinerCommands.canSenseHubFulfillmentCenter(rc, minerData)) minerData.setCurrentRole(MinerData.ROLE_FULFILLMENT_BUILDER);
 			return;
 		}
 
 		//If no refinery is adjacent, look for one.
 		//RobotInfo hq = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam(), ((int) Math.sqrt(RobotType.MINER.sensorRadiusSquared)) - 2); //For pathfind, change senseUnitType if add back in
+		
+		//TODO: Once the landscapers get going, miners should no longer return to the HQ to refine soup. We need to communicate that via a transaction.
+		
 		RobotInfo hq = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam());
 		Direction distantRefineryDirection = MinerCommands.getAnyRefineryDirection(rc);
+		
+		if(hq != null) {
+			if(GeneralCommands.senseUnitType(rc, RobotType.LANDSCAPER, rc.getTeam()) != null) {
+				System.out.println("Moving from landscaper site.");
+	    		moveMinerFromHQ(minerData);
+			} else if(Math.abs(rc.getLocation().x - minerData.getSpawnerLocation().x) == 1) {
+	    		//Get out of the way. This is a building site.
+				System.out.println("Moving from building site.");
+	    		moveMinerFromHQ(minerData);
+	    		return;
+	    	} else {
+	    		System.out.println("Routing to HQ");
+	    		if(!GeneralCommands.move(rc, rc.getLocation().directionTo(hq.getLocation()), minerData)) {
+	    			GeneralCommands.pathfind(hq.getLocation().add(hq.getLocation().directionTo(rc.getLocation())), rc, minerData);
+	    		}
+	    		return;
+	    	}
+		}
+		
 		if (distantRefineryDirection != Direction.CENTER) {
 			GeneralCommands.move(rc, distantRefineryDirection, minerData);
-			return;
-		} else if (hq != null) {
-			GeneralCommands.pathfind(hq.getLocation().add(hq.getLocation().directionTo(rc.getLocation())), rc, minerData);
 			return;
 		} else {
 			System.out.println("Moving toward hq");
@@ -199,12 +275,6 @@ public strictfp class RobotPlayer {
 				}
 			}
 		}
-		//If we can't find a refinery, build one.
-		if (MinerCommands.attemptRefineryConstruction(rc)) return;
-
-    	//If we can't build a refinery, start searching for better ground.
-		//TODO check soup locations for next location to go to
-    	MinerCommands.continueSearch(rc, minerData);
     }
 
 	/**
@@ -213,8 +283,24 @@ public strictfp class RobotPlayer {
 	 */
 	static void emptyMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
-		System.out.println("empty protocol");
-		if	(! MinerCommands.mineRawSoup(rc, MinerCommands.getAdjacentSoupDirection(rc))) {
+    	
+    	System.out.println("empty protocol");
+    	
+    	RobotInfo hq = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam());
+    	RobotInfo designSchool = GeneralCommands.senseUnitType(rc, RobotType.DESIGN_SCHOOL, rc.getTeam());
+    	RobotInfo fulfillmentCenter = GeneralCommands.senseUnitType(rc, RobotType.LANDSCAPER, rc.getTeam());
+    	
+    	if(designSchool != null || fulfillmentCenter != null) {
+    		System.out.println("\tDS or FC detected");
+        	moveMinerFromHQ(minerData);
+        	return;
+    	} else if(hq != null && rc.getTeamSoup() >= RobotType.DESIGN_SCHOOL.cost) {
+    		System.out.println("\tSetting role to design school builder");
+    		minerData.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
+    		return;
+    	}
+    	
+    	if(!MinerCommands.mineRawSoup(rc, MinerCommands.getAdjacentSoupDirection(rc))) {
 			Direction soupDir = MinerCommands.getDistantSoupDirection(rc);
 			if (soupDir != Direction.CENTER) {
 				minerData.setSearchDirection(soupDir);
@@ -222,6 +308,14 @@ public strictfp class RobotPlayer {
 		}
     	//If we can't find distant soup, move in the search direction.
     	MinerCommands.continueSearch(rc, minerData);
+    }
+    
+    static void moveMinerFromHQ(MinerData minerData) throws GameActionException {
+    	Direction fromHQDirection = minerData.getSpawnerLocation().directionTo(rc.getLocation());
+    	if(GeneralCommands.move(rc, fromHQDirection, minerData)) minerData.setSearchDirection(fromHQDirection);
+    	else if(GeneralCommands.move(rc, fromHQDirection.rotateLeft(), minerData)) minerData.setSearchDirection(fromHQDirection.rotateLeft());
+    	else if(GeneralCommands.move(rc, fromHQDirection.rotateRight(), minerData)) minerData.setSearchDirection(fromHQDirection.rotateRight());
+    	else GeneralCommands.pathfind(minerData.getSpawnerLocation().add(fromHQDirection).add(fromHQDirection), rc, minerData);
     }
 
 	/**
@@ -311,8 +405,11 @@ public strictfp class RobotPlayer {
     	if(turnCount == 1) LandscaperCommands.learnHQLocation(rc, data);
     	
     	if(data.getCurrentRole() == LandscaperData.TRAVEL_TO_HQ) {
-    		LandscaperCommands.approachHQ(rc, data);
-    		LandscaperCommands.determineApproachCompletion(rc, data);
+    		if(!LandscaperCommands.approachComplete(rc, data)) {
+    			LandscaperCommands.approachHQ(rc, data);
+    		} else {
+    			data.setCurrentRole(LandscaperData.DEFEND_HQ_FROM_FLOOD);
+    		}
     	} else if(data.getCurrentRole() == LandscaperData.DEFEND_HQ_FROM_FLOOD) {
     		LandscaperCommands.buildHQWall(rc, data);
     	}
