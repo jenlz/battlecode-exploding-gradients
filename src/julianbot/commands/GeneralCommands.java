@@ -98,9 +98,18 @@ public class GeneralCommands {
 		return null;
 	}
 	
+	//TURN MANAGEMENT
+	public static void waitUntilReady(RobotController rc) {
+		while(!rc.isReady()) {
+			Clock.yield();
+		}
+	}
+	
 	//MOVEMENT
 	public static boolean move(RobotController rc, Direction dir, RobotData data) throws GameActionException {
 		stopFollowingPath(data);
+		
+		waitUntilReady(rc);
 		
 		if(rc.isReady() && rc.canMove(dir)) {
 			rc.move(dir);
@@ -111,6 +120,8 @@ public class GeneralCommands {
 	}
 	
 	private static boolean moveOnPath(RobotController rc, Direction dir) throws GameActionException {
+		waitUntilReady(rc);
+		
 		if(rc.isReady() && rc.canMove(dir)) {
 			rc.move(dir);
 			return true;
@@ -125,6 +136,8 @@ public class GeneralCommands {
 		Direction dir = directions[(int)(Math.random() * directions.length)];
 		int rotateLimit = 8;
 		
+		waitUntilReady(rc);
+		
 		while (!GeneralCommands.move(rc, dir, data) && rotateLimit > 0) {
 			dir.rotateRight();
 			rotateLimit--;
@@ -134,7 +147,7 @@ public class GeneralCommands {
 	}	
 	
 	//TRANSACTIONS
-	public static void sendTransaction(RobotController rc, int soupBid, Type type, MapLocation loc) throws GameActionException {
+	public static void sendTransaction(RobotController rc, int soupBid, Type type, MapLocation loc) throws GameActionException {		
 		int transactionTag = (int) (Math.random()*500); //This use of parentheses will prevent truncation of the random number.
 		int[] message = new int[]{transactionTag, type.getVal()+transactionTag, loc.x+transactionTag, loc.y+transactionTag, rc.getRoundNum()+transactionTag, 0};
 		int odd = 0;
@@ -153,7 +166,7 @@ public class GeneralCommands {
 	 * @return
 	 * @throws GameActionException
 	 */
-	public static int[] decodeTransaction(RobotController rc, Transaction transaction) throws GameActionException {
+	public static int[] decodeTransaction(RobotController rc, Transaction transaction) throws GameActionException {		
 		int[] message = transaction.getMessage();
 		int transactionTag = message[0];
 		int[] plaintxt = new int[6];
@@ -300,7 +313,7 @@ public class GeneralCommands {
 	 */
 	public static MapLocation locateClosestLocation(RobotController rc, ArrayList<MapLocation> locs, MapLocation targetLoc) {
 		MapLocation closestLoc = null;
-		int closestDistance = 999999999;
+		int closestDistance = Integer.MAX_VALUE;
 		for (MapLocation loc : locs) {
 			int dist = loc.distanceSquaredTo(targetLoc);
 			if (dist < closestDistance) {

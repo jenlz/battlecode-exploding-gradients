@@ -9,7 +9,8 @@ import julianbot.robotdata.DesignSchoolData;
 public class DesignSchoolCommands {
 	
 	public static boolean oughtBuildLandscaper(RobotController rc, DesignSchoolData data) {
-		return rc.getTeamSoup() >= RobotType.LANDSCAPER.cost && GeneralCommands.senseUnitType(rc, RobotType.FULFILLMENT_CENTER, rc.getTeam()) != null;
+		//Build a landscaper if the fulfillment center has been built but no landscapers are present.
+		return GeneralCommands.senseUnitType(rc, RobotType.FULFILLMENT_CENTER, rc.getTeam()) != null && GeneralCommands.senseUnitType(rc, RobotType.LANDSCAPER, rc.getTeam()) == null;
 	}
 	
 	/**
@@ -23,6 +24,7 @@ public class DesignSchoolCommands {
     public static boolean tryBuild(RobotController rc, RobotType type, DesignSchoolData data) throws GameActionException {
     	Direction buildDirection = data.getBuildDirection();
     	
+    	GeneralCommands.waitUntilReady(rc);
         if (rc.isReady() && rc.canBuildRobot(type, buildDirection)) {
             rc.buildRobot(type, buildDirection);
             if(type == RobotType.LANDSCAPER) data.incrementLandscapersBuilt();

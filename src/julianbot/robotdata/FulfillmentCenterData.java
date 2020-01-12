@@ -12,16 +12,16 @@ public class FulfillmentCenterData extends RobotData {
 		buildDirection = Direction.NORTH;
 	}
 	
-	public int getLandscapersBuilt() {
+	public int getDronesBuilt() {
 		return dronesBuilt;
 	}
 
-	public void incrementLandscapersBuilt() {
+	public void incrementDronesBuilt() {
 		dronesBuilt++;
 	}
 	
-	public void setLandscapersBuilt(int landscapersBuilt) {
-		this.dronesBuilt = landscapersBuilt;
+	public void setDronesBuilt(int dronesBuilt) {
+		this.dronesBuilt = dronesBuilt;
 	}
 
 	public Direction getBuildDirection() {

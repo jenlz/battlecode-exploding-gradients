@@ -44,7 +44,9 @@ public class MinerCommands {
 		return false;
 	}
 	
-	public static boolean attemptDesignSchoolConstruction(RobotController rc, Direction buildDirection) throws GameActionException {		
+	public static boolean attemptDesignSchoolConstruction(RobotController rc, Direction buildDirection) throws GameActionException {
+		GeneralCommands.waitUntilReady(rc);
+		
 		if(rc.canBuildRobot(RobotType.DESIGN_SCHOOL, buildDirection)) {
 			rc.buildRobot(RobotType.DESIGN_SCHOOL, buildDirection);
 			return true;
@@ -55,7 +57,9 @@ public class MinerCommands {
 		return false;
 	}
 	
-	public static boolean attemptFulfillmentCenterConstruction(RobotController rc, Direction buildDirection) throws GameActionException {		
+	public static boolean attemptFulfillmentCenterConstruction(RobotController rc, Direction buildDirection) throws GameActionException {
+		GeneralCommands.waitUntilReady(rc);
+		
 		if(rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, buildDirection)) {
 			rc.buildRobot(RobotType.FULFILLMENT_CENTER, buildDirection);
 			return true;
@@ -96,6 +100,8 @@ public class MinerCommands {
 	}
 	
 	public static boolean attemptRefineryConstruction(RobotController rc) throws GameActionException {
+		GeneralCommands.waitUntilReady(rc);
+		
 		for(Direction buildDirection : directions) {
 			if(rc.canBuildRobot(RobotType.REFINERY, buildDirection)) {
 				rc.buildRobot(RobotType.REFINERY, buildDirection);
@@ -109,6 +115,7 @@ public class MinerCommands {
 	}
 	
 	public static void depositRawSoup(RobotController rc, Direction dir) throws GameActionException {
+		GeneralCommands.waitUntilReady(rc);
 		if(rc.canDepositSoup(dir)) rc.depositSoup(dir, rc.getSoupCarrying());
 	}
 
@@ -122,10 +129,10 @@ public class MinerCommands {
 		Direction mostSoupDirection = Direction.CENTER;
 		int mostSoupLocated = 0;
 		
-		for(Direction searchDirection : directions) {
-			if (rc.canSenseLocation(rc.adjacentLocation(searchDirection).add(searchDirection))) {
-				int foundSoup = rc.senseSoup(rc.adjacentLocation(searchDirection));
-				mostSoupDirection = foundSoup > mostSoupLocated ? searchDirection : mostSoupDirection;
+		for(Direction direction : directions) {
+			if (rc.canSenseLocation(rc.getLocation().add(direction))) {
+				int foundSoup = rc.senseSoup(rc.adjacentLocation(direction));
+				mostSoupDirection = foundSoup > mostSoupLocated ? direction : mostSoupDirection;
 			}
 		}
 		
@@ -138,27 +145,26 @@ public class MinerCommands {
 	 * @return
 	 * @throws GameActionException
 	 */
-	public static MapLocation calculateTargetSoupLocation(RobotController rc, MinerData data) throws GameActionException {
-		MapLocation targetSoupLocation = null;
+	public static void findNearbySoup(RobotController rc, MinerData data) throws GameActionException {
 		MapLocation rcLocation = rc.getLocation();
-		Direction mostSoupDirection = Direction.CENTER;
 		int mostSoupLocated = 0;
 		
 		for(int dx = -SENSOR_RADIUS; dx <= SENSOR_RADIUS; dx++) {
 			for(int dy = -SENSOR_RADIUS; dy <= SENSOR_RADIUS; dy++) {
 				MapLocation potentialSoupLocation = rcLocation.translate(dx, dy);
 				if(rc.canSenseLocation(potentialSoupLocation)) {
+					/*
 					int soupAtLocation = rc.senseSoup(potentialSoupLocation);
 					if(soupAtLocation > mostSoupLocated) {
 						mostSoupLocated = soupAtLocation;
 						targetSoupLocation = potentialSoupLocation;
-						
 					}
+					*/
+					
+					if(rc.senseSoup(potentialSoupLocation) > 0) data.addSoupLoc(potentialSoupLocation);
 				}
 			}
 		}
-		
-		return targetSoupLocation;
 	}
 
 	/**
@@ -187,6 +193,8 @@ public class MinerCommands {
 	 * @throws GameActionException
 	 */
 	public static boolean mineRawSoup(RobotController rc, Direction dir) throws GameActionException {
+		GeneralCommands.waitUntilReady(rc);
+		
 		if(rc.isReady() && rc.canMineSoup(dir) && rc.getSoupCarrying() != RobotType.MINER.soupLimit) {
 			rc.mineSoup(dir);
 			return true;
@@ -203,14 +211,14 @@ public class MinerCommands {
 	 */
 	public static void continueSearch(RobotController rc, MinerData data) throws GameActionException {
 		//The move function is deliberately unused here.
-		if(!rc.isReady()) return;
+		GeneralCommands.waitUntilReady(rc);
+		
 		if(rc.canMove(data.getSearchDirection()) && !rc.senseFlooding(rc.getLocation().add(data.getSearchDirection()))) {
 			rc.move(data.getSearchDirection());
 			return;
 		}
+		
 		data.setSearchDirection(directions[(int) (Math.random() * directions.length)]);
-
-
 	}
 	
 	public static boolean routeToFulfillmentCenterSite(RobotController rc, MinerData minerData) throws GameActionException {
@@ -230,6 +238,8 @@ public class MinerCommands {
 	public static boolean buildDefenseFulfillmentCenter(RobotController rc, MinerData minerData) throws GameActionException {
 		MapLocation hqLocation = minerData.getSpawnerLocation().add(Direction.EAST);
 		Direction buildDirection = rc.getLocation().directionTo(hqLocation);
+		
+		GeneralCommands.waitUntilReady(rc);
 		if(rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, buildDirection)) {
 			rc.buildRobot(RobotType.FULFILLMENT_CENTER, buildDirection);
 			return true;
