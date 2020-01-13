@@ -109,15 +109,15 @@ public strictfp class RobotPlayer {
         
         RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), hqData.getOpponent());
         
-        //TODO: Keep looping through units if rc.canShootUnit() returns false.
-    	//We don't want to sense a bunch of units, see a landscaper that can't be shot by random draw, then stop looping and miss a drone elsewhere in the array.
         if(enemy.length > 0) {
-	        int target = (int) (Math.random()*enemy.length);
-	    	if(rc.canShootUnit(enemy[target].getID())) {
-	    		rc.shootUnit(enemy[target].getID());
-	    	}
-	        if(enemy.length > 10) {
+        	if(enemy.length > 10) {
 	        	HQCommands.sendSOS(rc);
+	        }
+        	
+	        for(RobotInfo bullseye : enemy) { 
+		    	if(rc.canShootUnit(bullseye.getID())) {
+		    		HQCommands.shootUnit(rc, bullseye.getID());
+		    	}
 	        }
         }
     }
@@ -219,18 +219,26 @@ public strictfp class RobotPlayer {
     static void refineryMinerProtocol() throws GameActionException {
     	MinerData minerData = (MinerData) robotData;
     	
+    	RobotInfo refinery = GeneralCommands.senseUnitType(rc, RobotType.REFINERY, rc.getTeam());
+    	if(refinery != null) {
+    		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+    		return;
+    	}
+    	
     	RobotInfo hq = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam());
     	
     	if(hq != null) {
     		moveMinerFromHQ(minerData);
     		return;
-    	} else if(MinerCommands.attemptRefineryConstruction(rc)) {
-    		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
-    		
-    		MapLocation refineryLocation = GeneralCommands.senseUnitType(rc, RobotType.REFINERY, rc.getTeam()).getLocation();
-    		minerData.addRefineryLoc(refineryLocation);
-    		GeneralCommands.sendTransaction(rc, 10, GeneralCommands.Type.TRANSACTION_FRIENDLY_REFINERY_AT_LOC, refineryLocation);
-    		return;
+    	} else if(MinerCommands.oughtBuildRefinery(rc)) {
+	    		if(MinerCommands.attemptRefineryConstruction(rc)) {
+	    		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+	    		
+	    		MapLocation refineryLocation = GeneralCommands.senseUnitType(rc, RobotType.REFINERY, rc.getTeam()).getLocation();
+	    		minerData.addRefineryLoc(refineryLocation);
+	    		GeneralCommands.sendTransaction(rc, 10, GeneralCommands.Type.TRANSACTION_FRIENDLY_REFINERY_AT_LOC, refineryLocation);
+	    		return;
+    		}
     	}
     }
 
@@ -306,9 +314,11 @@ public strictfp class RobotPlayer {
     	System.out.println("empty protocol");
     	
     	RobotInfo hq = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam());
+    	RobotInfo fulfillmentCenter = GeneralCommands.senseUnitType(rc, RobotType.COW.FULFILLMENT_CENTER, rc.getTeam());
     	RobotInfo landscaper = GeneralCommands.senseUnitType(rc, RobotType.LANDSCAPER, rc.getTeam());
     	
-    	if(landscaper != null) {
+    	//TODO: Miners can approach again once the landscaper gets high on a wall. We need to test for elevation to see to it that this happens.
+    	if(landscaper != null || (fulfillmentCenter != null && rc.getTeamSoup() >= RobotType.LANDSCAPER.cost)) {
     		System.out.println("\tLandscaper detected");
         	moveMinerFromHQ(minerData);
         	minerData.removeRefineryLoc(hq.getLocation());
@@ -441,7 +451,7 @@ public strictfp class RobotPlayer {
     		/*Do nothing else*/
     	} else if(data.getCurrentRole() == LandscaperData.TRAVEL_TO_HQ) {
     		if(!LandscaperCommands.approachComplete(rc, data)) {
-    			LandscaperCommands.approachHQ(rc, data);
+    			GeneralCommands.routeTo(data.getHqLocation(), rc, data);
     		} else {
     			data.setCurrentRole(LandscaperData.DEFEND_HQ_FROM_FLOOD);
     		}
@@ -465,14 +475,23 @@ public strictfp class RobotPlayer {
     			if(rc.getLocation().isWithinDistanceSquared(data.getEnemyHQLocation(), 3)) {
     				DroneCommands.dropUnitNextToHQ(rc, data);
     			} else {
-    				GeneralCommands.routeTo(data.getActiveSearchDestination(), rc, data);
-    			}
-    		} else if(DroneCommands.oughtPickUpUnit(rc, data)){
-    			if(!DroneCommands.pickUpUnit(rc, data, RobotType.LANDSCAPER)) {
-    				GeneralCommands.routeTo(data.getSpawnerLocation(), rc, data);
+    				GeneralCommands.routeTo(data.getEnemyHQLocation(), rc, data);
     			}
     		} else {
-    			GeneralCommands.routeTo(data.getSpawnerLocation(), rc, data);
+    			boolean oughtPickUpCow = DroneCommands.oughtPickUpCow(rc, data);
+    			boolean oughtPickUpLandscaper = DroneCommands.oughtPickUpLandscaper(rc, data);
+    			
+    			if(GeneralCommands.senseUnitType(rc, RobotType.COW) != null && oughtPickUpCow) {
+	    			if(!DroneCommands.pickUpUnit(rc, data, RobotType.COW)) {
+	    				GeneralCommands.routeTo(data.getHqLocation(), rc, data);
+	    			}
+	    		} else if(oughtPickUpLandscaper) {
+	    			if(!DroneCommands.pickUpUnit(rc, data, RobotType.LANDSCAPER, rc.getTeam())) {
+	    				GeneralCommands.routeTo(data.getHqLocation(), rc, data);
+	    			}
+	    		} else if(!rc.getLocation().isWithinDistanceSquared(data.getHqLocation(), 3)) {
+	    			GeneralCommands.routeTo(data.getSpawnerLocation(), rc, data);
+	    		}
     		}
     	} else {
     		if(!data.searchDestinationsDetermined()) {

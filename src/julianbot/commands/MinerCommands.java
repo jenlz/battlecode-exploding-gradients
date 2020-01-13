@@ -101,6 +101,10 @@ public class MinerCommands {
 		}
 	}
 	
+	public static boolean oughtBuildRefinery(RobotController rc) {
+		return rc.getTeamSoup() >= RobotType.REFINERY.cost + 5;
+	}
+	
 	public static boolean attemptRefineryConstruction(RobotController rc) throws GameActionException {
 		GeneralCommands.waitUntilReady(rc);
 		

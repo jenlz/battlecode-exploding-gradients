@@ -9,7 +9,8 @@ import julianbot.robotdata.FulfillmentCenterData;
 public class FulfillmentCenterCommands {
 	
 	public static boolean oughtBuildDrone(RobotController rc, FulfillmentCenterData data) {
-		return rc.getTeamSoup() >= RobotType.DELIVERY_DRONE.cost + data.getDronesBuilt() * Math.abs(RobotType.LANDSCAPER.cost - RobotType.DELIVERY_DRONE.cost) + 1;
+		if(GeneralCommands.senseNumberOfUnits(rc, RobotType.LANDSCAPER, rc.getTeam()) < 2) return false;
+		return rc.getTeamSoup() >= RobotType.DELIVERY_DRONE.cost + 1;
 	}
 	
 	/**

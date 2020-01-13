@@ -10,7 +10,8 @@ public class DesignSchoolCommands {
 	
 	public static boolean oughtBuildLandscaper(RobotController rc, DesignSchoolData data) {
 		//Build a landscaper if the fulfillment center has been built but no landscapers are present.
-		return GeneralCommands.senseUnitType(rc, RobotType.FULFILLMENT_CENTER, rc.getTeam()) != null && GeneralCommands.senseUnitType(rc, RobotType.LANDSCAPER, rc.getTeam()) == null;
+		if (GeneralCommands.senseNumberOfUnits(rc, RobotType.LANDSCAPER, rc.getTeam()) < 2) return GeneralCommands.senseUnitType(rc, RobotType.FULFILLMENT_CENTER, rc.getTeam()) != null;
+		return rc.getTeamSoup() >= RobotType.LANDSCAPER.cost * 2;
 	}
 	
 	/**
