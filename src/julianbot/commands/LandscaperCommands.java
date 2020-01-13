@@ -2,6 +2,7 @@ package julianbot.commands;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
@@ -14,20 +15,28 @@ import julianbot.utils.NumberMath;
 public class LandscaperCommands {
 	
 	private static final int DIG_PATTERN_ARRAY_SHIFT = 2;
+	private static Direction[][] movePattern = new Direction[][]{
+		{Direction.EAST, Direction.EAST, Direction.EAST, Direction.EAST, Direction.SOUTH},
+		{Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.EAST, Direction.SOUTH},
+		{Direction.NORTH, Direction.WEST, Direction.NORTH, Direction.EAST, Direction.SOUTH},
+		{Direction.NORTH, Direction.NORTH, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH},
+		{Direction.NORTH, Direction.WEST, Direction.WEST, Direction.WEST, Direction.WEST}
+	};
+	
 	private static Direction[][] digPattern = new Direction[][]{
-		{Direction.EAST, Direction.SOUTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH},
-		{Direction.NORTHEAST, Direction.EAST, Direction.NORTHEAST, Direction.SOUTHEAST, Direction.SOUTH},
-		{Direction.NORTH, Direction.NORTHEAST, Direction.NORTH, Direction.SOUTHEAST, Direction.SOUTH},
-		{Direction.NORTH, Direction.NORTHWEST, Direction.SOUTHWEST, Direction.WEST, Direction.SOUTHWEST},
-		{Direction.NORTH, Direction.NORTHWEST, Direction.WEST, Direction.NORTHWEST, Direction.WEST}
+		{Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.SOUTHWEST},
+		{Direction.EAST, null, null, null, Direction.WEST},
+		{Direction.NORTHEAST, null, null, null, Direction.SOUTHWEST},
+		{Direction.EAST, null, null, null, Direction.WEST},
+		{Direction.NORTHEAST, Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.NORTHWEST}
 	};
 	
 	private static Direction[][][] buildPattern = new Direction[][][] {
-		{{}, {Direction.WEST, Direction.NORTHWEST, Direction.NORTH, Direction.NORTHEAST}, {}, {Direction.NORTHWEST, Direction.NORTH, Direction.NORTHEAST, Direction.EAST}, {}},
-		{{Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST, Direction.NORTH}, {}, {}, {}, {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST}},
-		{{Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST}, {}, {}, {}, {Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST}},
-		{{Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST}, {}, {}, {}, {Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH}},
-		{{}, {Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST}, {}, {Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST}, {}},
+		{{Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}},
+		{{Direction.CENTER}, {}, {}, {}, {Direction.CENTER}},
+		{{Direction.CENTER}, {}, {}, {}, {Direction.CENTER}},
+		{{Direction.CENTER}, {}, {}, {}, {Direction.CENTER}},
+		{{Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}},
 	};
 	
 	public static boolean dig(RobotController rc, Direction dir) throws GameActionException {
@@ -60,16 +69,6 @@ public class LandscaperCommands {
 		}
 	}
 	
-	public static void approachHQ(RobotController rc, LandscaperData data) throws GameActionException {
-		if(!data.hasPath()) {
-			if(GeneralCommands.move(rc, rc.getLocation().directionTo(data.getHqLocation()), data)) return;
-			Direction direction = rc.getLocation().directionTo(data.getHqLocation());    		
-    		GeneralCommands.pathfind(rc.getLocation().add(direction).add(direction), rc, data);
-		} else {
-			GeneralCommands.pathfind(null, rc, data);
-		}
-	}
-	
 	public static boolean approachComplete(RobotController rc, LandscaperData data) {
 		MapLocation rcLocation = rc.getLocation();
 		MapLocation hqLocation = data.getHqLocation();
@@ -97,10 +96,16 @@ public class LandscaperCommands {
 		int gridX = dx + DIG_PATTERN_ARRAY_SHIFT;
 		int gridY = -dy + DIG_PATTERN_ARRAY_SHIFT;
 		
+		//If where we're going is too low, deposit dirt there.
+		if(rc.senseElevation(rcLocation) - rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) > GameConstants.MAX_DIRT_DIFFERENCE) {
+			LandscaperCommands.depositDirt(rc, movePattern[gridY][gridX]);
+			return;
+		}
+		
 		constructDirections = buildPattern[gridY][gridX];
 		if(constructDirections.length == 0) {
 			System.out.println("Nowhere to build!");
-			digOrMove(rc, data, rcLocation, digPattern[gridY][gridX]);
+			GeneralCommands.move(rc, movePattern[gridY][gridX], data);
 			return;
 		}
 		
@@ -114,7 +119,7 @@ public class LandscaperCommands {
 	
 	private static void digWallDirt(RobotController rc, LandscaperData data) throws GameActionException {
 		System.out.println("Digging!");
-		Direction digDirection = Direction.CENTER;
+		Direction digDirection = null;
 		
 		MapLocation rcLocation = rc.getLocation();
 		MapLocation hqLocation = data.getHqLocation();
@@ -124,15 +129,17 @@ public class LandscaperCommands {
 		
 		int gridX = dx + DIG_PATTERN_ARRAY_SHIFT;
 		int gridY = -dy + DIG_PATTERN_ARRAY_SHIFT;
+		
+		//If where we're going is too high, dig from there.
+		if(rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) - rc.senseElevation(rcLocation) > GameConstants.MAX_DIRT_DIFFERENCE) {
+			LandscaperCommands.dig(rc, movePattern[gridY][gridX]);
+			return;
+		}
+		
 		digDirection = digPattern[gridY][gridX];
 		
-		System.out.println("Continuing " + digDirection);
-		digOrMove(rc, data, rcLocation, digDirection);
-	}
-	
-	private static void digOrMove(RobotController rc, LandscaperData data, MapLocation rcLocation, Direction digDirection) throws GameActionException {
-		if(rc.senseElevation(rcLocation) - rc.senseElevation(rcLocation.add(digDirection)) < 1) LandscaperCommands.dig(rc, digDirection);
-		else GeneralCommands.move(rc, digDirection, data);
+		if(digDirection != null) LandscaperCommands.dig(rc, digDirection);
+		GeneralCommands.move(rc, movePattern[gridY][gridX], data);
 	}
 	
 	public static boolean buryEnemyHQ(RobotController rc, LandscaperData data) throws GameActionException {

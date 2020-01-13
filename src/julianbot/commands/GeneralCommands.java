@@ -62,6 +62,41 @@ public class GeneralCommands {
 		if(type == RobotType.LANDSCAPER) return RobotType.DESIGN_SCHOOL;
 		return RobotType.HQ;
 	}
+	
+	/**
+	 * Senses unit type within sensor radius.
+	 * @param rc
+	 * @param type
+	 * @return First unit of given type. Null if not found
+	 */
+	public static RobotInfo senseUnitType(RobotController rc, RobotType type) {
+		RobotInfo[] robots = rc.senseNearbyRobots();
+		for (RobotInfo robot : robots) {
+			if (robot.getType() == type) {
+				return robot;
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * Senses number of units matching given criteria within sensor radius
+	 * @param rc
+	 * @param type
+	 * @return Number of units of given type
+	 */
+	public static int senseNumberOfUnits(RobotController rc, RobotType type) {
+		int unitCount = 0;
+		
+		RobotInfo[] robots = rc.senseNearbyRobots();
+		for (RobotInfo robot : robots) {
+			if (robot.getType() == type) {
+				unitCount++;
+			}
+		}
+		
+		return unitCount;
+	}
 
 	/**
 	 * Senses unit type within sensor radius.
@@ -78,6 +113,26 @@ public class GeneralCommands {
 			}
 		}
 		return null;
+	}
+	
+	/**
+	 * Senses number of units matching given criteria within sensor radius
+	 * @param rc
+	 * @param type
+	 * @param team
+	 * @return Number of units of given type and team
+	 */
+	public static int senseNumberOfUnits(RobotController rc, RobotType type, Team team) {
+		int unitCount = 0;
+		
+		RobotInfo[] robots = rc.senseNearbyRobots(-1, team);
+		for (RobotInfo robot : robots) {
+			if (robot.getType() == type) {
+				unitCount++;
+			}
+		}
+		
+		return unitCount;
 	}
 
 	/**
@@ -96,6 +151,27 @@ public class GeneralCommands {
 			}
 		}
 		return null;
+	}
+	
+	/**
+	 * Senses number of units matching given criteria within inputted radius
+	 * @param rc
+	 * @param type
+	 * @param team
+	 * @param radius
+	 * @return Number of units of given type and team
+	 */
+	public static int senseNumberOfUnits(RobotController rc, RobotType type, Team team, int radius) {
+		int unitCount = 0;
+		
+		RobotInfo[] robots = rc.senseNearbyRobots(radius, team);
+		for (RobotInfo robot : robots) {
+			if (robot.getType() == type) {
+				unitCount++;
+			}
+		}
+		
+		return unitCount;
 	}
 	
 	//TURN MANAGEMENT

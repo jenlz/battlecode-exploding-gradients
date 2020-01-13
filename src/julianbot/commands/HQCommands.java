@@ -27,9 +27,15 @@ public class HQCommands {
 		return rc.getTeamSoup() >= RobotType.MINER.cost + data.getMinersBuilt() * 30 || rc.getRoundNum() == 1;
 	}
 	
+	//DEFENSE
 	public static void sendSOS(RobotController rc) throws GameActionException {
 		//Since there can be seven transactions per round, we can be guaranteed to get one message through if that message is sent with a bid of one more than a seventh of the inital soup cost.
 		GeneralCommands.sendTransaction(rc, 10, Type.TRANSACTION_SOS_AT_LOC, rc.getLocation());
+	}
+	
+	public static void shootUnit(RobotController rc, int robotID) throws GameActionException {
+		GeneralCommands.waitUntilReady(rc);
+		rc.shootUnit(robotID);
 	}
 	
 	/**

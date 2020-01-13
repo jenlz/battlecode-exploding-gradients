@@ -6,6 +6,7 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
+import battlecode.common.Team;
 import battlecode.common.Transaction;
 import julianbot.commands.GeneralCommands.Type;
 import julianbot.robotdata.DroneData;
@@ -33,8 +34,38 @@ public class DroneCommands {
 		}
 	}
 	
+	public static boolean oughtPickUpCow(RobotController rc, DroneData data) {
+		//Pick up the unit if we are closer to our own base than our opponent's.
+		//This check is just to prevent the drone from moving cows that are already nearer to the opponent's HQ.
+		MapLocation rcLocation = rc.getLocation();
+		return rcLocation.distanceSquaredTo(data.getSpawnerLocation()) < rcLocation.distanceSquaredTo(data.getEnemyHQLocation());
+	}
+	
+	public static boolean oughtPickUpLandscaper(RobotController rc, DroneData data) {		
+		//Pick up the unit if we are closer to our own base than our opponent's.
+		//This check is just to prevent the drone from dropping of a landscaper, then immediately detecting it and picking it up again.
+		//Also, don't pick up landscapers until there is a surplus so our wall doesn't stop rising.
+		MapLocation rcLocation = rc.getLocation();
+		return rcLocation.distanceSquaredTo(data.getSpawnerLocation()) < rcLocation.distanceSquaredTo(data.getEnemyHQLocation())
+				&& GeneralCommands.senseNumberOfUnits(rc, RobotType.LANDSCAPER, rc.getTeam()) > 1;
+	}
+	
 	public static boolean pickUpUnit(RobotController rc, DroneData data, RobotType targetType) throws GameActionException {
-		RobotInfo info = GeneralCommands.senseUnitType(rc, targetType, rc.getTeam());
+		RobotInfo info = GeneralCommands.senseUnitType(rc, targetType);
+		if(info != null) {
+			GeneralCommands.waitUntilReady(rc);
+			
+			if(rc.canPickUpUnit(info.ID)) {
+				rc.pickUpUnit(info.ID);
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	public static boolean pickUpUnit(RobotController rc, DroneData data, RobotType targetType, Team targetTeam) throws GameActionException {
+		RobotInfo info = GeneralCommands.senseUnitType(rc, targetType, targetTeam);
 		if(info != null) {
 			GeneralCommands.waitUntilReady(rc);
 			
@@ -60,13 +91,6 @@ public class DroneCommands {
 		}
 		
 		return false;
-	}
-	
-	public static boolean oughtPickUpUnit(RobotController rc, DroneData data) {
-		if(data.getEnemyHQLocation() == null) return true;
-		
-		MapLocation rcLocation = rc.getLocation();
-		return rcLocation.distanceSquaredTo(data.getSpawnerLocation()) < rcLocation.distanceSquaredTo(data.getEnemyHQLocation());
 	}
 	
 	public static void readTransaction(RobotController rc, DroneData data, Transaction[] block) throws GameActionException {
