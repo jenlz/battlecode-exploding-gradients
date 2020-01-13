@@ -27,6 +27,7 @@ public class MinerData extends RobotData {
 	
 	private Direction searchDirection;
 	private ArrayList<MapLocation> soupLocs;
+		private ArrayList<MapLocation> removedSoupLocs;
 	private ArrayList<MapLocation> refineryLocs;
 
 	/**
@@ -39,6 +40,7 @@ public class MinerData extends RobotData {
 		currentRole = ROLE_SOUP_MINER;
 		searchDirection = spawnerLocation.directionTo(rc.getLocation());
 		soupLocs = new ArrayList<MapLocation>();
+			removedSoupLocs = new ArrayList<MapLocation>();
 		refineryLocs = new ArrayList<MapLocation>();
 		refineryLocs.add(spawnerLocation);
 	}
@@ -173,10 +175,16 @@ public class MinerData extends RobotData {
 	public boolean addSoupLoc(MapLocation loc) {
 		for (MapLocation soupLoc : soupLocs) {
 			//21 is default sensor radius besides miner and hq.
-			if (/*soupLoc.distanceSquaredTo(loc) < 21 || */soupLoc == loc) {
+			
+			if (/*soupLoc.distanceSquaredTo(loc) < 21 || */soupLoc.equals(loc)) {
 				return false;
 			}
 		}
+		
+		for(MapLocation soupLoc : removedSoupLocs) {
+			if(soupLoc.equals(loc)) return false;
+		}
+		
 		soupLocs.add(loc);
 		return true;
 	}
@@ -188,7 +196,7 @@ public class MinerData extends RobotData {
 	 */
 	public boolean addRefineryLoc(MapLocation loc) {
 		for (MapLocation refineryLoc : refineryLocs) {
-			if (loc == refineryLoc) {
+			if (refineryLoc.equals(loc)) {
 				return false;
 			}
 		}
@@ -202,7 +210,9 @@ public class MinerData extends RobotData {
 	 * @return Whether location removed
 	 */
 	public boolean removeSoupLoc(MapLocation loc) {
-		return soupLocs.remove(loc);
+		boolean removalSuccessful = soupLocs.remove(loc);
+		if(removalSuccessful) removedSoupLocs.add(loc);
+		return removalSuccessful;
 	}
 
 	/**

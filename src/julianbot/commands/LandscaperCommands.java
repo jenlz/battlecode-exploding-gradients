@@ -77,14 +77,11 @@ public class LandscaperCommands {
 	}
 	
 	public static void buildHQWall(RobotController rc, LandscaperData data) throws GameActionException {
-		System.out.println("---Building wall---");
 		if(rc.getDirtCarrying() > 0) constructWallUnits(rc, data);
 		else digWallDirt(rc, data);
-		System.out.println("=====");
 	}
 	
 	private static void constructWallUnits(RobotController rc, LandscaperData data) throws GameActionException {
-		System.out.println("Constructing!");
 		Direction[] constructDirections = new Direction[0];
 		
 		MapLocation rcLocation = rc.getLocation();
@@ -104,7 +101,6 @@ public class LandscaperCommands {
 		
 		constructDirections = buildPattern[gridY][gridX];
 		if(constructDirections.length == 0) {
-			System.out.println("Nowhere to build!");
 			GeneralCommands.move(rc, movePattern[gridY][gridX], data);
 			return;
 		}
@@ -118,7 +114,6 @@ public class LandscaperCommands {
 	}
 	
 	private static void digWallDirt(RobotController rc, LandscaperData data) throws GameActionException {
-		System.out.println("Digging!");
 		Direction digDirection = null;
 		
 		MapLocation rcLocation = rc.getLocation();
@@ -144,7 +139,9 @@ public class LandscaperCommands {
 	
 	public static boolean buryEnemyHQ(RobotController rc, LandscaperData data) throws GameActionException {
 		if(data.getEnemyHQLocation() != null) {
-			if(rc.getDirtCarrying() > 0) LandscaperCommands.depositDirt(rc, rc.getLocation().directionTo(data.getEnemyHQLocation()));
+			
+			if(!rc.getLocation().isWithinDistanceSquared(data.getEnemyHQLocation(), 3)) GeneralCommands.routeTo(data.getEnemyHQLocation(), rc, data);
+			else if(rc.getDirtCarrying() > 0) LandscaperCommands.depositDirt(rc, rc.getLocation().directionTo(data.getEnemyHQLocation()));
 			else LandscaperCommands.dig(rc, data.getEnemyHQBuryDigDirection());
 			
 			return true;

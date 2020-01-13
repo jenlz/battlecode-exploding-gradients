@@ -1,5 +1,6 @@
 package julianbot.commands;
 
+import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -13,8 +14,9 @@ public class DesignSchoolCommands {
 	
 	public static boolean oughtBuildLandscaper(RobotController rc, DesignSchoolData data) {
 		//Build a landscaper if the fulfillment center has been built but no landscapers are present.
-		if (GeneralCommands.senseNumberOfUnits(rc, RobotType.LANDSCAPER, rc.getTeam()) < 2) return GeneralCommands.senseUnitType(rc, RobotType.FULFILLMENT_CENTER, rc.getTeam()) != null;
-		return rc.getTeamSoup() >= RobotType.LANDSCAPER.cost * 2;
+//		int landscapersPresent = GeneralCommands.senseNumberOfUnits(rc, RobotType.LANDSCAPER, rc.getTeam());
+		if (data.getLandscapersBuilt() == 0) return GeneralCommands.senseUnitType(rc, RobotType.FULFILLMENT_CENTER, rc.getTeam()) != null;
+		return (data.isStableSoupIncomeConfirmed()) ? rc.getTeamSoup() >= RobotType.LANDSCAPER.cost : rc.getTeamSoup() >= RobotType.REFINERY.cost + 5;
 	}
 	
 	/**
@@ -35,5 +37,33 @@ public class DesignSchoolCommands {
             return true;
         } 
         return false;
+    }
+    
+    public static void confirmStableSoupIncome(RobotController rc, DesignSchoolData data) throws GameActionException {
+    	if(!data.searchedForVaporator()) {
+    		if(GeneralCommands.senseUnitType(rc, RobotType.VAPORATOR, rc.getTeam()) != null) {
+    			data.setStableSoupIncomeConfirmed(true);
+    		}
+    		
+    		data.setSearchedForVaporator(true);
+    	}
+    	
+    	for(int i = data.getTransactionRound(); i < rc.getRoundNum(); i++) {
+    		for(Transaction transaction : rc.getBlock(i)) {
+    			int[] message = GeneralCommands.decodeTransaction(rc, transaction);
+    			if(message.length >= 4) {
+    				if(message[1] == GeneralCommands.Type.TRANSACTION_FRIENDLY_REFINERY_AT_LOC.getVal()) {
+    					data.setStableSoupIncomeConfirmed(true);
+    					System.out.println("Stable soup income confirmed!");
+    					return;
+    				}
+    			}
+    		}
+    		
+    		if(Clock.getBytecodesLeft() <= 200) {
+    			data.setTransactionRound(i);
+    			break;
+    		}
+    	}
     }
 }
