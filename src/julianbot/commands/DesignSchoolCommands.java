@@ -2,9 +2,12 @@ package julianbot.commands;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
+import battlecode.common.Transaction;
 import julianbot.robotdata.DesignSchoolData;
+import julianbot.robotdata.MinerData;
 
 public class DesignSchoolCommands {
 	
@@ -31,7 +34,6 @@ public class DesignSchoolCommands {
             if(type == RobotType.LANDSCAPER) data.incrementLandscapersBuilt();
             return true;
         } 
-        
         return false;
     }
 }

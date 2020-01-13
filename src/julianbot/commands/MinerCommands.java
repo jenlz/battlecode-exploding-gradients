@@ -19,12 +19,21 @@ public class MinerCommands {
 		boolean fulfillmentCenterBuilt = false;
 		boolean designSchoolBuilt = false;
 		
+		RobotInfo[] enemy = rc.senseNearbyRobots(-1, data.getOpponent());
+		boolean enemyDesignSchoolAdjacent = false;
+		
 		for(RobotInfo robot : robots) {
 			if(robot.type == RobotType.FULFILLMENT_CENTER) fulfillmentCenterBuilt = true;
 			else if(robot.type == RobotType.DESIGN_SCHOOL) designSchoolBuilt = true;
 		}
 		
-		if(fulfillmentCenterBuilt) data.setCurrentRole(MinerData.ROLE_DEFENSE_BUILDER);
+		for(RobotInfo robot : enemy) {
+			if(robot.type == RobotType.DESIGN_SCHOOL) enemyDesignSchoolAdjacent = true;
+		}
+		
+		
+		if(enemyDesignSchoolAdjacent) data.setCurrentRole(MinerData.ROLE_BLOCK);
+		else if(fulfillmentCenterBuilt) data.setCurrentRole(MinerData.ROLE_DEFENSE_BUILDER);
 		else if(designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.FULFILLMENT_CENTER.cost * 0.8f)) data.setCurrentRole(MinerData.ROLE_FULFILLMENT_BUILDER);
 		else if(!designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.DESIGN_SCHOOL.cost * 0.8f)) data.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
 //		else if (rc.getRoundNum() % 3 == 0) data.setCurrentRole(MinerData.ROLE_SCOUT);
@@ -265,7 +274,6 @@ public class MinerCommands {
 				if (category == null) {
 					System.out.println("Something is terribly wrong. enumOfValue returns null");
 				}
-				//System.out.println("Category of message: " + category);
 				switch(category) {
 					case TRANSACTION_SOUP_AT_LOC:
 						minerdata.addSoupLoc(loc);

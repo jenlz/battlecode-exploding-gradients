@@ -3,11 +3,14 @@ package julianbot.robotdata;
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import battlecode.common.Team;
 
 public class DroneData extends RobotData {
 	
 	static Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
 	
+	private Team enemyFrom;
+	private boolean holdingEnemy;
 	private MapLocation hqLocation;
 	private MapLocation enemyHQLocation;
 	private MapLocation[] searchDestinations;
@@ -15,6 +18,15 @@ public class DroneData extends RobotData {
 	
 	public DroneData(RobotController rc) {
 		super(rc);
+		holdingEnemy = false;
+	}
+	
+	public boolean getHoldingEnemy() {
+		return holdingEnemy;
+	}
+	
+	public void setHoldingEnemy(boolean enemy) {
+		holdingEnemy = enemy;
 	}
 	
 	public MapLocation getHqLocation() {
@@ -62,6 +74,15 @@ public class DroneData extends RobotData {
 		activeSearchDestinationIndex++;
 		activeSearchDestinationIndex %= searchDestinations.length;
 		System.out.println("Active destination is now " + searchDestinations[activeSearchDestinationIndex]);
+	}
+
+	public void setEnemyFrom(Team team) {
+		enemyFrom = team;
+		
+	}
+	
+	public Team getEnemyFrom() {
+		return enemyFrom;
 	}
 	
 }

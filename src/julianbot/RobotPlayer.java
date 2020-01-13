@@ -11,6 +11,7 @@ import julianbot.commands.DesignSchoolCommands;
 import julianbot.commands.DroneCommands;
 import julianbot.commands.FulfillmentCenterCommands;
 import julianbot.commands.GeneralCommands;
+import julianbot.commands.GeneralCommands.Type;
 import julianbot.commands.HQCommands;
 import julianbot.commands.LandscaperCommands;
 import julianbot.commands.MinerCommands;
@@ -108,13 +109,20 @@ public strictfp class RobotPlayer {
         if(rc.getRoundNum() % 100 == 0) HQCommands.repeatForeignTransaction(rc, hqData);        
         
         RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), hqData.getOpponent());
-        
+                
         if(enemy.length > 0) {
         	if(enemy.length > 10) {
 	        	HQCommands.sendSOS(rc);
 	        }
-        	
 	        for(RobotInfo bullseye : enemy) { 
+	        	if(bullseye.type.equals(RobotType.DESIGN_SCHOOL)) {
+	        		//HQCommands.sendSOS(rc);
+	        		//GeneralCommands.sendTransaction(rc, 10, Type.TRANSACTION_ENEMY_DESIGN_SCHOOL_AT_LOC, bullseye.location);
+	        		hqData.setBuildDirection(rc.getLocation().directionTo(bullseye.location).rotateLeft());
+	        		while(!HQCommands.tryBuild(rc, RobotType.MINER, hqData)) {
+	        			
+	        		}
+	        	}
 		    	if(rc.canShootUnit(bullseye.getID())) {
 		    		HQCommands.shootUnit(rc, bullseye.getID());
 		    	}
@@ -436,6 +444,20 @@ public strictfp class RobotPlayer {
     static void runDesignSchool() throws GameActionException {
     	DesignSchoolData designSchoolData = (DesignSchoolData) robotData;
     	if(DesignSchoolCommands.oughtBuildLandscaper(rc, designSchoolData)) DesignSchoolCommands.tryBuild(rc, RobotType.LANDSCAPER, designSchoolData);
+    	
+    	RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), designSchoolData.getOpponent());
+        
+        if(enemy.length > 0) {
+	        for(RobotInfo bullseye : enemy) { 
+	        	if(bullseye.type.equals(RobotType.DESIGN_SCHOOL)) {
+	        		designSchoolData.setBuildDirection(rc.getLocation().directionTo(bullseye.location).rotateLeft());
+	        		while(!DesignSchoolCommands.tryBuild(rc, RobotType.LANDSCAPER, designSchoolData)) {
+	        			
+	        		}
+	        	}
+	        }
+        }
+    	
     }
 
     static void runFulfillmentCenter() throws GameActionException {
@@ -446,9 +468,12 @@ public strictfp class RobotPlayer {
     static void runLandscaper() throws GameActionException {
     	LandscaperData data = (LandscaperData) robotData;
     	if(turnCount == 1) LandscaperCommands.learnHQLocation(rc, data);
+    	RobotInfo enemyDesign = GeneralCommands.senseUnitType(rc, RobotType.DESIGN_SCHOOL, data.getOpponent());
     	
     	if(LandscaperCommands.buryEnemyHQ(rc, data)) {
     		/*Do nothing else*/
+    	} else if(enemyDesign!=null){
+    		LandscaperCommands.buryEnemyDesign(rc,data,enemyDesign);
     	} else if(data.getCurrentRole() == LandscaperData.TRAVEL_TO_HQ) {
     		if(!LandscaperCommands.approachComplete(rc, data)) {
     			GeneralCommands.routeTo(data.getHqLocation(), rc, data);
@@ -471,13 +496,52 @@ public strictfp class RobotPlayer {
     	}
     	
     	if(data.getEnemyHQLocation() != null) {
-    		if(rc.isCurrentlyHoldingUnit()) {
+    		
+    		if(!rc.isCurrentlyHoldingUnit()) {
+        		if(GeneralCommands.senseUnitType(rc,RobotType.LANDSCAPER,data.getOpponent())!=null && (GeneralCommands.senseUnitType(rc,RobotType.HQ,data.getTeam())!=null || GeneralCommands.senseUnitType(rc,RobotType.HQ,data.getOpponent())!=null)) {
+        			if(!DroneCommands.pickUpUnit(rc, data, RobotType.LANDSCAPER, data.getOpponent())) {
+        				if(GeneralCommands.senseUnitType(rc, RobotType.HQ, data.getTeam())!=null)
+        					GeneralCommands.routeTo(data.getHqLocation(),rc,data);
+        				else
+        					GeneralCommands.routeTo(data.getEnemyHQLocation(),rc,data);
+        			}
+        			else {
+        				data.setHoldingEnemy(true);
+        				if(GeneralCommands.senseUnitType(rc, RobotType.HQ, data.getTeam())!=null)
+        					data.setEnemyFrom(data.getTeam());
+        				else
+        					data.setEnemyFrom(data.getOpponent());
+        			}
+        		}
+        	}
+        	
+        	if(data.getHoldingEnemy()) {
+        		for(Direction d : Direction.allDirections()) {
+        			if(rc.senseFlooding(rc.adjacentLocation(d))) {
+        				rc.dropUnit(d);
+        				data.setHoldingEnemy(false);
+        				break;
+        			}
+        		}
+        		if(data.getHoldingEnemy()) {
+        			if(GeneralCommands.senseUnitType(rc, RobotType.HQ, data.getTeam())!=null)
+						data.setEnemyFrom(data.getTeam());
+					else
+						data.setEnemyFrom(data.getOpponent());
+        			if(data.getEnemyFrom().equals(data.getTeam()))
+        				GeneralCommands.routeTo(data.getEnemyHQLocation(), rc, data);
+        			else
+        				GeneralCommands.routeTo(data.getHqLocation(), rc, data);
+        		}
+        	}
+    		
+    		if(rc.isCurrentlyHoldingUnit() && !data.getHoldingEnemy()) {
     			if(rc.getLocation().isWithinDistanceSquared(data.getEnemyHQLocation(), 3)) {
     				DroneCommands.dropUnitNextToHQ(rc, data);
     			} else {
     				GeneralCommands.routeTo(data.getEnemyHQLocation(), rc, data);
     			}
-    		} else {
+    		} else if (!rc.isCurrentlyHoldingUnit()){
     			boolean oughtPickUpCow = DroneCommands.oughtPickUpCow(rc, data);
     			boolean oughtPickUpLandscaper = DroneCommands.oughtPickUpLandscaper(rc, data);
     			
@@ -509,14 +573,12 @@ public strictfp class RobotPlayer {
     static void runNetGun() throws GameActionException {
     	NetGunData ngData = (NetGunData) robotData;
     	RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), ngData.getOpponent());
-    	
-    	//TODO: Keep looping through units if rc.canShootUnit() returns false.
-    	//We don't want to sense a bunch of units, see a landscaper that can't be shot by random draw, then stop looping and miss a drone elsewhere in the array.
     	if(enemy.length > 0) {
-	    	int target = (int) (Math.random() * enemy.length);
-	    	if(rc.canShootUnit(enemy[target].getID())) {
-	    		rc.shootUnit(enemy[target].getID());
-	    	}
+    		for (RobotInfo target : enemy) {
+    			if(rc.canShootUnit(target.getID())) {
+    				rc.shootUnit(target.getID());
+    			}
+    		}
     	}
     }
 }

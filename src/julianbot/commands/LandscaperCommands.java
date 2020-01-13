@@ -168,5 +168,10 @@ public class LandscaperCommands {
 		else if(rc.canDigDirt(enemyHQDirection.rotateRight().rotateRight())) data.setEnemyHQBuryDigDirection(enemyHQDirection.rotateRight().rotateRight());
 		else data.setEnemyHQBuryDigDirection(enemyHQDirection);
 	}
+
+	public static void buryEnemyDesign(RobotController rc, LandscaperData data, RobotInfo enemy) throws GameActionException {
+		if(rc.getDirtCarrying() > 0) LandscaperCommands.depositDirt(rc, rc.getLocation().directionTo(enemy.location));
+		else LandscaperCommands.dig(rc, rc.getLocation().directionTo(data.getHqLocation()));
+	}
 	
 }
