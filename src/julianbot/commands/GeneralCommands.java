@@ -1,10 +1,19 @@
 package julianbot.commands;
 
-import battlecode.common.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import battlecode.common.Clock;
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
+import battlecode.common.Team;
+import battlecode.common.Transaction;
 import julianbot.robotdata.RobotData;
 import julianbot.utils.pathfinder.Pathfinder;
-
-import java.util.ArrayList;
 
 public class GeneralCommands {
 	
@@ -113,6 +122,24 @@ public class GeneralCommands {
 			}
 		}
 		return null;
+	}
+	
+	public static RobotInfo[] senseAllUnitsOfType(RobotController rc, RobotType type, Team team) {
+		RobotInfo[] robots = rc.senseNearbyRobots(-1, team);
+		List<RobotInfo> matchingRobots = new ArrayList<>();
+		
+		for (RobotInfo robot : robots) {
+			if (robot.getType() == type) {
+				matchingRobots.add(robot);
+			}
+		}
+		
+		RobotInfo[] matchingRobotsArray = new RobotInfo[matchingRobots.size()];
+		for(int i = 0; i < matchingRobots.size(); i++) {
+			matchingRobotsArray[i] = matchingRobots.get(i);
+		}
+		
+		return matchingRobotsArray;
 	}
 	
 	/**
@@ -226,7 +253,7 @@ public class GeneralCommands {
 	}	
 	
 	//TRANSACTIONS
-	public static void sendTransaction(RobotController rc, int soupBid, Type type, MapLocation loc) throws GameActionException {		
+	public static boolean sendTransaction(RobotController rc, int soupBid, Type type, MapLocation loc) throws GameActionException {		
 		int transactionTag = (int) (Math.random()*500); //This use of parentheses will prevent truncation of the random number.
 		int[] message = new int[]{transactionTag, type.getVal()+transactionTag, loc.x+transactionTag, loc.y+transactionTag, rc.getRoundNum()+transactionTag, 0};
 		int odd = 0;
@@ -235,7 +262,13 @@ public class GeneralCommands {
 				odd++;
 		}
 		message[5] = odd;
-		if(rc.canSubmitTransaction(message, soupBid)) rc.submitTransaction(message, soupBid);
+		
+		if(rc.canSubmitTransaction(message, soupBid)) {
+			rc.submitTransaction(message, soupBid);
+			return true;
+		}
+		
+		return false;
 	}
 
 	/**
@@ -299,18 +332,24 @@ public class GeneralCommands {
 		}
 	}
 	
+	public static void sendPendingTransaction(RobotController rc, RobotData data) throws GameActionException {
+		if(GeneralCommands.sendTransaction(rc, data.getPendingTransactionSoupBid(), data.getPendingTransactionType(), data.getPendingTransactionLocation())) {
+			System.out.println("Submitted pending transaction!");
+			data.clearPendingTransaction();
+		}
+	}
+	
 	//PATHFINDING
-	public static void routeTo(MapLocation destination, RobotController rc, RobotData data) throws GameActionException {
+	public static boolean routeTo(MapLocation destination, RobotController rc, RobotData data) throws GameActionException {
 		//If we're already pathfinding, continue on.
 		if(data.hasPath()) {
-			GeneralCommands.pathfind(destination, rc, data);
-			return;
+			return GeneralCommands.pathfind(destination, rc, data);
 		}
 		
 		//Otherwise, simply try to move directly towards the destination.
 		MapLocation rcLocation = rc.getLocation();
 		Direction initialDirection = rc.getLocation().directionTo(destination);
-		if(GeneralCommands.move(rc, initialDirection, data)) return;
+		if(GeneralCommands.move(rc, initialDirection, data)) return true;
 		
 		//If this isn't possible, try to move around whatever is blocking us.
 		//Directions closer to the destination will be favored.
@@ -333,7 +372,7 @@ public class GeneralCommands {
 		
 		for(Direction direction : nextDirections) {
 			if(rcLocation.add(direction).equals(data.getPreviousLocation())) continue;
-			if(GeneralCommands.move(rc, direction, data)) return;
+			if(GeneralCommands.move(rc, direction, data)) return true;
 		}
 		
 		/*
@@ -347,7 +386,9 @@ public class GeneralCommands {
 		*/
 		
 		//If all of these measures have failed, we'll need to use pathfinding to get around.
-		GeneralCommands.pathfind(destination, rc, data);
+		//However, just in case, we will allow for the previous location to be used next turn.
+		data.setPreviousLocation(rcLocation);
+		return GeneralCommands.pathfind(destination, rc, data);
 	}
 	
 	/**
@@ -361,7 +402,7 @@ public class GeneralCommands {
 	public static boolean pathfind(MapLocation destination, RobotController rc, RobotData data) throws GameActionException {
 		if(!data.hasPath() && destination != null) {
 			GeneralCommands.calculatePathTo(destination, rc, data);
-			return false;
+			return data.hasPath();
 		}
 		
 		return GeneralCommands.proceedAlongPath(rc, data);
@@ -376,12 +417,15 @@ public class GeneralCommands {
 	private static boolean proceedAlongPath(RobotController rc, RobotData data) throws GameActionException {
 		if(data.hasPath() && GeneralCommands.moveOnPath(rc, data.getNextPathDirection(), data)) {
 			data.incrementPathProgression();
+			
 			if(data.pathCompleted()) {
 				stopFollowingPath(data);
-				return true;
 			}
+			
+			return true;
 		}
 		
+		stopFollowingPath(data);
 		return false;
 	}
 	

@@ -139,7 +139,9 @@ public class LandscaperCommands {
 	
 	public static boolean buryEnemyHQ(RobotController rc, LandscaperData data) throws GameActionException {
 		if(data.getEnemyHQLocation() != null) {
-			if(rc.getDirtCarrying() > 0) LandscaperCommands.depositDirt(rc, rc.getLocation().directionTo(data.getEnemyHQLocation()));
+			
+			if(!rc.getLocation().isWithinDistanceSquared(data.getEnemyHQLocation(), 3)) GeneralCommands.routeTo(data.getEnemyHQLocation(), rc, data);
+			else if(rc.getDirtCarrying() > 0) LandscaperCommands.depositDirt(rc, rc.getLocation().directionTo(data.getEnemyHQLocation()));
 			else LandscaperCommands.dig(rc, data.getEnemyHQBuryDigDirection());
 			
 			return true;

@@ -31,6 +31,11 @@ public class MinerCommands {
 		else data.setCurrentRole(MinerData.ROLE_SOUP_MINER);
 	}
 	
+	public static RobotType getBuildPriority(MinerData data) {
+		if(data.getSoupLocs().size() > 3 && data.getRefineryLocs().size() == 1 && data.getRefineryLocs().contains(data.getSpawnerLocation())) return RobotType.REFINERY;
+		return RobotType.DESIGN_SCHOOL;
+	}
+	
 	public static boolean canSenseHubDesignSchool(RobotController rc, MinerData data) throws GameActionException {
 		RobotInfo designSchoolInfo = rc.senseRobotAtLocation(data.getSpawnerLocation().translate(-1, 0));
 		if(designSchoolInfo == null) return false;
@@ -102,14 +107,15 @@ public class MinerCommands {
 	}
 	
 	public static boolean oughtBuildRefinery(RobotController rc) {
-		return rc.getTeamSoup() >= RobotType.REFINERY.cost + 5;
+		return rc.getTeamSoup() >= RobotType.REFINERY.cost;
 	}
 	
-	public static boolean attemptRefineryConstruction(RobotController rc) throws GameActionException {
+	public static boolean attemptRefineryConstruction(RobotController rc, MinerData data) throws GameActionException {
 		GeneralCommands.waitUntilReady(rc);
 		
 		for(Direction buildDirection : directions) {
-			if(rc.canBuildRobot(RobotType.REFINERY, buildDirection)) {
+			//The distance check is to make sure that we don't build the refinery where the wall ought to be.
+			if(rc.canBuildRobot(RobotType.REFINERY, buildDirection) && rc.getLocation().add(buildDirection).distanceSquaredTo(data.getSpawnerLocation()) > 18) {
 				rc.buildRobot(RobotType.REFINERY, buildDirection);
 				return true;
 			}
@@ -164,6 +170,19 @@ public class MinerCommands {
 		}
 	}
 
+	public static void refreshSoupLocations(RobotController rc, MinerData data) throws GameActionException {
+		//Use of "int i" rather than MapLocation location : data.getSoupLocs() was intentional. This will throw an error otherwise.
+		for(int i = 0; i < data.getSoupLocs().size(); i++) {
+			MapLocation allegedSoupLocation = data.getSoupLocs().get(i);
+			if(rc.canSenseLocation(allegedSoupLocation)) {
+				if(rc.senseSoup(allegedSoupLocation) == 0) {
+					data.removeSoupLoc(allegedSoupLocation);
+					i--;
+				}
+			}
+		}
+	}
+	
 	/**
 	 * Returns location of soup within two radius of robot. If not found, will return null.
 	 * @param rc
