@@ -402,7 +402,7 @@ public strictfp class RobotPlayer {
     }
 
 	/**
-	 * Searches map until it finds enemy unit, then follows that unit. If enemy drone appears, avoids it. Reports enemy building locations.
+	 * Searches map until it finds enemy unit, then follows that unit. Reports enemy building locations.
 	 * @throws GameActionException
 	 */
 	static void scoutMinerProtocol() throws GameActionException {
@@ -514,6 +514,8 @@ public strictfp class RobotPlayer {
     		for(int i = (rc.getRoundNum() > 100) ? rc.getRoundNum() - 100 : 1; i < rc.getRoundNum(); i++)
     		DroneCommands.readTransaction(rc, data, rc.getBlock(i));
     	}
+
+    	DroneCommands.readTransaction(rc, data, rc.getBlock(rc.getRoundNum() - 1));
     	
     	if(data.getEnemyHQLocation() != null) {
     		if(rc.isCurrentlyHoldingUnit()) {
