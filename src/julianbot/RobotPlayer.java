@@ -20,6 +20,7 @@ import julianbot.robotdata.FulfillmentCenterData;
 import julianbot.robotdata.HQData;
 import julianbot.robotdata.LandscaperData;
 import julianbot.robotdata.MinerData;
+import julianbot.robotdata.NetGunData;
 import julianbot.robotdata.RobotData;
 
 public strictfp class RobotPlayer {
@@ -84,6 +85,7 @@ public strictfp class RobotPlayer {
     		case LANDSCAPER:         robotData = new LandscaperData(rc);         break;
     		case FULFILLMENT_CENTER: robotData = new FulfillmentCenterData(rc);  break;
     		case DELIVERY_DRONE:     robotData = new DroneData(rc);              break;
+    		case NET_GUN:            robotData = new NetGunData(rc);             break;
     		default:                 robotData = new RobotData(rc);              break;
     	}
 
@@ -107,6 +109,8 @@ public strictfp class RobotPlayer {
         
         RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), hqData.getOpponent());
         
+        //TODO: Keep looping through units if rc.canShootUnit() returns false.
+    	//We don't want to sense a bunch of units, see a landscaper that can't be shot by random draw, then stop looping and miss a drone elsewhere in the array.
         if(enemy.length > 0) {
 	        int target = (int) (Math.random()*enemy.length);
 	    	if(rc.canShootUnit(enemy[target].getID())) {
@@ -227,15 +231,6 @@ public strictfp class RobotPlayer {
     		minerData.addRefineryLoc(refineryLocation);
     		GeneralCommands.sendTransaction(rc, 10, GeneralCommands.Type.TRANSACTION_FRIENDLY_REFINERY_AT_LOC, refineryLocation);
     		return;
-    	} else {
-    		if(!rc.isReady() || rc.getTeamSoup() >= RobotType.REFINERY.cost) {
-    			//Failure did not occur due to invalid location, so there is no need to move.
-    			return;
-    		} else {
-    			//Keep seeking a place to build a refinery, but ensure it's far from the HQ.
-    			moveMinerFromHQ(minerData);
-    			return;
-    		}
     	}
     }
 
@@ -279,7 +274,6 @@ public strictfp class RobotPlayer {
 		//TODO: Once the landscapers get going, miners should no longer return to the HQ to refine soup. We need to communicate that via a transaction.
 		
 		RobotInfo hq = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam());
-		Direction distantRefineryDirection = MinerCommands.getAnyRefineryDirection(rc);
 		RobotInfo landscaper = GeneralCommands.senseUnitType(rc, RobotType.LANDSCAPER, rc.getTeam());
 		
 		if(hq != null) {
@@ -290,24 +284,15 @@ public strictfp class RobotPlayer {
 	    		if(minerData.getRefineryLocs().size() == 0) {
 	        		minerData.setCurrentRole(MinerData.ROLE_REFINERY_BUILDER);
 	        	}
-			} else if(Math.abs(rc.getLocation().x - minerData.getSpawnerLocation().x) == 1 && rc.getLocation().y - minerData.getSpawnerLocation().y == 0) {
-	    		//Get out of the way. This is a building site.
-				System.out.println("Moving from building site.");
-	    		moveMinerFromHQ(minerData);
-	    		return;
-	    	} else {
-	    		System.out.println("Routing to HQ");
+			} else {
 	    		GeneralCommands.routeTo(hq.getLocation(), rc, minerData);
-	    		return;
 	    	}
-		}
-
-		if (distantRefineryDirection != Direction.CENTER) {
-			GeneralCommands.move(rc, distantRefineryDirection, minerData);
-			return;
 		} else {
-			System.out.println("Moving toward hq");
-			GeneralCommands.routeTo(minerData.getSpawnerLocation(), rc, minerData);
+			if(minerData.getRefineryLocs().size() > 0) {
+				GeneralCommands.routeTo(GeneralCommands.locateClosestLocation(rc, minerData.getRefineryLocs(), rc.getLocation()), rc, minerData);
+			} else {
+				minerData.setCurrentRole(MinerData.ROLE_REFINERY_BUILDER);
+			}
 		}
     }
 
@@ -470,19 +455,24 @@ public strictfp class RobotPlayer {
     	
     	if(turnCount == 1) DroneCommands.learnHQLocation(rc, data);
     	
+    	if(turnCount < GameConstants.INITIAL_COOLDOWN_TURNS) {
+    		for(int i = (rc.getRoundNum() > 100) ? rc.getRoundNum() - 100 : 1; i < rc.getRoundNum(); i++)
+    		DroneCommands.readTransaction(rc, data, rc.getBlock(i));
+    	}
+    	
     	if(data.getEnemyHQLocation() != null) {
     		if(rc.isCurrentlyHoldingUnit()) {
     			if(rc.getLocation().isWithinDistanceSquared(data.getEnemyHQLocation(), 3)) {
     				DroneCommands.dropUnitNextToHQ(rc, data);
     			} else {
-    				GeneralCommands.move(rc, rc.getLocation().directionTo(data.getEnemyHQLocation()), data);
+    				GeneralCommands.routeTo(data.getActiveSearchDestination(), rc, data);
     			}
     		} else if(DroneCommands.oughtPickUpUnit(rc, data)){
     			if(!DroneCommands.pickUpUnit(rc, data, RobotType.LANDSCAPER)) {
-    				GeneralCommands.move(rc, rc.getLocation().directionTo(data.getSpawnerLocation()), data);
+    				GeneralCommands.routeTo(data.getSpawnerLocation(), rc, data);
     			}
     		} else {
-    			GeneralCommands.move(rc, rc.getLocation().directionTo(data.getSpawnerLocation()), data);
+    			GeneralCommands.routeTo(data.getSpawnerLocation(), rc, data);
     		}
     	} else {
     		if(!data.searchDestinationsDetermined()) {
@@ -491,15 +481,23 @@ public strictfp class RobotPlayer {
     		
     		GeneralCommands.routeTo(data.getActiveSearchDestination(), rc, data);
     		DroneCommands.attemptEnemyHQDetection(rc, data);
+    		if(data.getEnemyHQLocation() != null) {
+    			GeneralCommands.sendTransaction(rc, 10, GeneralCommands.Type.TRANSACTION_ENEMY_HQ_AT_LOC, data.getEnemyHQLocation());
+    		}
     	}
     }
 
     static void runNetGun() throws GameActionException {
-    	RobotData ngData = robotData;
+    	NetGunData ngData = (NetGunData) robotData;
     	RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), ngData.getOpponent());
-    	int target = (int) (Math.random()*enemy.length);
-    	if(rc.canShootUnit(enemy[target].getID())) {
-    		rc.shootUnit(enemy[target].getID());
+    	
+    	//TODO: Keep looping through units if rc.canShootUnit() returns false.
+    	//We don't want to sense a bunch of units, see a landscaper that can't be shot by random draw, then stop looping and miss a drone elsewhere in the array.
+    	if(enemy.length > 0) {
+	    	int target = (int) (Math.random() * enemy.length);
+	    	if(rc.canShootUnit(enemy[target].getID())) {
+	    		rc.shootUnit(enemy[target].getID());
+	    	}
     	}
     }
 }

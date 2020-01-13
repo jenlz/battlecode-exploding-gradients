@@ -149,20 +149,11 @@ public class MinerCommands {
 	 */
 	public static void findNearbySoup(RobotController rc, MinerData data) throws GameActionException {
 		MapLocation rcLocation = rc.getLocation();
-		int mostSoupLocated = 0;
 		
 		for(int dx = -SENSOR_RADIUS; dx <= SENSOR_RADIUS; dx++) {
 			for(int dy = -SENSOR_RADIUS; dy <= SENSOR_RADIUS; dy++) {
 				MapLocation potentialSoupLocation = rcLocation.translate(dx, dy);
 				if(rc.canSenseLocation(potentialSoupLocation)) {
-					/*
-					int soupAtLocation = rc.senseSoup(potentialSoupLocation);
-					if(soupAtLocation > mostSoupLocated) {
-						mostSoupLocated = soupAtLocation;
-						targetSoupLocation = potentialSoupLocation;
-					}
-					*/
-					
 					if(rc.senseSoup(potentialSoupLocation) > 0) data.addSoupLoc(potentialSoupLocation);
 				}
 			}
@@ -277,6 +268,8 @@ public class MinerCommands {
 						break;
 					case TRANSACTION_FRIENDLY_REFINERY_AT_LOC:
 						minerdata.addRefineryLoc(loc);
+						break;
+					default:
 						break;
 				}
 			}

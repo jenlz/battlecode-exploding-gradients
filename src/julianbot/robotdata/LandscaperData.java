@@ -13,13 +13,10 @@ public class LandscaperData extends RobotData {
 	private MapLocation hqLocation;
 	private MapLocation enemyHQLocation;
 		private Direction enemyHQBuryDigDirection;
-	
-	private Direction searchDirection;
-	
+		
 	public LandscaperData(RobotController rc) {
 		super(rc);
 		currentRole = TRAVEL_TO_HQ;
-		searchDirection = spawnerLocation.directionTo(rc.getLocation());
 	}
 	
 	public int getCurrentRole() {
@@ -36,14 +33,6 @@ public class LandscaperData extends RobotData {
 
 	public void setHqLocation(MapLocation hqLocation) {
 		this.hqLocation = hqLocation;
-	}
-
-	public Direction getSearchDirection() {
-		return searchDirection;
-	}
-
-	public void setSearchDirection(Direction searchDirection) {
-		this.searchDirection = searchDirection;
 	}
 
 	public MapLocation getEnemyHQLocation() {

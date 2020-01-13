@@ -68,4 +68,28 @@ public class DroneCommands {
 		MapLocation rcLocation = rc.getLocation();
 		return rcLocation.distanceSquaredTo(data.getSpawnerLocation()) < rcLocation.distanceSquaredTo(data.getEnemyHQLocation());
 	}
+	
+	public static void readTransaction(RobotController rc, DroneData data, Transaction[] block) throws GameActionException {
+
+		for (Transaction message : block) {
+			int[] decodedMessage = GeneralCommands.decodeTransaction(rc, message);
+			if (decodedMessage != new int[] {0}) {
+				GeneralCommands.Type category = GeneralCommands.Type.enumOfValue(decodedMessage[1]);
+				MapLocation loc = new MapLocation(decodedMessage[2], decodedMessage[3]);
+
+				if (category == null) {
+					System.out.println("Something is terribly wrong. enumOfValue returns null");
+				}
+				//System.out.println("Category of message: " + category);
+				switch(category) {
+					case TRANSACTION_ENEMY_HQ_AT_LOC:
+						data.setEnemyHQLocation(loc);;
+						break;
+					default:
+						break;
+				}
+			}
+
+		}
+	}
 }
