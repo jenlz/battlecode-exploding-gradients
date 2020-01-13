@@ -16,7 +16,11 @@ public class RobotData {
 	protected MapGraph mapGraph;
 		protected Direction[] path;
 		protected int pathProgression;
-		
+	private boolean hasPendingTransaction;
+		private GeneralCommands.Type pendingTransactionType;
+		private MapLocation pendingTransactionLocation;
+		private int pendingTransactionSoupBid;
+	
 	public RobotData(RobotController rc) {
 		team = rc.getTeam();
 		opponent = team.opponent();
@@ -86,6 +90,45 @@ public class RobotData {
 	
 	public boolean pathCompleted() {
 		return pathProgression >= path.length;
+	}
+	
+	public boolean hasPendingTransaction() {
+		return hasPendingTransaction;
+	}
+	
+	public void setPendingTransaction(GeneralCommands.Type transactionType, MapLocation location, int soupBid) {
+		this.hasPendingTransaction = true;
+		this.pendingTransactionType = transactionType;
+		this.pendingTransactionLocation = location;
+		this.pendingTransactionSoupBid = soupBid;
+	}
+	
+	public void clearPendingTransaction() {
+		this.hasPendingTransaction = false;
+	}
+
+	public GeneralCommands.Type getPendingTransactionType() {
+		return pendingTransactionType;
+	}
+
+	public void setPendingTransactionType(GeneralCommands.Type pendingTransactionType) {
+		this.pendingTransactionType = pendingTransactionType;
+	}
+
+	public MapLocation getPendingTransactionLocation() {
+		return pendingTransactionLocation;
+	}
+
+	public void setPendingTransactionLocation(MapLocation pendingTransactionLocation) {
+		this.pendingTransactionLocation = pendingTransactionLocation;
+	}
+
+	public int getPendingTransactionSoupBid() {
+		return pendingTransactionSoupBid;
+	}
+
+	public void setPendingTransactionSoupBid(int pendingTransactionSoupBid) {
+		this.pendingTransactionSoupBid = pendingTransactionSoupBid;
 	}
 	
 }
