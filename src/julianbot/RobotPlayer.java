@@ -602,6 +602,8 @@ public strictfp class RobotPlayer {
 	    			}
 	    		} else if(!rc.getLocation().isWithinDistanceSquared(data.getHqLocation(), 3)) {
 	    			GeneralCommands.routeTo(data.getSpawnerLocation(), rc, data);
+	    		} else {
+	    			GeneralCommands.routeTo(data.getEnemyHQLocation(), rc, data);
 	    		}
     		}
     	} else {

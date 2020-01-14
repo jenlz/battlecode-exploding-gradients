@@ -11,7 +11,7 @@ import julianbot.robotdata.FulfillmentCenterData;
 public class FulfillmentCenterCommands {
 	
 	public static boolean oughtBuildDrone(RobotController rc, FulfillmentCenterData data) {
-		if(GeneralCommands.senseNumberOfUnits(rc, RobotType.LANDSCAPER, rc.getTeam()) < data.getDronesBuilt() + 2) return false;
+		if(GeneralCommands.senseNumberOfUnits(rc, RobotType.LANDSCAPER, rc.getTeam()) < data.getDronesBuilt() + 1) return false;
 		return (data.isStableSoupIncomeConfirmed()) ? rc.getTeamSoup() >= RobotType.DELIVERY_DRONE.cost + 1 : rc.getTeamSoup() >= RobotType.REFINERY.cost + 5;
 	}
 	

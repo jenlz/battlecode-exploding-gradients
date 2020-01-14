@@ -47,7 +47,7 @@ public class DroneCommands {
 		//Also, don't pick up landscapers until there is a surplus so our wall doesn't stop rising.
 		MapLocation rcLocation = rc.getLocation();
 		return rcLocation.distanceSquaredTo(data.getSpawnerLocation()) < rcLocation.distanceSquaredTo(data.getEnemyHQLocation())
-				&& GeneralCommands.senseNumberOfUnits(rc, RobotType.LANDSCAPER, rc.getTeam()) > 1;
+				&& GeneralCommands.senseNumberOfUnits(rc, RobotType.LANDSCAPER, rc.getTeam()) > 2;
 	}
 	
 	public static boolean pickUpUnit(RobotController rc, DroneData data, RobotType targetType) throws GameActionException {
