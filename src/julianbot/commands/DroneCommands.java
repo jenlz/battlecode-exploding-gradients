@@ -88,6 +88,12 @@ public class DroneCommands {
 		} else if(rc.canDropUnit(directionToHQ.rotateRight())) {
 			rc.dropUnit(directionToHQ.rotateRight());
 			return true;
+		} else if(rc.canDropUnit(directionToHQ.rotateLeft().rotateLeft())) {
+			rc.dropUnit(directionToHQ.rotateLeft().rotateLeft());
+			return true;
+		} else if(rc.canDropUnit(directionToHQ.rotateRight().rotateRight())) {
+			rc.dropUnit(directionToHQ.rotateRight().rotateRight());
+			return true;
 		}
 		
 		return false;
