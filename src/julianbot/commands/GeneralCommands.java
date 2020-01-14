@@ -282,13 +282,15 @@ public class GeneralCommands {
 		int[] message = transaction.getMessage();
 		int transactionTag = message[0];
 		int[] plaintxt = new int[6];
+		
 		int odd = 0;
 		for (int i = 0; i<message.length-1; i++) {
 			if (message[i]%2 == 1)
 				odd++;
 		}
-		if (odd!=message[5])
-			return new int[] {0}; //empty means message not from own team
+		
+		if(message.length < 6) return new int[] {0};
+		if (odd!=message[5]) return new int[] {0}; //empty means message not from own team
 		for (int i = 0; i<message.length-1; i++) {
 			plaintxt[i] = message[i] - transactionTag;
 		}
@@ -341,6 +343,7 @@ public class GeneralCommands {
 	
 	//PATHFINDING
 	public static boolean routeTo(MapLocation destination, RobotController rc, RobotData data) throws GameActionException {
+		rc.setIndicatorLine(rc.getLocation(), destination, 0, 0, 255);
 		//If we're already pathfinding, continue on.
 		if(data.hasPath()) {
 			return GeneralCommands.pathfind(destination, rc, data);

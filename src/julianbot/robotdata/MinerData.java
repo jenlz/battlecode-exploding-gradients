@@ -15,11 +15,12 @@ public class MinerData extends RobotData {
 	public static final int ROLE_SOUP_MINER = 2;
 	public static final int ROLE_REFINERY_BUILDER = 3;
 	public static final int ROLE_DEFENSE_BUILDER = 4;
+	public static final int ROLE_BLOCK = 5;
 		private boolean northGunBuilt;
 		private boolean designSchoolBuilt;
 		private boolean fulfillmentCenterBuilt;
 		private boolean southGunBuilt;
-	public static final int ROLE_SCOUT = 5;
+	public static final int ROLE_SCOUT = 6;
 		private RobotInfo targetRobot;
 		private RobotInfo previousTarget;
 		private int turnsScouted;

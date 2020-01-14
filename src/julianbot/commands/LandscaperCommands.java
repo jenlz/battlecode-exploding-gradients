@@ -42,6 +42,7 @@ public class LandscaperCommands {
 	public static boolean dig(RobotController rc, Direction dir) throws GameActionException {
 		GeneralCommands.waitUntilReady(rc);
 		if(rc.isReady() && rc.canDigDirt(dir)) {
+			rc.setIndicatorDot(rc.getLocation().add(dir), 255, 0, 0);
 			rc.digDirt(dir);
 			return true;
 		}
@@ -52,6 +53,7 @@ public class LandscaperCommands {
 	public static boolean depositDirt(RobotController rc, Direction dir) throws GameActionException {
 		GeneralCommands.waitUntilReady(rc);
 		if(rc.isReady() && rc.canDepositDirt(dir)) {
+			rc.setIndicatorDot(rc.getLocation().add(dir), 0, 255, 0);
 			rc.depositDirt(dir);
 			return true;
 		}
@@ -180,6 +182,11 @@ public class LandscaperCommands {
 		else if(rc.canDigDirt(enemyHQDirection.rotateLeft().rotateLeft())) data.setEnemyHQBuryDigDirection(enemyHQDirection.rotateLeft().rotateLeft());
 		else if(rc.canDigDirt(enemyHQDirection.rotateRight().rotateRight())) data.setEnemyHQBuryDigDirection(enemyHQDirection.rotateRight().rotateRight());
 		else data.setEnemyHQBuryDigDirection(enemyHQDirection);
+	}
+
+	public static void buryEnemyDesign(RobotController rc, LandscaperData data, RobotInfo enemy) throws GameActionException {
+		if(rc.getDirtCarrying() > 0) LandscaperCommands.depositDirt(rc, rc.getLocation().directionTo(enemy.location));
+		else LandscaperCommands.dig(rc, rc.getLocation().directionTo(data.getHqLocation()));
 	}
 	
 }
