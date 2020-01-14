@@ -42,6 +42,7 @@ public class LandscaperCommands {
 	public static boolean dig(RobotController rc, Direction dir) throws GameActionException {
 		GeneralCommands.waitUntilReady(rc);
 		if(rc.isReady() && rc.canDigDirt(dir)) {
+			rc.setIndicatorDot(rc.getLocation().add(dir), 255, 0, 0);
 			rc.digDirt(dir);
 			return true;
 		}
@@ -52,6 +53,7 @@ public class LandscaperCommands {
 	public static boolean depositDirt(RobotController rc, Direction dir) throws GameActionException {
 		GeneralCommands.waitUntilReady(rc);
 		if(rc.isReady() && rc.canDepositDirt(dir)) {
+			rc.setIndicatorDot(rc.getLocation().add(dir), 0, 255, 0);
 			rc.depositDirt(dir);
 			return true;
 		}

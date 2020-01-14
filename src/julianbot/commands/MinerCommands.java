@@ -137,7 +137,7 @@ public class MinerCommands {
 	
 	public static void depositRawSoup(RobotController rc, Direction dir) throws GameActionException {
 		GeneralCommands.waitUntilReady(rc);
-		if(rc.canDepositSoup(dir)) rc.depositSoup(dir, rc.getSoupCarrying());
+		if(rc.canDepositSoup(dir)) rc.depositSoup(dir, rc.getSoupCarrying()); rc.setIndicatorDot(rc.getLocation().add(dir), 255, 0, 0);
 	}
 
 	/**
@@ -219,8 +219,9 @@ public class MinerCommands {
 	 */
 	public static boolean mineRawSoup(RobotController rc, Direction dir) throws GameActionException {
 		GeneralCommands.waitUntilReady(rc);
-		
+
 		if(rc.isReady() && rc.canMineSoup(dir) && rc.getSoupCarrying() != RobotType.MINER.soupLimit) {
+			rc.setIndicatorDot(rc.getLocation().add(dir), 0, 255, 0);
 			rc.mineSoup(dir);
 			return true;
 		} else {

@@ -343,6 +343,7 @@ public class GeneralCommands {
 	
 	//PATHFINDING
 	public static boolean routeTo(MapLocation destination, RobotController rc, RobotData data) throws GameActionException {
+		rc.setIndicatorLine(rc.getLocation(), destination, 0, 0, 255);
 		//If we're already pathfinding, continue on.
 		if(data.hasPath()) {
 			return GeneralCommands.pathfind(destination, rc, data);
