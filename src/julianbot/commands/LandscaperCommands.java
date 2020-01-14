@@ -142,7 +142,7 @@ public class LandscaperCommands {
 	public static boolean buryEnemyHQ(RobotController rc, LandscaperData data) throws GameActionException {
 		if(data.getEnemyHQLocation() != null) {
 			Direction dirToHQ = rc.getLocation().directionTo(data.getEnemyHQLocation());
-			if(!rc.getLocation().isWithinDistanceSquared(data.getEnemyHQLocation(), 3)) {
+			if(!rc.getLocation().isAdjacentTo(data.getEnemyHQLocation())) {
 				if (!GeneralCommands.move(rc, dirToHQ, data)) {
 					int dirtDifference = rc.senseElevation(rc.getLocation()) - rc.senseElevation(rc.adjacentLocation(dirToHQ));
 					if (dirtDifference > GameConstants.MAX_DIRT_DIFFERENCE) {
@@ -156,7 +156,7 @@ public class LandscaperCommands {
 							depositDirt(rc, dirToHQ.rotateLeft().rotateLeft());
 						}
 					} else {
-						//GeneralCommands.routeTo(data.getHqLocation(), rc, data);
+						GeneralCommands.routeTo(data.getHqLocation(), rc, data);
 					}
 				}
 			} else if(rc.getDirtCarrying() > 0) LandscaperCommands.depositDirt(rc, rc.getLocation().directionTo(data.getEnemyHQLocation()));
