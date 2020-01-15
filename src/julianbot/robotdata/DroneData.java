@@ -16,8 +16,8 @@ public class DroneData extends RobotData {
 	private MapLocation[] searchDestinations;
 		private int activeSearchDestinationIndex;
 	
-	public DroneData(RobotController rc) {
-		super(rc);
+	public DroneData(RobotController rc, MapLocation spawnerLocation) {
+		super(rc, spawnerLocation);
 		holdingEnemy = false;
 	}
 	

@@ -4,7 +4,7 @@ import battlecode.common.Direction;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.Team;
-import julianbot.commands.GeneralCommands;
+import julianbot.robots.Robot;
 import julianbot.utils.pathfinder.MapGraph;
 
 public class RobotData {
@@ -17,15 +17,15 @@ public class RobotData {
 		protected Direction[] path;
 		protected int pathProgression;
 	private boolean hasPendingTransaction;
-		private GeneralCommands.Type pendingTransactionType;
+		private Robot.Type pendingTransactionType;
 		private MapLocation pendingTransactionLocation;
 		private int pendingTransactionSoupBid;
 	
-	public RobotData(RobotController rc) {
+	public RobotData(RobotController rc, MapLocation spawnerLocation) {
 		team = rc.getTeam();
 		opponent = team.opponent();
 		previousLocation = rc.getLocation();
-		setSpawnerLocation(GeneralCommands.getSpawnerLocation(rc));		
+		setSpawnerLocation(spawnerLocation);	
 	}
 	
 	public Team getTeam() {
@@ -96,7 +96,7 @@ public class RobotData {
 		return hasPendingTransaction;
 	}
 	
-	public void setPendingTransaction(GeneralCommands.Type transactionType, MapLocation location, int soupBid) {
+	public void setPendingTransaction(Robot.Type transactionType, MapLocation location, int soupBid) {
 		this.hasPendingTransaction = true;
 		this.pendingTransactionType = transactionType;
 		this.pendingTransactionLocation = location;
@@ -107,11 +107,11 @@ public class RobotData {
 		this.hasPendingTransaction = false;
 	}
 
-	public GeneralCommands.Type getPendingTransactionType() {
+	public Robot.Type getPendingTransactionType() {
 		return pendingTransactionType;
 	}
 
-	public void setPendingTransactionType(GeneralCommands.Type pendingTransactionType) {
+	public void setPendingTransactionType(Robot.Type pendingTransactionType) {
 		this.pendingTransactionType = pendingTransactionType;
 	}
 

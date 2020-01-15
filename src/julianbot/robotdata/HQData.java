@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import battlecode.common.Direction;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.Transaction;
 
@@ -14,8 +15,8 @@ public class HQData extends RobotData {
 	private Direction buildDirection;
 	private List<Transaction> foreignTransactions;
 	
-	public HQData(RobotController rc) {
-		super(rc);
+	public HQData(RobotController rc, MapLocation spawnerLocation) {
+		super(rc, spawnerLocation);
 		buildDirection = Direction.NORTH;
 		foreignTransactions = new ArrayList<>();
 	}

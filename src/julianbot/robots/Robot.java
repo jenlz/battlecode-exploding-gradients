@@ -1,4 +1,4 @@
-package julianbot.commands;
+package julianbot.robots;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,9 +15,14 @@ import battlecode.common.Transaction;
 import julianbot.robotdata.RobotData;
 import julianbot.utils.pathfinder.Pathfinder;
 
-public class GeneralCommands {
+public abstract class Robot {
 	
-	static Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
+	protected RobotController rc;
+	protected RobotData data;
+	
+	protected static Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
+	
+	protected int turnCount;
 	
 	public enum Type{
 		TRANSACTION_SOS_AT_LOC(-104),
@@ -54,8 +59,34 @@ public class GeneralCommands {
 		//Call Type.enumOfValue(plaintxt[1]) to get enum from value
 	}
 	
+	public Robot(RobotController rc) {
+		this.rc = rc;
+	}
+	
+	public RobotController getRobotController() {
+		return rc;
+	}
+
+	public void setRobotController(RobotController rc) {
+		this.rc = rc;
+	}
+
+	public RobotData getRobotData() {
+		return data;
+	}
+
+	public void setRobotData(RobotData data) {
+		this.data = data;
+	}
+	
+	public abstract void run() throws GameActionException;
+
+	public void incrementTurnCount() {
+		 turnCount += 1;
+	}
+	
 	//RECONNAISSANCE
-	public static MapLocation getSpawnerLocation(RobotController rc) {
+	protected MapLocation getSpawnerLocation() {
 		RobotInfo[] robots = rc.senseNearbyRobots(3, rc.getTeam());
 		RobotType targetType = getSpawnerTypeFor(rc.getType());
 		
@@ -66,7 +97,7 @@ public class GeneralCommands {
 		return null;
 	}
 	
-	private static RobotType getSpawnerTypeFor(RobotType type) {
+	protected RobotType getSpawnerTypeFor(RobotType type) {
 		if(type == RobotType.MINER) return RobotType.HQ;
 		if(type == RobotType.REFINERY) return RobotType.MINER;
 		if(type == RobotType.LANDSCAPER) return RobotType.DESIGN_SCHOOL;
@@ -79,7 +110,7 @@ public class GeneralCommands {
 	 * @param type
 	 * @return First unit of given type. Null if not found
 	 */
-	public static RobotInfo senseUnitType(RobotController rc, RobotType type) {
+	protected RobotInfo senseUnitType(RobotType type) {
 		RobotInfo[] robots = rc.senseNearbyRobots();
 		for (RobotInfo robot : robots) {
 			if (robot.getType() == type) {
@@ -95,7 +126,7 @@ public class GeneralCommands {
 	 * @param type
 	 * @return Number of units of given type
 	 */
-	public static int senseNumberOfUnits(RobotController rc, RobotType type) {
+	protected int senseNumberOfUnits(RobotType type) {
 		int unitCount = 0;
 		
 		RobotInfo[] robots = rc.senseNearbyRobots();
@@ -115,7 +146,7 @@ public class GeneralCommands {
 	 * @param team
 	 * @return First unit of given type and team. Null if not found
 	 */
-	public static RobotInfo senseUnitType(RobotController rc, RobotType type, Team team) {
+	protected RobotInfo senseUnitType(RobotType type, Team team) {
 		RobotInfo[] robots = rc.senseNearbyRobots(-1, team);
 		for (RobotInfo robot : robots) {
 			if (robot.getType() == type) {
@@ -125,7 +156,7 @@ public class GeneralCommands {
 		return null;
 	}
 	
-	public static RobotInfo[] senseAllUnitsOfType(RobotController rc, RobotType type, Team team) {
+	protected RobotInfo[] senseAllUnitsOfType(RobotType type, Team team) {
 		RobotInfo[] robots = rc.senseNearbyRobots(-1, team);
 		List<RobotInfo> matchingRobots = new ArrayList<>();
 		
@@ -150,7 +181,7 @@ public class GeneralCommands {
 	 * @param team
 	 * @return Number of units of given type and team
 	 */
-	public static int senseNumberOfUnits(RobotController rc, RobotType type, Team team) {
+	protected int senseNumberOfUnits(RobotType type, Team team) {
 		int unitCount = 0;
 		
 		RobotInfo[] robots = rc.senseNearbyRobots(-1, team);
@@ -171,7 +202,7 @@ public class GeneralCommands {
 	 * @param radius
 	 * @return First unit of given type and team. Null if not found.
 	 */
-	public static RobotInfo senseUnitType(RobotController rc, RobotType type, Team team, int radius) {
+	protected RobotInfo senseUnitType(RobotType type, Team team, int radius) {
 		RobotInfo[] robots = rc.senseNearbyRobots(radius, team);
 		for (RobotInfo robot : robots) {
 			if (robot.getType() == type) {
@@ -189,7 +220,7 @@ public class GeneralCommands {
 	 * @param radius
 	 * @return Number of units of given type and team
 	 */
-	public static int senseNumberOfUnits(RobotController rc, RobotType type, Team team, int radius) {
+	protected int senseNumberOfUnits(RobotType type, Team team, int radius) {
 		int unitCount = 0;
 		
 		RobotInfo[] robots = rc.senseNearbyRobots(radius, team);
@@ -203,29 +234,17 @@ public class GeneralCommands {
 	}
 	
 	//TURN MANAGEMENT
-	public static void waitUntilReady(RobotController rc) {
+	protected void waitUntilReady() {
 		while(!rc.isReady()) {
 			Clock.yield();
 		}
 	}
 	
 	//MOVEMENT
-	public static boolean move(RobotController rc, Direction dir, RobotData data) throws GameActionException {
-		stopFollowingPath(data);
+	protected boolean move(Direction dir) throws GameActionException {
+		stopFollowingPath();
 		
-		waitUntilReady(rc);
-		
-		if(rc.isReady() && rc.canMove(dir)) {
-			data.setPreviousLocation(rc.getLocation());
-			rc.move(dir);
-			return true;
-		}
-		
-		return false;
-	}
-	
-	private static boolean moveOnPath(RobotController rc, Direction dir, RobotData data) throws GameActionException {
-		waitUntilReady(rc);
+		waitUntilReady();
 		
 		if(rc.isReady() && rc.canMove(dir)) {
 			data.setPreviousLocation(rc.getLocation());
@@ -236,15 +255,27 @@ public class GeneralCommands {
 		return false;
 	}
 	
-	public static boolean moveAnywhere(RobotController rc, RobotData data) throws GameActionException {
-		stopFollowingPath(data);
+	protected boolean moveOnPath(Direction dir) throws GameActionException {
+		waitUntilReady();
+		
+		if(rc.isReady() && rc.canMove(dir)) {
+			data.setPreviousLocation(rc.getLocation());
+			rc.move(dir);
+			return true;
+		}
+		
+		return false;
+	}
+	
+	protected boolean moveAnywhere() throws GameActionException {
+		stopFollowingPath();
 		
 		Direction dir = directions[(int)(Math.random() * directions.length)];
 		int rotateLimit = 8;
 		
-		waitUntilReady(rc);
+		waitUntilReady();
 		
-		while (!GeneralCommands.move(rc, dir, data) && rotateLimit > 0) {
+		while (!move(dir) && rotateLimit > 0) {
 			dir.rotateRight();
 			rotateLimit--;
 		}
@@ -254,7 +285,7 @@ public class GeneralCommands {
 	}	
 	
 	//TRANSACTIONS
-	public static boolean sendTransaction(RobotController rc, int soupBid, Type type, MapLocation loc) throws GameActionException {		
+	protected boolean sendTransaction(int soupBid, Type type, MapLocation loc) throws GameActionException {		
 		int transactionTag = (int) (Math.random()*500); //This use of parentheses will prevent truncation of the random number.
 		int[] message = new int[]{transactionTag, type.getVal()+transactionTag, loc.x+transactionTag, loc.y+transactionTag, rc.getRoundNum()+transactionTag, 0};
 		int odd = 0;
@@ -279,7 +310,7 @@ public class GeneralCommands {
 	 * @return
 	 * @throws GameActionException
 	 */
-	public static int[] decodeTransaction(RobotController rc, Transaction transaction) throws GameActionException {		
+	protected int[] decodeTransaction(Transaction transaction) throws GameActionException {		
 		int[] message = transaction.getMessage();
 		int transactionTag = message[0];
 		int[] plaintxt = new int[6];
@@ -305,7 +336,7 @@ public class GeneralCommands {
 	 * @param unitTeam
 	 * @return
 	 */
-	public static Type getLocationType(RobotController rc, RobotType unitType, Team unitTeam) {
+	protected static Type getLocationType(RobotController rc, RobotType unitType, Team unitTeam) {
 		if (unitTeam == rc.getTeam()) {
 			switch (unitType) {
 				case HQ:
@@ -335,25 +366,27 @@ public class GeneralCommands {
 		}
 	}
 	
-	public static void sendPendingTransaction(RobotController rc, RobotData data) throws GameActionException {
-		if(GeneralCommands.sendTransaction(rc, data.getPendingTransactionSoupBid(), data.getPendingTransactionType(), data.getPendingTransactionLocation())) {
+	public void sendPendingTransaction() throws GameActionException {
+		if(!data.hasPendingTransaction()) return;
+		
+		if(sendTransaction(data.getPendingTransactionSoupBid(), data.getPendingTransactionType(), data.getPendingTransactionLocation())) {
 			System.out.println("Submitted pending transaction!");
 			data.clearPendingTransaction();
 		}
 	}
 	
 	//PATHFINDING
-	public static boolean routeTo(MapLocation destination, RobotController rc, RobotData data) throws GameActionException {
+	protected boolean routeTo(MapLocation destination) throws GameActionException {
 		rc.setIndicatorLine(rc.getLocation(), destination, 0, 0, 255);
 		//If we're already pathfinding, continue on.
 		if(data.hasPath()) {
-			return GeneralCommands.pathfind(destination, rc, data);
+			return pathfind(destination);
 		}
 		
 		//Otherwise, simply try to move directly towards the destination.
 		MapLocation rcLocation = rc.getLocation();
 		Direction initialDirection = rc.getLocation().directionTo(destination);
-		if(GeneralCommands.move(rc, initialDirection, data)) return true;
+		if(move(initialDirection)) return true;
 		
 		//If this isn't possible, try to move around whatever is blocking us.
 		//Directions closer to the destination will be favored.
@@ -376,7 +409,7 @@ public class GeneralCommands {
 		
 		for(Direction direction : nextDirections) {
 			if(rcLocation.add(direction).equals(data.getPreviousLocation())) continue;
-			if(GeneralCommands.move(rc, direction, data)) return true;
+			if(move(direction)) return true;
 		}
 		
 		/*
@@ -392,7 +425,7 @@ public class GeneralCommands {
 		//If all of these measures have failed, we'll need to use pathfinding to get around.
 		//However, just in case, we will allow for the previous location to be used next turn.
 		data.setPreviousLocation(rcLocation);
-		return GeneralCommands.pathfind(destination, rc, data);
+		return pathfind(destination);
 	}
 	
 	/**
@@ -403,37 +436,37 @@ public class GeneralCommands {
 	 * @return
 	 * @throws GameActionException
 	 */
-	public static boolean pathfind(MapLocation destination, RobotController rc, RobotData data) throws GameActionException {
+	protected boolean pathfind(MapLocation destination) throws GameActionException {
 		if(!data.hasPath() && destination != null) {
-			GeneralCommands.calculatePathTo(destination, rc, data);
+			calculatePathTo(destination);
 			return data.hasPath();
 		}
 		
-		return GeneralCommands.proceedAlongPath(rc, data);
+		return proceedAlongPath();
 	}
 	
-	private static void calculatePathTo(MapLocation destination, RobotController rc, RobotData data) throws GameActionException {
+	protected void calculatePathTo(MapLocation destination) throws GameActionException {
 		data.setMapGraph(Pathfinder.buildMapGraph(rc, rc.getCurrentSensorRadiusSquared()));
 		data.setPath(Pathfinder.getRoute(rc.getLocation(), destination, data.getMapGraph()));
 		data.setPathProgression(0);
 	}
 	
-	private static boolean proceedAlongPath(RobotController rc, RobotData data) throws GameActionException {
-		if(data.hasPath() && GeneralCommands.moveOnPath(rc, data.getNextPathDirection(), data)) {
+	protected boolean proceedAlongPath() throws GameActionException {
+		if(data.hasPath() && moveOnPath(data.getNextPathDirection())) {
 			data.incrementPathProgression();
 			
 			if(data.pathCompleted()) {
-				stopFollowingPath(data);
+				stopFollowingPath();
 			}
 			
 			return true;
 		}
 		
-		stopFollowingPath(data);
+		stopFollowingPath();
 		return false;
 	}
 	
-	public static void stopFollowingPath(RobotData data) {
+	protected void stopFollowingPath() {
 		data.setPath(null);
 		data.setPathProgression(0);
 	}
@@ -445,7 +478,7 @@ public class GeneralCommands {
 	 * @param targetLoc
 	 * @return
 	 */
-	public static MapLocation locateClosestLocation(RobotController rc, ArrayList<MapLocation> locs, MapLocation targetLoc) {
+	protected MapLocation locateClosestLocation(ArrayList<MapLocation> locs, MapLocation targetLoc) {
 		MapLocation closestLoc = null;
 		int closestDistance = Integer.MAX_VALUE;
 		for (MapLocation loc : locs) {

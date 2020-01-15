@@ -14,8 +14,8 @@ public class LandscaperData extends RobotData {
 	private MapLocation enemyHQLocation;
 		private Direction enemyHQBuryDigDirection;
 		
-	public LandscaperData(RobotController rc) {
-		super(rc);
+	public LandscaperData(RobotController rc, MapLocation spawnerLocation) {
+		super(rc, spawnerLocation);
 		currentRole = TRAVEL_TO_HQ;
 	}
 	

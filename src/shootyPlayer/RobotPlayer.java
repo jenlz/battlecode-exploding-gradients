@@ -1,6 +1,12 @@
 package shootyPlayer;
-import battlecode.common.*;
-import julianbot.commands.HQCommands;
+import battlecode.common.Clock;
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.GameConstants;
+import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
+import battlecode.common.Team;
 
 public strictfp class RobotPlayer {
     static RobotController rc;
@@ -64,7 +70,7 @@ public strictfp class RobotPlayer {
             for(RobotInfo bullseye : enemy) {
                 if(rc.canShootUnit(bullseye.getID())) {
                     System.out.println("Shooting target");
-                    HQCommands.shootUnit(rc, bullseye.getID());
+//                    HQCommands.shootUnit(rc, bullseye.getID());
                 }
             }
         }

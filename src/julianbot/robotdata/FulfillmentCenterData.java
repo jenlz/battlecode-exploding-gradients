@@ -11,8 +11,8 @@ public class FulfillmentCenterData extends RobotData {
 		private int transactionRound;
 		private boolean searchedForVaporator;
 	
-	public FulfillmentCenterData(RobotController rc) {
-		super(rc);
+	public FulfillmentCenterData(RobotController rc, MapLocation spawnerLocation) {
+		super(rc, spawnerLocation);
 		buildDirection = Direction.NORTH;
 		transactionRound = 1;
 	}

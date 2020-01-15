@@ -1,11 +1,11 @@
 package julianbot.robotdata;
 
+import java.util.ArrayList;
+
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
-
-import java.util.ArrayList;
 
 public class MinerData extends RobotData {
 
@@ -35,8 +35,8 @@ public class MinerData extends RobotData {
 	 * Initializes role of miner as
 	 * @param rc
 	 */
-	public MinerData(RobotController rc) {
-		super(rc);
+	public MinerData(RobotController rc, MapLocation spawnerLocation) {
+		super(rc, spawnerLocation);
 		currentRole = ROLE_SOUP_MINER;
 		searchDirection = spawnerLocation.directionTo(rc.getLocation());
 		soupLocs = new ArrayList<MapLocation>();

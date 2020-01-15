@@ -11,8 +11,8 @@ public class DesignSchoolData extends RobotData {
 		private int transactionRound;
 		private boolean searchedForVaporator;
 	
-	public DesignSchoolData(RobotController rc) {
-		super(rc);
+	public DesignSchoolData(RobotController rc, MapLocation spawnerLocation) {
+		super(rc, spawnerLocation);
 		buildDirection = Direction.WEST;
 		transactionRound = 1;
 	}
