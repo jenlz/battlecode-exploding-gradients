@@ -108,10 +108,8 @@ public strictfp class RobotPlayer {
         }
                 
         HQCommands.storeForeignTransactions(rc, hqData);
-        if(rc.getRoundNum() % 100 == 0) HQCommands.repeatForeignTransaction(rc, hqData);        
-        
-        //Disabled HQ net gun for drone attack testing
-        /*
+        if(rc.getRoundNum() % 100 == 0) HQCommands.repeatForeignTransaction(rc, hqData);
+
         RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), hqData.getOpponent());
                 
         if(enemy.length > 0) {
@@ -132,7 +130,7 @@ public strictfp class RobotPlayer {
 		    	}
 	        }
         }
-        */
+
     }
 
     static void runMiner() throws GameActionException {
