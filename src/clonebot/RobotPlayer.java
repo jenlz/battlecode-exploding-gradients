@@ -1,4 +1,4 @@
-package julianbot;
+package clonebot;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -7,22 +7,22 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
-import julianbot.commands.DesignSchoolCommands;
-import julianbot.commands.DroneCommands;
-import julianbot.commands.FulfillmentCenterCommands;
-import julianbot.commands.GeneralCommands;
-import julianbot.commands.GeneralCommands.Type;
-import julianbot.commands.HQCommands;
-import julianbot.commands.LandscaperCommands;
-import julianbot.commands.MinerCommands;
-import julianbot.robotdata.DesignSchoolData;
-import julianbot.robotdata.DroneData;
-import julianbot.robotdata.FulfillmentCenterData;
-import julianbot.robotdata.HQData;
-import julianbot.robotdata.LandscaperData;
-import julianbot.robotdata.MinerData;
-import julianbot.robotdata.NetGunData;
-import julianbot.robotdata.RobotData;
+import clonebot.commands.DesignSchoolCommands;
+import clonebot.commands.DroneCommands;
+import clonebot.commands.FulfillmentCenterCommands;
+import clonebot.commands.GeneralCommands;
+import clonebot.commands.GeneralCommands.Type;
+import clonebot.commands.HQCommands;
+import clonebot.commands.LandscaperCommands;
+import clonebot.commands.MinerCommands;
+import clonebot.robotdata.DesignSchoolData;
+import clonebot.robotdata.DroneData;
+import clonebot.robotdata.FulfillmentCenterData;
+import clonebot.robotdata.HQData;
+import clonebot.robotdata.LandscaperData;
+import clonebot.robotdata.MinerData;
+import clonebot.robotdata.NetGunData;
+import clonebot.robotdata.RobotData;
 
 public strictfp class RobotPlayer {
     static RobotController rc;
@@ -110,6 +110,8 @@ public strictfp class RobotPlayer {
         HQCommands.storeForeignTransactions(rc, hqData);
         if(rc.getRoundNum() % 100 == 0) HQCommands.repeatForeignTransaction(rc, hqData);        
         
+        //Disabled HQ net gun for drone attack testing
+        /*
         RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), hqData.getOpponent());
                 
         if(enemy.length > 0) {
@@ -130,6 +132,7 @@ public strictfp class RobotPlayer {
 		    	}
 	        }
         }
+        */
     }
 
     static void runMiner() throws GameActionException {

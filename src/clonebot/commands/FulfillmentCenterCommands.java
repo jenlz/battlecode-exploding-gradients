@@ -1,4 +1,4 @@
-package julianbot.commands;
+package clonebot.commands;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -6,7 +6,7 @@ import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 import battlecode.common.Transaction;
-import julianbot.robotdata.FulfillmentCenterData;
+import clonebot.robotdata.FulfillmentCenterData;
 
 public class FulfillmentCenterCommands {
 	

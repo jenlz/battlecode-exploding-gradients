@@ -1,18 +1,22 @@
-package julianbot.commands;
+package clonebot.commands;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 import battlecode.common.Transaction;
-import julianbot.robotdata.FulfillmentCenterData;
+import clonebot.robotdata.DesignSchoolData;
+import clonebot.robotdata.MinerData;
 
-public class FulfillmentCenterCommands {
+public class DesignSchoolCommands {
 	
-	public static boolean oughtBuildDrone(RobotController rc, FulfillmentCenterData data) {
-		if(GeneralCommands.senseNumberOfUnits(rc, RobotType.LANDSCAPER, rc.getTeam()) < data.getDronesBuilt() + 1) return false;
-		return (data.isStableSoupIncomeConfirmed()) ? rc.getTeamSoup() >= RobotType.DELIVERY_DRONE.cost + 1 : rc.getTeamSoup() >= RobotType.REFINERY.cost + 5;
+	public static boolean oughtBuildLandscaper(RobotController rc, DesignSchoolData data) {
+		//Build a landscaper if the fulfillment center has been built but no landscapers are present.
+//		int landscapersPresent = GeneralCommands.senseNumberOfUnits(rc, RobotType.LANDSCAPER, rc.getTeam());
+		if (data.getLandscapersBuilt() == 0) return GeneralCommands.senseUnitType(rc, RobotType.FULFILLMENT_CENTER, rc.getTeam()) != null;
+		return (data.isStableSoupIncomeConfirmed()) ? rc.getTeamSoup() >= RobotType.LANDSCAPER.cost : rc.getTeamSoup() >= RobotType.REFINERY.cost + 5;
 	}
 	
 	/**
@@ -23,20 +27,19 @@ public class FulfillmentCenterCommands {
      * @return true if a move was performed
      * @throws GameActionException
      */
-    public static boolean tryBuild(RobotController rc, RobotType type, FulfillmentCenterData data) throws GameActionException {
+    public static boolean tryBuild(RobotController rc, RobotType type, DesignSchoolData data) throws GameActionException {
     	Direction buildDirection = data.getBuildDirection();
     	
     	GeneralCommands.waitUntilReady(rc);
         if (rc.isReady() && rc.canBuildRobot(type, buildDirection)) {
             rc.buildRobot(type, buildDirection);
-            if(type == RobotType.DELIVERY_DRONE) data.incrementDronesBuilt();
+            if(type == RobotType.LANDSCAPER) data.incrementLandscapersBuilt();
             return true;
         } 
-        
         return false;
     }
     
-    public static void confirmStableSoupIncome(RobotController rc, FulfillmentCenterData data) throws GameActionException {
+    public static void confirmStableSoupIncome(RobotController rc, DesignSchoolData data) throws GameActionException {
     	if(!data.searchedForVaporator()) {
     		if(GeneralCommands.senseUnitType(rc, RobotType.VAPORATOR, rc.getTeam()) != null) {
     			data.setStableSoupIncomeConfirmed(true);

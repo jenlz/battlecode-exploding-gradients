@@ -1,4 +1,4 @@
-package julianbot.commands;
+package clonebot.commands;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -8,8 +8,8 @@ import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
 import battlecode.common.Transaction;
-import julianbot.commands.GeneralCommands.Type;
-import julianbot.robotdata.DroneData;
+import clonebot.commands.GeneralCommands.Type;
+import clonebot.robotdata.DroneData;
 
 public class DroneCommands {
 
