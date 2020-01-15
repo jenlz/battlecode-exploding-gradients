@@ -141,9 +141,33 @@ public class LandscaperCommands {
 	
 	public static boolean buryEnemyHQ(RobotController rc, LandscaperData data) throws GameActionException {
 		if(data.getEnemyHQLocation() != null) {
-			
-			if(!rc.getLocation().isWithinDistanceSquared(data.getEnemyHQLocation(), 3)) GeneralCommands.routeTo(data.getEnemyHQLocation(), rc, data);
-			else if(rc.getDirtCarrying() > 0) LandscaperCommands.depositDirt(rc, rc.getLocation().directionTo(data.getEnemyHQLocation()));
+			Direction dirToHQ = rc.getLocation().directionTo(data.getEnemyHQLocation());
+			if(!rc.getLocation().isAdjacentTo(data.getEnemyHQLocation())) {
+				if (!GeneralCommands.move(rc, dirToHQ, data)) {
+					int dirtDifference = rc.senseElevation(rc.getLocation()) - rc.senseElevation(rc.adjacentLocation(dirToHQ));
+					RobotInfo[] robots = rc.senseNearbyRobots();
+					boolean robotInTheWay = false;
+					for (RobotInfo robot : robots) {
+						if (robot.getLocation() == rc.getLocation().add(dirToHQ)) {
+							robotInTheWay = true;
+						}
+					}
+
+					if (dirtDifference > GameConstants.MAX_DIRT_DIFFERENCE && !robotInTheWay) {
+						if (!dig(rc, dirToHQ.rotateRight().rotateRight())) {
+							dig(rc, dirToHQ.rotateLeft().rotateLeft());
+						}
+						LandscaperCommands.depositDirt(rc, dirToHQ);
+					} else if (dirtDifference < -GameConstants.MAX_DIRT_DIFFERENCE && !robotInTheWay) {
+						LandscaperCommands.dig(rc, dirToHQ);
+						if (!depositDirt(rc, dirToHQ.rotateRight().rotateRight())) {
+							depositDirt(rc, dirToHQ.rotateLeft().rotateLeft());
+						}
+					} else {
+						GeneralCommands.routeTo(data.getEnemyHQLocation(), rc, data);
+					}
+				}
+			} else if(rc.getDirtCarrying() > 0) LandscaperCommands.depositDirt(rc, rc.getLocation().directionTo(data.getEnemyHQLocation()));
 			else LandscaperCommands.dig(rc, data.getEnemyHQBuryDigDirection());
 			
 			return true;
