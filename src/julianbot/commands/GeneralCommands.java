@@ -48,6 +48,7 @@ public class GeneralCommands {
 		            return e;
 		        }
 		    }
+			System.out.println("Something is terribly wrong. enumOfValue returns null");
 		    return null;
 		}
 		//Call Type.enumOfValue(plaintxt[1]) to get enum from value
