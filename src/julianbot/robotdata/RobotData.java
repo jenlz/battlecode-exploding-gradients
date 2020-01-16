@@ -25,6 +25,7 @@ public class RobotData {
 		team = rc.getTeam();
 		opponent = team.opponent();
 		previousLocation = rc.getLocation();
+		hasPendingTransaction = false;
 		setSpawnerLocation(spawnerLocation);	
 	}
 	
