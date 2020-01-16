@@ -23,6 +23,8 @@ public class Drone extends Robot {
 
 	@Override
 	public void run() throws GameActionException {
+		super.run();
+		
 		if(turnCount == 1) learnHQLocation();
     	
     	if(turnCount < GameConstants.INITIAL_COOLDOWN_TURNS) {

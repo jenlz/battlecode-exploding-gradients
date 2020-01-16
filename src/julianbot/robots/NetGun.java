@@ -17,6 +17,8 @@ public class NetGun extends Robot {
 
 	@Override
 	public void run() throws GameActionException {
+		super.run();
+		
     	RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), netGunData.getOpponent());
     	if(enemy.length > 0) {
     		for (RobotInfo target : enemy) {

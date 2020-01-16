@@ -23,11 +23,11 @@ public class Landscaper extends Robot {
 	};
 	
 	private static Direction[][] digPattern = new Direction[][]{
-		{Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.SOUTHWEST},
-		{Direction.EAST, null, null, null, Direction.WEST},
-		{Direction.NORTHEAST, null, null, null, Direction.SOUTHWEST},
-		{Direction.EAST, null, null, null, Direction.WEST},
-		{Direction.NORTHEAST, Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.NORTHWEST}
+		{Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.EAST},
+		{Direction.WEST, null, null, null, Direction.EAST},
+		{Direction.WEST, null, null, null, Direction.EAST},
+		{Direction.WEST, null, null, null, Direction.EAST},
+		{Direction.WEST, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH}
 	};
 	
 	private static Direction[][][] buildPattern = new Direction[][][] {
@@ -48,6 +48,8 @@ public class Landscaper extends Robot {
 
 	@Override
 	public void run() throws GameActionException {
+		super.run();
+		
     	if(turnCount == 1) learnHQLocation();
 		RobotInfo enemyDesign = senseUnitType(RobotType.DESIGN_SCHOOL, landscaperData.getOpponent());
     	
@@ -95,7 +97,7 @@ public class Landscaper extends Robot {
 				landscaperData.setHqLocation(new MapLocation(message[2], message[3]));
 				return;
 			}
-		}
+		}		
 	}
 	
 	private boolean approachComplete() {

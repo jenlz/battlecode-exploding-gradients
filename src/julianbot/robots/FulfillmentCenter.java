@@ -20,6 +20,8 @@ public class FulfillmentCenter extends Robot {
 
 	@Override
 	public void run() throws GameActionException {
+		super.run();
+		
 		if(!fulfillmentCenterData.isStableSoupIncomeConfirmed()) confirmStableSoupIncome();
     	if(oughtBuildDrone()) tryBuild(RobotType.DELIVERY_DRONE);
 	}

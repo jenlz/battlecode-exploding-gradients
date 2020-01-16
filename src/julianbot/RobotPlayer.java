@@ -42,8 +42,6 @@ public strictfp class RobotPlayer {
             try {
                 // Here, we've separated the controls into a different method for each RobotType.
                 // You can add the missing ones or rewrite this into your own control structure.
-            	robot.sendPendingTransaction();
-            	robot.incrementTurnCount();
                 robot.run();
                 Clock.yield();
 
@@ -63,7 +61,7 @@ public strictfp class RobotPlayer {
 			case FULFILLMENT_CENTER: return new FulfillmentCenter(rc);
 			case DELIVERY_DRONE:     return new Drone(rc);
 			case NET_GUN:            return new NetGun(rc);
-			default:                 return new Miner(rc);
+			default:                 return new Robot(rc);
     	}
     }
     

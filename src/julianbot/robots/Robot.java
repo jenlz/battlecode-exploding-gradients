@@ -15,13 +15,14 @@ import battlecode.common.Transaction;
 import julianbot.robotdata.RobotData;
 import julianbot.utils.pathfinder.Pathfinder;
 
-public abstract class Robot {
+public class Robot {
 	
 	protected RobotController rc;
 	protected RobotData data;
 	
 	protected static Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
 	
+	protected int spawnRound;
 	protected int turnCount;
 	
 	public enum Type{
@@ -61,6 +62,7 @@ public abstract class Robot {
 	
 	public Robot(RobotController rc) {
 		this.rc = rc;
+		this.spawnRound = rc.getRoundNum();
 	}
 	
 	public RobotController getRobotController() {
@@ -79,10 +81,13 @@ public abstract class Robot {
 		this.data = data;
 	}
 	
-	public abstract void run() throws GameActionException;
+	public void run() throws GameActionException {
+		sendPendingTransaction();
+    	updateTurnCount();
+	}
 
-	public void incrementTurnCount() {
-		 turnCount += 1;
+	public void updateTurnCount() {
+		 turnCount = rc.getRoundNum() - spawnRound + 1;
 	}
 	
 	//RECONNAISSANCE
@@ -287,13 +292,13 @@ public abstract class Robot {
 	//TRANSACTIONS
 	protected boolean sendTransaction(int soupBid, Type type, MapLocation loc) throws GameActionException {		
 		int transactionTag = (int) (Math.random()*500); //This use of parentheses will prevent truncation of the random number.
-		int[] message = new int[]{transactionTag, type.getVal()+transactionTag, loc.x+transactionTag, loc.y+transactionTag, rc.getRoundNum()+transactionTag, 0};
+		int[] message = new int[]{transactionTag, type.getVal()+transactionTag, loc.x+transactionTag, loc.y+transactionTag, rc.getRoundNum()+transactionTag, 0, 0};
 		int odd = 0;
 		for (int i : message) {
 			if (i%2 == 1)
 				odd++;
 		}
-		message[5] = odd;
+		message[6] = odd;
 		
 		if(rc.canSubmitTransaction(message, soupBid)) {
 			rc.submitTransaction(message, soupBid);
@@ -313,7 +318,7 @@ public abstract class Robot {
 	protected int[] decodeTransaction(Transaction transaction) throws GameActionException {		
 		int[] message = transaction.getMessage();
 		int transactionTag = message[0];
-		int[] plaintxt = new int[6];
+		int[] plaintxt = new int[7];
 		
 		int odd = 0;
 		for (int i = 0; i<message.length-1; i++) {
@@ -321,8 +326,7 @@ public abstract class Robot {
 				odd++;
 		}
 		
-		if(message.length < 6) return new int[] {0};
-		if (odd!=message[5]) return new int[] {0}; //empty means message not from own team
+		if (odd!=message[6]) return new int[] {0}; //empty means message not from own team
 		for (int i = 0; i<message.length-1; i++) {
 			plaintxt[i] = message[i] - transactionTag;
 		}

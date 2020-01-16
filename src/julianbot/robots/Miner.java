@@ -24,6 +24,8 @@ public class Miner extends Robot {
 
 	@Override
 	public void run() throws GameActionException {
+		super.run();
+		
     	if(turnCount == 1) discernRole();
 
     	//TODO: We can split this up over multiple rounds to avoid reading transactions past initial cooldown turns or finishing early, then starting again on round 9, only to finish after initial cooldown.

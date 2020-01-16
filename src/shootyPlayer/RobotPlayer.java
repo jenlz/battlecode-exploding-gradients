@@ -66,11 +66,9 @@ public strictfp class RobotPlayer {
         RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), rc.getTeam().opponent());
 
         if(enemy.length > 0) {
-            System.out.println("Enemies detected");
             for(RobotInfo bullseye : enemy) {
                 if(rc.canShootUnit(bullseye.getID())) {
-                    System.out.println("Shooting target");
-//                    HQCommands.shootUnit(rc, bullseye.getID());
+                    rc.shootUnit(bullseye.getID());
                 }
             }
         }

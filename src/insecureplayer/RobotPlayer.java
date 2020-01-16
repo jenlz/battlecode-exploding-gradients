@@ -206,7 +206,7 @@ public strictfp class RobotPlayer {
 
     static void tryBlockchain() throws GameActionException {
         if (turnCount < 3) {
-            int[] message = new int[GameConstants.MAX_BLOCKCHAIN_TRANSACTION_LENGTH];
+            int[] message = new int[7];
             for (int i = 0; i < message.length; i++) {
                 message[i] = 123;
             }

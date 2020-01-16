@@ -21,7 +21,9 @@ public class HQ extends Robot {
 	}
 
 	@Override
-	public void run() throws GameActionException {    	
+	public void run() throws GameActionException { 
+		super.run();
+		
     	if(rc.getRoundNum() == 1) {
     		makeInitialReport();
     		setBuildDirectionTowardsSoup();

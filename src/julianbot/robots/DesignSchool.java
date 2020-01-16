@@ -21,6 +21,8 @@ public class DesignSchool extends Robot {
 
 	@Override
 	public void run() throws GameActionException {
+		super.run();
+		
 		if(!designSchoolData.isStableSoupIncomeConfirmed()) confirmStableSoupIncome();
     	if(oughtBuildLandscaper()) tryBuild(RobotType.LANDSCAPER);
     	
