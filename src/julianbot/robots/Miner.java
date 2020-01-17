@@ -119,16 +119,24 @@ public class Miner extends Robot {
     }
     
     private void refineryMinerProtocol() throws GameActionException {
-    	System.out.println("refinery protocol");
-    	
-    	RobotInfo refinery = senseUnitType(RobotType.REFINERY, rc.getTeam());
-    	if(refinery != null) {
-    		minerData.addRefineryLoc(refinery.getLocation());
-    		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
-    		return;
-    	}
-    	
-    	if(oughtBuildRefinery(rc)) {
+		System.out.println("refinery protocol");
+
+		RobotInfo refinery = senseUnitType(RobotType.REFINERY, rc.getTeam());
+		if (refinery != null) {
+			minerData.addRefineryLoc(refinery.getLocation());
+			minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+			return;
+		}
+
+		/*MapLocation closestSoupLoc = locateClosestLocation(minerData.getSoupLocs(), rc.getLocation());
+		for (MapLocation soupLoc : minerData.getSoupLocs()) {
+			if (minerData.getSpawnerLocation().distanceSquaredTo(soupLoc) > 9) {
+				routeTo(soupLoc);
+			}
+		} */
+
+    	if(oughtBuildRefinery()) {
+
 	    	if(attemptRefineryConstruction()) {
 	    		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
 	    		
@@ -431,7 +439,7 @@ public class Miner extends Robot {
 		}
 	}
 	
-	private boolean oughtBuildRefinery(RobotController rc) {
+	private boolean oughtBuildRefinery() {
 		return rc.getTeamSoup() >= RobotType.REFINERY.cost;
 	}
 	
@@ -483,8 +491,8 @@ public class Miner extends Robot {
 	private void findNearbySoup() throws GameActionException {
 		// Might use a lot of bytecode. Not 100% sure. Trying to prevent an overly large ArrayList of soupLocs.
 		MapLocation[] soupLocs = rc.senseNearbySoup();
-		MapLocation bestSoupLoc = soupLocs[0];
-		int bestSoupCount = rc.senseSoup(soupLocs[0]);
+		MapLocation bestSoupLoc = null;
+		int bestSoupCount = 0;
 		for (MapLocation soupLoc : soupLocs) {
 			if (rc.senseSoup(soupLoc) > bestSoupCount) {
 				bestSoupLoc = soupLoc;
@@ -504,7 +512,7 @@ public class Miner extends Robot {
 		//Use of "int i" rather than MapLocation location : data.getSoupLocs() was intentional. This will throw an error otherwise.
 		for(int i = 0; i < minerData.getSoupLocs().size(); i++) {
 			MapLocation allegedSoupLocation = minerData.getSoupLocs().get(i);
-			if(rc.canSenseLocation(allegedSoupLocation)) {
+			if(allegedSoupLocation != null && rc.canSenseLocation(allegedSoupLocation)) {
 				if(rc.senseSoup(allegedSoupLocation) == 0) {
 					minerData.removeSoupLoc(allegedSoupLocation);
 					i--;
