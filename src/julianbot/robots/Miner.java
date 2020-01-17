@@ -128,10 +128,11 @@ public class Miner extends Robot {
 			return;
 		}
 
-		//MapLocation closestSoupLoc = locateClosestLocation(minerData.getSoupLocs(), rc.getLocation());
-		for (MapLocation soupLoc : minerData.getSoupLocs()) {
-			if (minerData.getSpawnerLocation().distanceSquaredTo(soupLoc) > 9) {
-				routeTo(soupLoc);
+		if(minerData.getSoupLocs().size() > 0) {
+			for (MapLocation soupLoc : minerData.getSoupLocs()) {
+				if (minerData.getSpawnerLocation().distanceSquaredTo(soupLoc) > 9) {
+					routeTo(soupLoc);
+				}
 			}
 		}
 
@@ -283,8 +284,7 @@ public class Miner extends Robot {
     		if(minerData.getSoupLocs().size() > 0) refreshSoupLocations();
     		if(minerData.getSoupLocs().size() == 0) findNearbySoup();
     		
-    		if(minerData.getSoupLocs().size() > 0 && minerData.getSoupLocs() != null) {
-    			System.out.println("Soup locs before calling locate method: " + minerData.getSoupLocs());
+    		if(minerData.getSoupLocs().size() > 0) {
     			MapLocation closestSoup = locateClosestLocation(minerData.getSoupLocs(), rc.getLocation());
     			if(!routeTo(closestSoup)) minerData.removeSoupLoc(closestSoup);
     		} else {
@@ -492,16 +492,17 @@ public class Miner extends Robot {
 	private void findNearbySoup() throws GameActionException {
 		// Might use a lot of bytecode. Not 100% sure. Trying to prevent an overly large ArrayList of soupLocs.
 		MapLocation[] soupLocs = rc.senseNearbySoup();
-		MapLocation bestSoupLoc = null;
-		int bestSoupCount = 0;
-		for (MapLocation soupLoc : soupLocs) {
-			if (rc.senseSoup(soupLoc) > bestSoupCount) {
-				bestSoupLoc = soupLoc;
-				bestSoupCount = rc.senseSoup(soupLoc);
+		if (soupLocs.length > 0) {
+			MapLocation bestSoupLoc = null;
+			int bestSoupCount = 0;
+			for (MapLocation soupLoc : soupLocs) {
+				if (rc.senseSoup(soupLoc) > bestSoupCount) {
+					bestSoupLoc = soupLoc;
+					bestSoupCount = rc.senseSoup(soupLoc);
+				}
 			}
+			minerData.addSoupLoc(bestSoupLoc);
 		}
-
-		minerData.addSoupLoc(bestSoupLoc);
 
 	}
 
