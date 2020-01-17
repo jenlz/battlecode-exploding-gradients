@@ -119,16 +119,25 @@ public class Miner extends Robot {
     }
     
     private void refineryMinerProtocol() throws GameActionException {
-    	System.out.println("refinery protocol");
-    	
-    	RobotInfo refinery = senseUnitType(RobotType.REFINERY, rc.getTeam());
-    	if(refinery != null) {
-    		minerData.addRefineryLoc(refinery.getLocation());
-    		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
-    		return;
-    	}
-    	
-    	if(oughtBuildRefinery(rc)) {
+		System.out.println("refinery protocol");
+
+		RobotInfo refinery = senseUnitType(RobotType.REFINERY, rc.getTeam());
+		if (refinery != null) {
+			minerData.addRefineryLoc(refinery.getLocation());
+			minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+			return;
+		}
+
+		if(minerData.getSoupLocs().size() > 0) {
+			for (MapLocation soupLoc : minerData.getSoupLocs()) {
+				if (minerData.getSpawnerLocation().distanceSquaredTo(soupLoc) > 9) {
+					routeTo(soupLoc);
+				}
+			}
+		}
+
+    	if(oughtBuildRefinery()) {
+
 	    	if(attemptRefineryConstruction()) {
 	    		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
 	    		
@@ -433,7 +442,7 @@ public class Miner extends Robot {
 		}
 	}
 	
-	private boolean oughtBuildRefinery(RobotController rc) {
+	private boolean oughtBuildRefinery() {
 		return rc.getTeamSoup() >= RobotType.REFINERY.cost;
 	}
 	
@@ -460,7 +469,6 @@ public class Miner extends Robot {
 
 	/**
 	 * Finds location with the most soup within 1 tile radius
-	 * @param rc
 	 * @return
 	 * @throws GameActionException
 	 */
@@ -479,29 +487,36 @@ public class Miner extends Robot {
 	}
 
 	/**
-	 * Finds location with the most soup within a 2 tile radius
-	 * @param rc
+	 * Finds location with the most soup within sensor radius
 	 * @return
 	 * @throws GameActionException
 	 */
 	private void findNearbySoup() throws GameActionException {
-		MapLocation rcLocation = rc.getLocation();
-		
-		for(int dx = -SENSOR_RADIUS; dx <= SENSOR_RADIUS; dx++) {
-			for(int dy = -SENSOR_RADIUS; dy <= SENSOR_RADIUS; dy++) {
-				MapLocation potentialSoupLocation = rcLocation.translate(dx, dy);
-				if(rc.canSenseLocation(potentialSoupLocation)) {
-					if(rc.senseSoup(potentialSoupLocation) > 0) minerData.addSoupLoc(potentialSoupLocation);
+		// Might use a lot of bytecode. Not 100% sure. Trying to prevent an overly large ArrayList of soupLocs.
+		MapLocation[] soupLocs = rc.senseNearbySoup();
+		if (soupLocs.length > 0) {
+			MapLocation bestSoupLoc = null;
+			int bestSoupCount = 0;
+			for (MapLocation soupLoc : soupLocs) {
+				if (rc.senseSoup(soupLoc) > bestSoupCount) {
+					bestSoupLoc = soupLoc;
+					bestSoupCount = rc.senseSoup(soupLoc);
 				}
 			}
+			minerData.addSoupLoc(bestSoupLoc);
 		}
+
 	}
 
+	/**
+	 * Removes stored soup locations that are now empty
+	 * @throws GameActionException
+	 */
 	private void refreshSoupLocations() throws GameActionException {		
 		//Use of "int i" rather than MapLocation location : data.getSoupLocs() was intentional. This will throw an error otherwise.
 		for(int i = 0; i < minerData.getSoupLocs().size(); i++) {
 			MapLocation allegedSoupLocation = minerData.getSoupLocs().get(i);
-			if(rc.canSenseLocation(allegedSoupLocation)) {
+			if(allegedSoupLocation != null && rc.canSenseLocation(allegedSoupLocation)) {
 				if(rc.senseSoup(allegedSoupLocation) == 0) {
 					minerData.removeSoupLoc(allegedSoupLocation);
 					i--;
@@ -512,7 +527,6 @@ public class Miner extends Robot {
 	
 	/**
 	 * Returns location of soup within two radius of robot. If not found, will return null.
-	 * @param rc
 	 * @return
 	 * @throws GameActionException
 	 */
@@ -531,7 +545,6 @@ public class Miner extends Robot {
 
 	/**
 	 * Mines soup if able
-	 * @param rc Robot Controller
 	 * @param dir Direction
 	 * @throws GameActionException
 	 */
@@ -549,8 +562,6 @@ public class Miner extends Robot {
 
 	/**
 	 * Moves in same direction as before, otherwise moves in random direction
-	 * @param rc
-	 * @param data
 	 * @throws GameActionException
 	 */
 	private void continueSearch() throws GameActionException {		
@@ -596,8 +607,6 @@ public class Miner extends Robot {
 
 	/**
 	 * Reads block and uses useful information such as refinery and soup locations
-	 * @param rc
-	 * @param minerdata
 	 * @param block
 	 * @throws GameActionException
 	 */
