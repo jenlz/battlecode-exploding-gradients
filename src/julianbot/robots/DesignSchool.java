@@ -22,9 +22,6 @@ public class DesignSchool extends Robot {
 	@Override
 	public void run() throws GameActionException {
 		super.run();
-		
-		if(!designSchoolData.isStableSoupIncomeConfirmed()) confirmStableSoupIncome();
-    	if(oughtBuildLandscaper()) tryBuild(RobotType.LANDSCAPER);
     	
     	RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), designSchoolData.getOpponent());
         
@@ -32,12 +29,19 @@ public class DesignSchool extends Robot {
 	        for(RobotInfo bullseye : enemy) { 
 	        	if(bullseye.type.equals(RobotType.DESIGN_SCHOOL)) {
 	        		designSchoolData.setBuildDirection(rc.getLocation().directionTo(bullseye.location).rotateLeft());
-	        		while(!tryBuild(RobotType.LANDSCAPER)) {
-	        			
-	        		}
+	        		tryBuild(RobotType.LANDSCAPER);
+	        		return;
 	        	}
 	        }
         }
+        
+        if(!designSchoolData.isStableSoupIncomeConfirmed()) confirmStableSoupIncome();
+    	if(oughtBuildLandscaper()) {
+    		if(!tryBuild(RobotType.LANDSCAPER) && designSchoolData.getBuildDirection().equals(Direction.WEST)) {
+    			//If we cannot build a landscaper to the west, it means the wall already exists, so we can start building northwards to generate attack landscapers.
+    			designSchoolData.setBuildDirection(Direction.NORTH);
+    		}
+    	}
 	}
 	
 	private boolean oughtBuildLandscaper() {
@@ -63,7 +67,8 @@ public class DesignSchool extends Robot {
             rc.buildRobot(type, buildDirection);
             if(type == RobotType.LANDSCAPER) designSchoolData.incrementLandscapersBuilt();
             return true;
-        } 
+        }
+        
         return false;
     }
     

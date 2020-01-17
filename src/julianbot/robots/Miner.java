@@ -386,7 +386,9 @@ public class Miner extends Robot {
 	}
 	
 	private boolean canSenseHubDesignSchool() throws GameActionException {
-		RobotInfo designSchoolInfo = rc.senseRobotAtLocation(data.getSpawnerLocation().translate(-1, 0));
+		MapLocation designSchoolSite = data.getSpawnerLocation().translate(-1, 0);
+		if(!rc.canSenseLocation(designSchoolSite)) return false;
+		RobotInfo designSchoolInfo = rc.senseRobotAtLocation(designSchoolSite);
 		if(designSchoolInfo == null) return false;
 		return designSchoolInfo.type == RobotType.DESIGN_SCHOOL;
 	}

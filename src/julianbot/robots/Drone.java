@@ -162,6 +162,7 @@ public class Drone extends Robot {
 	
 	private boolean pickUpUnit(RobotType targetType, Team targetTeam) throws GameActionException {
 		RobotInfo info = senseUnitType(targetType, targetTeam);
+		
 		if(info != null) {
 			waitUntilReady();
 			

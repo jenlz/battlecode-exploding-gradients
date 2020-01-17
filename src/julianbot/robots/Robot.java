@@ -63,7 +63,6 @@ public class Robot {
 	public Robot(RobotController rc) {
 		this.rc = rc;
 		this.spawnRound = rc.getRoundNum();
-		this.data = new RobotData(rc, getSpawnerLocation());
 	}
 	
 	public RobotController getRobotController() {

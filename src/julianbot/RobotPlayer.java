@@ -12,7 +12,9 @@ import julianbot.robots.HQ;
 import julianbot.robots.Landscaper;
 import julianbot.robots.Miner;
 import julianbot.robots.NetGun;
+import julianbot.robots.Refinery;
 import julianbot.robots.Robot;
+import julianbot.robots.Vaporator;
 
 public strictfp class RobotPlayer {
     static RobotController rc;
@@ -56,10 +58,12 @@ public strictfp class RobotPlayer {
     	switch(type) {
 			case HQ:                 return new HQ(rc);
 			case MINER:              return new Miner(rc);
+			case REFINERY:           return new Refinery(rc);
 			case DESIGN_SCHOOL:      return new DesignSchool(rc);
 			case LANDSCAPER:         return new Landscaper(rc);
 			case FULFILLMENT_CENTER: return new FulfillmentCenter(rc);
 			case DELIVERY_DRONE:     return new Drone(rc);
+			case VAPORATOR:          return new Vaporator(rc);
 			case NET_GUN:            return new NetGun(rc);
 			default:                 return new Robot(rc);
     	}

@@ -123,6 +123,8 @@ public class Landscaper extends Robot {
 		int gridX = dx + DIG_PATTERN_ARRAY_SHIFT;
 		int gridY = -dy + DIG_PATTERN_ARRAY_SHIFT;
 		
+		if(gridX < 0 || gridX >= movePattern[0].length || gridY < 0 || gridY >= movePattern.length) return;
+		
 		//If where we're going is too low, deposit dirt there.
 		if(rc.senseElevation(rcLocation) - rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) > GameConstants.MAX_DIRT_DIFFERENCE) {
 			depositDirt(movePattern[gridY][gridX]);
