@@ -303,6 +303,8 @@ public class Robot {
 		if(rc.canSubmitTransaction(message, soupBid)) {
 			rc.submitTransaction(message, soupBid);
 			return true;
+		} else {
+			data.setPendingTransaction(type, loc, soupBid);
 		}
 		
 		return false;
