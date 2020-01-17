@@ -304,6 +304,8 @@ public class Robot {
 		if(rc.canSubmitTransaction(message, soupBid)) {
 			rc.submitTransaction(message, soupBid);
 			return true;
+		} else {
+			data.setPendingTransaction(type, loc, soupBid);
 		}
 		
 		return false;
@@ -331,6 +333,7 @@ public class Robot {
 		for (int i = 0; i<message.length-1; i++) {
 			plaintxt[i] = message[i] - transactionTag;
 		}
+		if (Type.enumOfValue(plaintxt[1]) == null) return new int[] {0}; //Checks if matches one of categories.
 		return plaintxt;
 	}
 

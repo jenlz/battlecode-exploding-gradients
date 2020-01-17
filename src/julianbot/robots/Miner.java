@@ -144,7 +144,6 @@ public class Miner extends Robot {
 	    		
 	    		if(!sendTransaction(10, Robot.Type.TRANSACTION_FRIENDLY_REFINERY_AT_LOC, refineryLocation)) {
 	    			System.out.println("Refinery transaction pending!");
-	    			minerData.setPendingTransaction(Robot.Type.TRANSACTION_ENEMY_REFINERY_AT_LOC, refineryLocation, 10);
 	    		} else {
 	    			System.out.println("Completed refinery transaction!");
 	    		}
@@ -503,6 +502,8 @@ public class Miner extends Robot {
 				}
 			}
 			minerData.addSoupLoc(bestSoupLoc);
+			sendTransaction(3, Type.TRANSACTION_SOUP_AT_LOC, bestSoupLoc);
+			System.out.println("Transmitted soup!");
 		}
 
 	}
@@ -612,7 +613,7 @@ public class Miner extends Robot {
 	private void readTransaction(Transaction[] block) throws GameActionException {		
 		for (Transaction message : block) {
 			int[] decodedMessage = decodeTransaction(message);
-			if (decodedMessage != new int[] {0}) {
+			if (decodedMessage.length == GameConstants.NUMBER_OF_TRANSACTIONS_PER_BLOCK) {
 				Robot.Type category = Robot.Type.enumOfValue(decodedMessage[1]);
 				MapLocation loc = new MapLocation(decodedMessage[2], decodedMessage[3]);
 
