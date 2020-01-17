@@ -8,7 +8,9 @@ import battlecode.common.RobotController;
 public class Pathfinder {
 	
 	public static MapGraph buildMapGraph(RobotController rc, int radiusSquared) throws GameActionException {
-		return new MapGraph(rc, radiusSquared);
+		MapGraph mapGraph = new MapGraph(radiusSquared);
+		mapGraph.connectEdges(rc);
+		return mapGraph;
 	}
 	
 	public static Direction[] getRoute(MapLocation start, MapLocation destination, MapGraph mapGraph) {

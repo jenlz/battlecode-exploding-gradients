@@ -11,8 +11,6 @@ import battlecode.common.Transaction;
 import julianbot.robotdata.MinerData;
 
 public class Miner extends Robot {
-
-	private static final int SENSOR_RADIUS = (int) Math.ceil(Math.sqrt(RobotType.MINER.sensorRadiusSquared));
 	
 	private MinerData minerData;
 	
@@ -397,6 +395,7 @@ public class Miner extends Robot {
 	private boolean canSenseHubDesignSchool() throws GameActionException {
 		MapLocation designSchoolSite = data.getSpawnerLocation().translate(-1, 0);
 		if(!rc.canSenseLocation(designSchoolSite)) return false;
+		
 		RobotInfo designSchoolInfo = rc.senseRobotAtLocation(designSchoolSite);
 		if(designSchoolInfo == null) return false;
 		return designSchoolInfo.type == RobotType.DESIGN_SCHOOL;

@@ -22,7 +22,8 @@ public class MapGraph {
 	
 	private MapLocation sourceLocation;
 	
-	public MapGraph(RobotController rc, int radiusSquared) throws GameActionException {
+	@SuppressWarnings("unchecked")
+	public MapGraph(int radiusSquared) {
 		this.lengthToEdge = (int) Math.sqrt(radiusSquared);
 		this.radiusSquared = radiusSquared;
 		this.dimension = 1 + 2 * lengthToEdge;
@@ -31,17 +32,8 @@ public class MapGraph {
 		this.adj = new LinkedList[nodeCount];
 		this.parentCodes = new int[nodeCount];
 		
-		this.sourceLocation = rc.getLocation();
-		
 		for(int i = 0; i < nodeCount; ++i) {
 			this.adj[i] = new LinkedList<>();
-		}
-		
-		for(int i = -lengthToEdge; i <= lengthToEdge; i++) {
-			for(int j = -lengthToEdge; j <= lengthToEdge; j++) {
-				if(i * i + j * j > radiusSquared) continue;				
-				connectAllAdjacencies(rc, i, j);
-			}
 		}
 	}
 	
@@ -55,6 +47,17 @@ public class MapGraph {
 		int graphX = locationCode % dimension;
 		int graphY = locationCode / dimension;
 		return sourceLocation.translate(graphX - lengthToEdge, graphY - lengthToEdge);
+	}
+	
+	public void connectEdges(RobotController rc) throws GameActionException {
+		this.sourceLocation = rc.getLocation();
+		
+		for(int i = -lengthToEdge; i <= lengthToEdge; i++) {
+			for(int j = -lengthToEdge; j <= lengthToEdge; j++) {
+				if(i * i + j * j > radiusSquared) continue;				
+				connectAllAdjacencies(rc, i, j);
+			}
+		}
 	}
 	
 	private void connectAllAdjacencies(RobotController rc, int dx, int dy) throws GameActionException {
