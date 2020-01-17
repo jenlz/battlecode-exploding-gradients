@@ -484,6 +484,8 @@ public class Robot {
 	 * @return
 	 */
 	protected MapLocation locateClosestLocation(ArrayList<MapLocation> locs, MapLocation targetLoc) {
+		System.out.println("Locs: " + locs);
+		System.out.println("Loc: " + targetLoc);
 		MapLocation closestLoc = null;
 		int closestDistance = Integer.MAX_VALUE;
 		for (MapLocation loc : locs) {

@@ -128,12 +128,12 @@ public class Miner extends Robot {
 			return;
 		}
 
-		/*MapLocation closestSoupLoc = locateClosestLocation(minerData.getSoupLocs(), rc.getLocation());
+		//MapLocation closestSoupLoc = locateClosestLocation(minerData.getSoupLocs(), rc.getLocation());
 		for (MapLocation soupLoc : minerData.getSoupLocs()) {
 			if (minerData.getSpawnerLocation().distanceSquaredTo(soupLoc) > 9) {
 				routeTo(soupLoc);
 			}
-		} */
+		}
 
     	if(oughtBuildRefinery()) {
 
@@ -283,7 +283,8 @@ public class Miner extends Robot {
     		if(minerData.getSoupLocs().size() > 0) refreshSoupLocations();
     		if(minerData.getSoupLocs().size() == 0) findNearbySoup();
     		
-    		if(minerData.getSoupLocs().size() > 0) {
+    		if(minerData.getSoupLocs().size() > 0 && minerData.getSoupLocs() != null) {
+    			System.out.println("Soup locs before calling locate method: " + minerData.getSoupLocs());
     			MapLocation closestSoup = locateClosestLocation(minerData.getSoupLocs(), rc.getLocation());
     			if(!routeTo(closestSoup)) minerData.removeSoupLoc(closestSoup);
     		} else {
