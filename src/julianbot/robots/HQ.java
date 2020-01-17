@@ -67,7 +67,7 @@ public class HQ extends Robot {
 	private boolean oughtBuildMiner() {
 		if(senseUnitType(RobotType.DESIGN_SCHOOL, rc.getTeam()) != null) return false;
 		
-		return rc.getTeamSoup() >= RobotType.MINER.cost + hqData.getMinersBuilt() * 30 || rc.getRoundNum() == 1;
+		return rc.getTeamSoup() >= RobotType.MINER.cost + hqData.getMinersBuilt() * 30 || rc.getRoundNum() < 50;
 	}
 	
 	//DEFENSE
