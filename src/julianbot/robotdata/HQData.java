@@ -11,9 +11,11 @@ import battlecode.common.Transaction;
 public class HQData extends RobotData {
 
 	private int minersBuilt;
-	
 	private Direction buildDirection;
+	
 	private List<Transaction> foreignTransactions;
+	
+	private MapLocation enemyHqLocation;
 	
 	public HQData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
@@ -49,6 +51,14 @@ public class HQData extends RobotData {
 	public Transaction getRandomForeignTransaction() {
 		if(foreignTransactions.size() == 0) return null;
 		return foreignTransactions.get((int) (Math.random() * foreignTransactions.size()));
+	}
+
+	public MapLocation getEnemyHqLocation() {
+		return enemyHqLocation;
+	}
+
+	public void setEnemyHqLocation(MapLocation enemyHqLocation) {
+		this.enemyHqLocation = enemyHqLocation;
 	}
 	
 }

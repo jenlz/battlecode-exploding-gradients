@@ -23,11 +23,11 @@ public class Landscaper extends Robot {
 	};
 	
 	private static Direction[][] digPattern = new Direction[][]{
-		{Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.EAST},
+		{Direction.NORTH, Direction.NORTHWEST, Direction.NORTH, Direction.NORTHWEST, Direction.EAST},
+		{Direction.SOUTHWEST, null, null, null, Direction.NORTHEAST},
 		{Direction.WEST, null, null, null, Direction.EAST},
-		{Direction.WEST, null, null, null, Direction.EAST},
-		{Direction.WEST, null, null, null, Direction.EAST},
-		{Direction.WEST, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH}
+		{Direction.SOUTHWEST, null, null, null, Direction.NORTHEAST},
+		{Direction.WEST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHEAST, Direction.SOUTH}
 	};
 	
 	private static Direction[][][] buildPattern = new Direction[][][] {

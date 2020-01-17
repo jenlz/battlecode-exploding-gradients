@@ -3,7 +3,10 @@ package julianbot.robots;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.GameConstants;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Transaction;
 import julianbot.robotdata.FulfillmentCenterData;
@@ -22,13 +25,43 @@ public class FulfillmentCenter extends Robot {
 	public void run() throws GameActionException {
 		super.run();
 		
+		if(turnCount == 1) learnHQLocation();
+		
+		if(turnCount < GameConstants.INITIAL_COOLDOWN_TURNS) {
+    		for(int i = (rc.getRoundNum() > 100) ? rc.getRoundNum() - 100 : 1; i < rc.getRoundNum(); i++)
+    		readTransaction(rc.getBlock(i));
+    	}
+
+    	readTransaction(rc.getBlock(rc.getRoundNum() - 1));
+		
 		if(!fulfillmentCenterData.isStableSoupIncomeConfirmed()) confirmStableSoupIncome();
     	if(oughtBuildDrone()) tryBuild(RobotType.DELIVERY_DRONE);
 	}
+	
+	private void learnHQLocation() throws GameActionException {
+		for(Transaction transaction : rc.getBlock(1)) {
+			int[] message = decodeTransaction(transaction);
+			if(message.length > 1 && message[1] == Type.TRANSACTION_FRIENDLY_HQ_AT_LOC.getVal()) {
+				fulfillmentCenterData.setHqLocation(new MapLocation(message[2], message[3]));
+				return;
+			}
+		}		
+	}
 
 	private boolean oughtBuildDrone() {
-		if(senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam()) < fulfillmentCenterData.getDronesBuilt() + 1) return false;
-		return (fulfillmentCenterData.isStableSoupIncomeConfirmed()) ? rc.getTeamSoup() >= RobotType.DELIVERY_DRONE.cost + 1 : rc.getTeamSoup() >= RobotType.REFINERY.cost + 5;
+		if(fulfillmentCenterData.isStableSoupIncomeConfirmed()) {
+			RobotInfo[] robots = rc.senseNearbyRobots(fulfillmentCenterData.getHqLocation(), 3, rc.getTeam());
+			for(RobotInfo robot : robots) {
+				//A landscaper right next to the HQ is an attack landscaper.
+				if(robot.getType() == RobotType.LANDSCAPER) return true;
+			}
+			
+			//Otherwise, we can still produce scouting drones if we need to.
+			return (!fulfillmentCenterData.isEnemyHqLocated()) ? rc.getTeamSoup() >= RobotType.DELIVERY_DRONE.cost + 1 : false;
+		} else {
+			//If a stable soup income is not confirmed, give the miners time to build a refinery before allocating soup to drones.
+			return rc.getTeamSoup() >= RobotType.REFINERY.cost + 5;
+		}
 	}
 	
 	/**
@@ -79,5 +112,26 @@ public class FulfillmentCenter extends Robot {
     		}
     	}
     }
+    
+    private void readTransaction(Transaction[] block) throws GameActionException {
+
+		for (Transaction message : block) {
+			int[] decodedMessage = decodeTransaction(message);
+			if (!decodedMessage.equals(new int[] {0})) {
+				Robot.Type category = Robot.Type.enumOfValue(decodedMessage[1]);
+				MapLocation loc = new MapLocation(decodedMessage[2], decodedMessage[3]);
+
+				//System.out.println("Category of message: " + category);
+				switch(category) {
+					case TRANSACTION_ENEMY_HQ_AT_LOC:
+						fulfillmentCenterData.setEnemyHqLocated(true);
+						break;
+					default:
+						break;
+				}
+			}
+
+		}
+	}
 	
 }
