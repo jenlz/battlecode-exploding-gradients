@@ -26,9 +26,9 @@ public class DesignSchool extends Robot {
     	RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), designSchoolData.getOpponent());
         
         if(enemy.length > 0) {
-	        for(RobotInfo bullseye : enemy) { 
-	        	if(bullseye.type.equals(RobotType.DESIGN_SCHOOL)) {
-	        		designSchoolData.setBuildDirection(rc.getLocation().directionTo(bullseye.location).rotateLeft());
+	        for(RobotInfo potentialThreat : enemy) { 
+	        	if(potentialThreat.type.equals(RobotType.DESIGN_SCHOOL)) {
+	        		designSchoolData.setBuildDirection(rc.getLocation().directionTo(potentialThreat.location).rotateLeft());
 	        		tryBuild(RobotType.LANDSCAPER);
 	        		return;
 	        	}
@@ -94,7 +94,7 @@ public class DesignSchool extends Robot {
     		}
     		
     		if(Clock.getBytecodesLeft() <= 200) {
-    			designSchoolData.setTransactionRound(i);
+    			designSchoolData.setTransactionRound(i + 1);
     			break;
     		}
     	}

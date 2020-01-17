@@ -14,6 +14,9 @@ public class HQ extends Robot {
 
 	private HQData hqData;
 	
+	private static final int KILL_ORDER_COOLDOWN_ROUNDS = 50;
+	private int killOrderCooldownCount;
+	
 	public HQ(RobotController rc) {
 		super(rc);
 		this.data = new HQData(rc, getSpawnerLocation());
@@ -32,9 +35,11 @@ public class HQ extends Robot {
         if(oughtBuildMiner()) {        	
         	tryBuild(RobotType.MINER);
         }
-                
+        
+        if(hqData.getEnemyHqLocation() == null) readForEnemyHq();
+        
         storeForeignTransactions();
-        if(rc.getRoundNum() % 100 == 0) repeatForeignTransaction();        
+        if(rc.getRoundNum() % 100 == 0) repeatForeignTransaction();    
         
         RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), hqData.getOpponent());
                 
@@ -56,6 +61,22 @@ public class HQ extends Robot {
 		    		shootUnit(bullseye.getID());
 		    	}
 	        }
+        }
+        
+        if(killOrderCooldownCount <= 0) {
+	        RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
+	        int attackDroneCount = 0;
+	        
+	        for(RobotInfo ally : allies) {
+	        	if(ally.type == RobotType.DELIVERY_DRONE && (Math.abs(ally.getLocation().x - rc.getLocation().x) == 3 || Math.abs(ally.getLocation().y - rc.getLocation().y) == 3)) attackDroneCount++;
+	        }
+	        
+	        if(attackDroneCount >= 15) {
+	        	sendTransaction(10, Type.TRANSACTION_KILL_ORDER, hqData.getEnemyHqLocation());
+	        	killOrderCooldownCount = KILL_ORDER_COOLDOWN_ROUNDS;
+	        }
+        } else {
+        	killOrderCooldownCount--;
         }
 	}
 	
@@ -106,6 +127,7 @@ public class HQ extends Robot {
         return false;
     }
     
+    //TODO: Rewrite this using rc.senseNearbySoup()
     private void setBuildDirectionTowardsSoup() throws GameActionException {
     	MapLocation rcLocation = rc.getLocation();
     	int dimension = (int) Math.ceil(Math.sqrt(RobotType.HQ.sensorRadiusSquared));
@@ -120,6 +142,20 @@ public class HQ extends Robot {
     			}
     		}
     	}
+    }
+    
+    private void readForEnemyHq() throws GameActionException {
+    	if(rc.getRoundNum() == 1) return;
+    	
+    	for(Transaction transaction : rc.getBlock(rc.getRoundNum() - 1)) {
+			int[] message = decodeTransaction(transaction);
+			if(message.length >= 4) {
+				if(message[1] == Robot.Type.TRANSACTION_ENEMY_HQ_AT_LOC.getVal()) {
+					hqData.setEnemyHqLocation(new MapLocation(message[2], message[3]));
+					return;
+				}
+			}
+		}
     }
 	
     private void storeForeignTransactions() throws GameActionException {

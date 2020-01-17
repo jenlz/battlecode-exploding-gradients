@@ -1,8 +1,8 @@
 package julianbot.robots;
 
+import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
-import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
@@ -26,13 +26,7 @@ public class Drone extends Robot {
 		super.run();
 		
 		if(turnCount == 1) learnHQLocation();
-    	
-    	if(turnCount < GameConstants.INITIAL_COOLDOWN_TURNS) {
-    		for(int i = (rc.getRoundNum() > 100) ? rc.getRoundNum() - 100 : 1; i < rc.getRoundNum(); i++)
-    		readTransaction(rc.getBlock(i));
-    	}
-
-    	readTransaction(rc.getBlock(rc.getRoundNum() - 1));
+    	if(droneData.getEnemyHQLocation() == null) learnEnemyHQLocation();
     	
     	if(droneData.getEnemyHQLocation() != null) {
     		
@@ -77,8 +71,21 @@ public class Drone extends Robot {
     		if(rc.isCurrentlyHoldingUnit() && !droneData.getHoldingEnemy()) {
     			if(rc.getLocation().isWithinDistanceSquared(droneData.getEnemyHQLocation(), 3)) {
     				dropUnitNextToHQ();
-    			} else {
+    			} else if(droneData.receivedKillOrder()) {
     				routeTo(droneData.getEnemyHQLocation());
+    			} else {
+    				//Route to appropriate location (any location three units away from the HQ in either direction) and wait for kill order.
+    				if(rc.getLocation().equals(droneData.getAttackWaitLocation())) {
+    					if(readKillOrder()) droneData.setReceivedKillOrder(true);
+    				} else if(rc.canSenseLocation(droneData.getAttackWaitLocation())) {
+    					if(!rc.isLocationOccupied(droneData.getAttackWaitLocation())) {
+    						routeTo(droneData.getAttackWaitLocation());
+    					} else {
+    						droneData.proceedToNextWaitLocation();
+    					}
+    				} else {
+    					routeTo(droneData.getAttackWaitLocation());
+    				}
     			}
     		} else if (!rc.isCurrentlyHoldingUnit()){
     			boolean oughtPickUpCow = oughtPickUpCow();
@@ -89,11 +96,17 @@ public class Drone extends Robot {
 	    				routeTo(droneData.getHqLocation());
 	    			}
 	    		} else if(oughtPickUpLandscaper) {
-	    			if(!pickUpUnit(RobotType.LANDSCAPER, rc.getTeam())) {
-	    				routeTo(droneData.getHqLocation());
+	    			RobotInfo idleAttackLandscaper = senseAttackLanscaper();
+	    			
+	    			if(idleAttackLandscaper != null) {
+	    				if(!pickUpUnit(idleAttackLandscaper)) {
+		    				routeTo(idleAttackLandscaper.getLocation());
+		    			}
+	    			} else {
+	    				routeTo(droneData.getHqLocation().translate(0, 3));
 	    			}
 	    		} else if(!rc.getLocation().isWithinDistanceSquared(droneData.getHqLocation(), 3)) {
-	    			routeTo(droneData.getSpawnerLocation());
+	    			routeTo(droneData.getHqLocation().translate(0, 3));
 	    		} else {
 	    			routeTo(droneData.getEnemyHQLocation());
 	    		}
@@ -116,9 +129,29 @@ public class Drone extends Robot {
 			int[] message = decodeTransaction(transaction);
 			if(message.length > 1 && message[1] == Type.TRANSACTION_FRIENDLY_HQ_AT_LOC.getVal()) {
 				droneData.setHqLocation(new MapLocation(message[2], message[3]));
+				droneData.calculateInitialAttackWaitLocation();
 				return;
 			}
 		}
+	}
+	
+	private void learnEnemyHQLocation() throws GameActionException {
+		for(int i = droneData.getTransactionRound(); i < rc.getRoundNum(); i++) {
+    		for(Transaction transaction : rc.getBlock(i)) {
+    			int[] message = decodeTransaction(transaction);
+    			if(message.length >= 4) {
+    				if(message[1] == Robot.Type.TRANSACTION_ENEMY_HQ_AT_LOC.getVal()) {
+    					droneData.setEnemyHQLocation(new MapLocation(message[2], message[3]));
+    					return;
+    				}
+    			}
+    		}
+    		
+    		droneData.setTransactionRound(i + 1);
+    		if(Clock.getBytecodesLeft() <= 200) {
+    			break;
+    		}
+    	}
 	}
 	
 	private void attemptEnemyHQDetection() {
@@ -144,6 +177,41 @@ public class Drone extends Robot {
 		MapLocation rcLocation = rc.getLocation();
 		return rcLocation.distanceSquaredTo(data.getSpawnerLocation()) < rcLocation.distanceSquaredTo(droneData.getEnemyHQLocation())
 				&& senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam()) > 2;
+	}
+	
+	private RobotInfo senseAttackLanscaper() throws GameActionException {
+		RobotInfo topLeft = senseAttackLandscaperAt(droneData.getHqLocation().translate(-1, 1));
+		if(topLeft != null) return topLeft;
+		
+		RobotInfo topMiddle = senseAttackLandscaperAt(droneData.getHqLocation().translate(0, 1));
+		if(topMiddle != null) return topMiddle;
+		
+		RobotInfo topRight = senseAttackLandscaperAt(droneData.getHqLocation().translate(1, 1));
+		if(topRight != null) return topRight;
+		
+		return null;
+	}
+	
+	private RobotInfo senseAttackLandscaperAt(MapLocation location) throws GameActionException {
+		if(rc.canSenseLocation(location)) {
+			RobotInfo info = rc.senseRobotAtLocation(location);
+			if(info != null && info.type == RobotType.LANDSCAPER) return info;
+		}
+		
+		return null;
+	}
+	
+	private boolean pickUpUnit(RobotInfo info) throws GameActionException {
+		if(info != null) {
+			waitUntilReady();
+			
+			if(rc.canPickUpUnit(info.ID)) {
+				rc.pickUpUnit(info.ID);
+				return true;
+			}
+		}
+		
+		return false;
 	}
 	
 	private boolean pickUpUnit(RobotType targetType) throws GameActionException {
@@ -196,25 +264,17 @@ public class Drone extends Robot {
 		return false;
 	}
 	
-	private void readTransaction(Transaction[] block) throws GameActionException {
-
-		for (Transaction message : block) {
-			int[] decodedMessage = decodeTransaction(message);
-			if (!decodedMessage.equals(new int[] {0})) {
-				Robot.Type category = Robot.Type.enumOfValue(decodedMessage[1]);
-				MapLocation loc = new MapLocation(decodedMessage[2], decodedMessage[3]);
-
-				//System.out.println("Category of message: " + category);
-				switch(category) {
-					case TRANSACTION_ENEMY_HQ_AT_LOC:
-						droneData.setEnemyHQLocation(loc);
-						break;
-					default:
-						break;
+	private boolean readKillOrder() throws GameActionException {
+		for(Transaction transaction : rc.getBlock(rc.getRoundNum() - 1)) {
+			int[] message = decodeTransaction(transaction);
+			if(message.length >= 4) {
+				if(message[1] == Robot.Type.TRANSACTION_KILL_ORDER.getVal()) {
+					return true;
 				}
 			}
-
 		}
+		
+		return false;
 	}
 	
 }

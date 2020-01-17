@@ -11,6 +11,9 @@ public class FulfillmentCenterData extends RobotData {
 		private int transactionRound;
 		private boolean searchedForVaporator;
 	
+	private MapLocation hqLocation;
+	private boolean enemyHqLocated;
+	
 	public FulfillmentCenterData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
 		buildDirection = Direction.NORTH;
@@ -59,5 +62,21 @@ public class FulfillmentCenterData extends RobotData {
 
 	public void setSearchedForVaporator(boolean searchedForVaporator) {
 		this.searchedForVaporator = searchedForVaporator;
+	}
+	
+	public MapLocation getHqLocation() {
+		return hqLocation;
+	}
+
+	public void setHqLocation(MapLocation hqLocation) {
+		this.hqLocation = hqLocation;
+	}
+
+	public boolean isEnemyHqLocated() {
+		return enemyHqLocated;
+	}
+
+	public void setEnemyHqLocated(boolean enemyHqLocated) {
+		this.enemyHqLocated = enemyHqLocated;
 	}
 }

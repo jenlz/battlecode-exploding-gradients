@@ -7,18 +7,36 @@ import battlecode.common.Team;
 
 public class DroneData extends RobotData {
 	
-	static Direction[] directions = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
-	
-	private Team enemyFrom;
-	private boolean holdingEnemy;
+	//ROUTING
 	private MapLocation hqLocation;
 	private MapLocation enemyHQLocation;
 	private MapLocation[] searchDestinations;
 		private int activeSearchDestinationIndex;
 	
+	//TRANSACTION SEARCHING
+	private int transactionRound;
+	
+	//CARGO
+	private Team enemyFrom;
+	private boolean holdingEnemy;
+	
+	//ATTACKS
+	private MapLocation attackWaitLocation;
+	private boolean receivedKillOrder;
+	private static final Direction[][] WAIT_LOCATION_ORDER = new Direction[][]{
+		{null, Direction.EAST, Direction.EAST, Direction.EAST, Direction.EAST, Direction.SOUTHEAST, null},
+		{Direction.NORTHEAST, null, null, null, null, null, Direction.SOUTH},
+		{Direction.NORTH, null, null, null, null, null, Direction.SOUTH},
+		{Direction.NORTH, null, null, null, null, null, Direction.SOUTH},
+		{Direction.NORTH, null, null, null, null, null, Direction.SOUTH},
+		{Direction.NORTH, null, null, null, null, null, Direction.SOUTHWEST},
+		{null, Direction.NORTHWEST, Direction.WEST, Direction.WEST, Direction.WEST, Direction.WEST, null}};
+	private static final int WAIT_LOCATION_GRID_DIMENSION = 7;
+		
 	public DroneData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
 		holdingEnemy = false;
+		transactionRound = 1;
 	}
 	
 	public boolean getHoldingEnemy() {
@@ -83,6 +101,40 @@ public class DroneData extends RobotData {
 	
 	public Team getEnemyFrom() {
 		return enemyFrom;
+	}
+	
+	public MapLocation getAttackWaitLocation() {
+		return attackWaitLocation;
+	}
+
+	public void setAttackWaitLocation(MapLocation attackWaitLocation) {
+		this.attackWaitLocation = attackWaitLocation;
+	}
+
+	public void calculateInitialAttackWaitLocation() {
+		if(hqLocation != null) attackWaitLocation = hqLocation.translate(3, 0);
+	}
+
+	public void proceedToNextWaitLocation() {
+		int gridX = attackWaitLocation.x - hqLocation.x + (WAIT_LOCATION_GRID_DIMENSION / 2);
+		int gridY = hqLocation.y - attackWaitLocation.y + (WAIT_LOCATION_GRID_DIMENSION / 2);
+		attackWaitLocation = attackWaitLocation.add(WAIT_LOCATION_ORDER[gridY][gridX]);
+	}
+	
+	public boolean receivedKillOrder() {
+		return receivedKillOrder;
+	}
+
+	public void setReceivedKillOrder(boolean receivedKillOrder) {
+		this.receivedKillOrder = receivedKillOrder;
+	}
+	
+	public int getTransactionRound() {
+		return transactionRound;
+	}
+
+	public void setTransactionRound(int transactionRound) {
+		this.transactionRound = transactionRound;
 	}
 	
 }
