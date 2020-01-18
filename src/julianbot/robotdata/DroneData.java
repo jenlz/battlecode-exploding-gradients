@@ -5,6 +5,8 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.Team;
 
+import java.util.ArrayList;
+
 public class DroneData extends RobotData {
 	
 	//ROUTING
@@ -12,6 +14,7 @@ public class DroneData extends RobotData {
 	private MapLocation enemyHqLocation;
 	private MapLocation[] searchDestinations;
 		private int activeSearchDestinationIndex;
+	private ArrayList<MapLocation> floodedLocs;
 	
 	//TRANSACTION SEARCHING
 	private int transactionRound;
@@ -39,8 +42,27 @@ public class DroneData extends RobotData {
 		super(rc, spawnerLocation);
 		holdingEnemy = false;
 		transactionRound = 1;
+		floodedLocs = new ArrayList<MapLocation>();
 	}
-	
+
+	public ArrayList<MapLocation> getFloodedLocs() {
+		return floodedLocs;
+	}
+
+	/**
+	 * Adds flooded loc if it not too close to already added one or is already added
+	 * @param loc
+	 */
+	public void addFloodedLoc(MapLocation loc) {
+		boolean shouldAdd = true;
+		for (MapLocation floodedLoc : floodedLocs) {
+			if (loc.distanceSquaredTo(floodedLoc) < 16 || loc.equals(floodedLoc)) {
+				shouldAdd = false;
+			}
+		}
+		if (shouldAdd) floodedLocs.add(loc);
+	}
+
 	public boolean getHoldingEnemy() {
 		return holdingEnemy;
 	}
