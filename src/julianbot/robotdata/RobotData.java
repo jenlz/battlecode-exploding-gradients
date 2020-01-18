@@ -28,7 +28,9 @@ public class RobotData {
 		previousLocation = rc.getLocation();
 		hasPendingTransaction = false;
 		setSpawnerLocation(spawnerLocation);
-		searchDirection = spawnerLocation.directionTo(rc.getLocation());
+		if (!rc.getType().isBuilding()) {
+			searchDirection = spawnerLocation.directionTo(rc.getLocation());
+		}
 	}
 	
 	public Team getTeam() {

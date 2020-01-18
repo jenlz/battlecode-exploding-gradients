@@ -164,8 +164,7 @@ public class Drone extends Robot {
 
 			} else {
 				System.out.println("Moving and searching for flooding");
-				moveAnywhere();
-
+				continueSearch();
 				senseAdjacentFlooding();
 			}
 		}

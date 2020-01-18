@@ -559,22 +559,6 @@ public class Miner extends Robot {
 			return false;
 		}
 	}
-
-	/**
-	 * Moves in same direction as before, otherwise moves in random direction
-	 * @throws GameActionException
-	 */
-	private void continueSearch() throws GameActionException {		
-		//The move function is deliberately unused here.
-		waitUntilReady();
-		
-		if(rc.canMove(minerData.getSearchDirection()) && !rc.senseFlooding(rc.getLocation().add(minerData.getSearchDirection()))) {
-			rc.move(minerData.getSearchDirection());
-			return;
-		}
-		
-		minerData.setSearchDirection(directions[(int) (Math.random() * directions.length)]);
-	}
 	
 	private boolean routeToFulfillmentCenterSite() throws GameActionException {		
 		if(!minerData.hasPath()) {
