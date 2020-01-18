@@ -126,7 +126,7 @@ public class Landscaper extends Robot {
 		if(gridX < 0 || gridX >= movePattern[0].length || gridY < 0 || gridY >= movePattern.length) return;
 		
 		//If where we're going is too low, deposit dirt there.
-		if(rc.senseElevation(rcLocation) - rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) > GameConstants.MAX_DIRT_DIFFERENCE) {
+		if(rc.canSenseLocation(rcLocation.add(movePattern[gridY][gridX])) && rc.senseElevation(rcLocation) - rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) > GameConstants.MAX_DIRT_DIFFERENCE) {
 			depositDirt(movePattern[gridY][gridX]);
 			return;
 		}
@@ -139,7 +139,9 @@ public class Landscaper extends Robot {
 		
 		int[] constructElevations = new int[constructDirections.length];
 		for(int i = 0; i < constructElevations.length; i++) {
-			constructElevations[i] = rc.senseElevation(rcLocation.add(constructDirections[i]));
+			if (rc.canSenseLocation(rcLocation.add(constructDirections[i]))) {
+				constructElevations[i] = rc.senseElevation(rcLocation.add(constructDirections[i]));
+			}
 		}
 		
 		depositDirt(constructDirections[NumberMath.indexOfLeast(constructElevations)]);
@@ -158,7 +160,7 @@ public class Landscaper extends Robot {
 		int gridY = -dy + DIG_PATTERN_ARRAY_SHIFT;
 		
 		//If where we're going is too high, dig from there.
-		if(rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) - rc.senseElevation(rcLocation) > GameConstants.MAX_DIRT_DIFFERENCE) {
+		if(rc.canSenseLocation(rcLocation.add(movePattern[gridY][gridX])) && rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) - rc.senseElevation(rcLocation) > GameConstants.MAX_DIRT_DIFFERENCE) {
 			dig(movePattern[gridY][gridX]);
 			return;
 		}
