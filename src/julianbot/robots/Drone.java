@@ -122,13 +122,16 @@ public class Drone extends Robot {
 			if (droneData.getFloodedLocs().size() > 0) {
 				System.out.println("Moving toward flooded loc");
 				MapLocation closestLoc = locateClosestLocation(droneData.getFloodedLocs(), rc.getLocation());
-				if (routeTo(closestLoc.translate(1, 1))) {
-					if (rc.isReady() && rc.canDropUnit(rc.getLocation().directionTo(closestLoc))) {
-						System.out.println("Dropping enemy into water");
-						rc.dropUnit(rc.getLocation().directionTo(closestLoc));
-						droneData.setHoldingEnemy(false);
-					}
+				if (rc.getLocation().distanceSquaredTo(closestLoc) > 3) {
+					routeTo(closestLoc);
 				}
+
+				if (rc.isReady() && rc.getLocation().isAdjacentTo(closestLoc) && rc.canDropUnit(rc.getLocation().directionTo(closestLoc))) {
+					System.out.println("Dropping enemy into water");
+					rc.dropUnit(rc.getLocation().directionTo(closestLoc));
+					droneData.setHoldingEnemy(false);
+				}
+
 			} else {
 				System.out.println("Moving and searching for flooding");
 				moveAnywhere();
