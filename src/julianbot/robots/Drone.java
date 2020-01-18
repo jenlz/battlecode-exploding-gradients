@@ -27,7 +27,9 @@ public class Drone extends Robot {
 		
 		if(turnCount == 1) learnHQLocation();
     	if(droneData.getEnemyHQLocation() == null) learnEnemyHQLocation();
-    	
+
+    	senseAdjacentFlooding();
+
     	if(droneData.getEnemyHQLocation() != null) {
     		
     		if(!rc.isCurrentlyHoldingUnit()) {
@@ -49,24 +51,7 @@ public class Drone extends Robot {
         	}
         	
         	if(droneData.getHoldingEnemy()) {
-        		for(Direction d : Direction.allDirections()) {
-        			if(rc.senseFlooding(rc.adjacentLocation(d))) {
-        				waitUntilReady();
-        				rc.dropUnit(d);
-        				droneData.setHoldingEnemy(false);
-        				break;
-        			}
-        		}
-        		if(droneData.getHoldingEnemy()) {
-        			if(senseUnitType(RobotType.HQ, data.getTeam())!=null)
-        				droneData.setEnemyFrom(droneData.getTeam());
-					else
-						droneData.setEnemyFrom(data.getOpponent());
-        			if(droneData.getEnemyFrom().equals(data.getTeam()))
-        				routeTo(droneData.getEnemyHQLocation());
-        			else
-        				routeTo(droneData.getHqLocation());
-        		}
+					drownEnemyProtocol();
         	}
     		
     		if(rc.isCurrentlyHoldingUnit() && !droneData.getHoldingEnemy()) {
@@ -95,9 +80,11 @@ public class Drone extends Robot {
     			if(senseUnitType(RobotType.COW) != null && oughtPickUpCow) {
 	    			if(!pickUpUnit(RobotType.COW)) {
 	    				routeTo(droneData.getHqLocation());
-	    			}
+	    			} else {
+	    				droneData.setHoldingEnemy(true);
+					}
 	    		} else if(oughtPickUpLandscaper) {
-	    			RobotInfo idleAttackLandscaper = senseAttackLanscaper();
+	    			RobotInfo idleAttackLandscaper = senseAttackLandscaper();
 	    			
 	    			if(idleAttackLandscaper != null) {
 	    				if(!pickUpUnit(idleAttackLandscaper)) {
@@ -124,7 +111,33 @@ public class Drone extends Robot {
     		}
     	}
 	}
-	
+
+	/**
+	 * Once drone is holding enemy, will search for flooded area and drop it there.
+	 */
+	private void drownEnemyProtocol() throws GameActionException {
+		System.out.println("Entered Drown Enemy Protocol");
+		System.out.println("Flooded locs " + droneData.getFloodedLocs());
+		while (droneData.getHoldingEnemy()) {
+			if (droneData.getFloodedLocs().size() != 0) {
+				System.out.println("Moving toward flooded loc");
+				MapLocation closestLoc = locateClosestLocation(droneData.getFloodedLocs(), rc.getLocation());
+				routeTo(closestLoc.translate(1, 1));
+				waitUntilReady();
+				if (rc.isReady() && rc.canDropUnit(rc.getLocation().directionTo(closestLoc))) {
+					System.out.println("Dropping enemy into water");
+					rc.dropUnit(rc.getLocation().directionTo(closestLoc));
+					droneData.setHoldingEnemy(false);
+				}
+			} else {
+				System.out.println("Moving and searching for flooding");
+				moveAnywhere();
+
+				senseAdjacentFlooding();
+			}
+		}
+	}
+
 	private void learnHQLocation() throws GameActionException {
 		for(Transaction transaction : rc.getBlock(1)) {
 			int[] message = decodeTransaction(transaction);
@@ -180,7 +193,7 @@ public class Drone extends Robot {
 				&& senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam()) > 2;
 	}
 	
-	private RobotInfo senseAttackLanscaper() throws GameActionException {
+	private RobotInfo senseAttackLandscaper() throws GameActionException {
 		RobotInfo topLeft = senseAttackLandscaperAt(droneData.getHqLocation().translate(-1, 1));
 		if(topLeft != null) return topLeft;
 		
@@ -263,6 +276,18 @@ public class Drone extends Robot {
 		}
 		
 		return false;
+	}
+
+	/**
+	 * Senses flooding of adjacent tiles
+	 * @throws GameActionException
+	 */
+	private void senseAdjacentFlooding() throws GameActionException {
+		for (Direction dir : Direction.allDirections()) {
+			if (rc.senseFlooding(rc.adjacentLocation(dir))) {
+				droneData.addFloodedLoc(rc.adjacentLocation(dir));
+			}
+		}
 	}
 	
 	private boolean readKillOrder() throws GameActionException {
