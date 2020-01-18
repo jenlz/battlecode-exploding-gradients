@@ -307,7 +307,7 @@ public class Drone extends Robot {
 	 */
 	private void senseAdjacentFlooding() throws GameActionException {
 		for (Direction dir : Direction.allDirections()) {
-			if (rc.senseFlooding(rc.adjacentLocation(dir))) {
+			if (rc.canSenseLocation(rc.adjacentLocation(dir)) && rc.senseFlooding(rc.adjacentLocation(dir))) {
 				System.out.println("Storing flooded loc");
 				rc.setIndicatorDot(rc.adjacentLocation(dir), 255, 165, 0);
 				droneData.addFloodedLoc(rc.adjacentLocation(dir));
