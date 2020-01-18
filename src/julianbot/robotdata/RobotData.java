@@ -20,13 +20,17 @@ public class RobotData {
 		private Robot.Type pendingTransactionType;
 		private MapLocation pendingTransactionLocation;
 		private int pendingTransactionSoupBid;
+	private Direction searchDirection;
 	
 	public RobotData(RobotController rc, MapLocation spawnerLocation) {
 		team = rc.getTeam();
 		opponent = team.opponent();
 		previousLocation = rc.getLocation();
 		hasPendingTransaction = false;
-		setSpawnerLocation(spawnerLocation);	
+		setSpawnerLocation(spawnerLocation);
+		if (!rc.getType().isBuilding()) {
+			searchDirection = spawnerLocation.directionTo(rc.getLocation());
+		}
 	}
 	
 	public Team getTeam() {
@@ -43,6 +47,14 @@ public class RobotData {
 
 	public void setSpawnerLocation(MapLocation spawnerLocation) {
 		this.spawnerLocation = spawnerLocation;
+	}
+
+	public Direction getSearchDirection() {
+		return searchDirection;
+	}
+
+	public void setSearchDirection(Direction searchDirection) {
+		this.searchDirection = searchDirection;
 	}
 
 	public MapLocation getPreviousLocation() {

@@ -287,8 +287,24 @@ public class Robot {
 		
 		if(rotateLimit > 0) data.setPreviousLocation(rc.getLocation().add(dir.opposite()));
 		return rotateLimit > 0;
-	}	
-	
+	}
+
+	/**
+	 * Moves in same direction as before, otherwise moves in random direction
+	 * @throws GameActionException
+	 */
+	public void continueSearch() throws GameActionException {
+		//The move function is deliberately unused here.
+		waitUntilReady();
+
+		if(rc.canMove(data.getSearchDirection()) && !rc.senseFlooding(rc.getLocation().add(data.getSearchDirection()))) {
+			rc.move(data.getSearchDirection());
+			return;
+		}
+
+		data.setSearchDirection(directions[(int) (Math.random() * directions.length)]);
+	}
+
 	//TRANSACTIONS
 	protected boolean sendTransaction(int soupBid, Type type, MapLocation loc) throws GameActionException {		
 		int transactionTag = (int) (Math.random()*500); //This use of parentheses will prevent truncation of the random number.
@@ -312,7 +328,6 @@ public class Robot {
 
 	/**
 	 * Decodes transaction. Returns empty array if message is from enemy team.
-	 * @param rc
 	 * @param transaction
 	 * @return
 	 * @throws GameActionException
@@ -478,6 +493,10 @@ public class Robot {
 	protected void stopFollowingPath() {
 		data.setPath(null);
 		data.setPathProgression(0);
+	}
+
+	static Direction randomDirection() {
+		return Direction.allDirections()[(int) (Math.random() * Direction.allDirections().length)];
 	}
 
 	/**

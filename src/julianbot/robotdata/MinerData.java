@@ -25,7 +25,7 @@ public class MinerData extends RobotData {
 		private RobotInfo previousTarget;
 		private int turnsScouted;
 	
-	private Direction searchDirection;
+
 	private ArrayList<MapLocation> soupLocs;
 		private ArrayList<MapLocation> removedSoupLocs;
 	private ArrayList<MapLocation> refineryLocs;
@@ -38,7 +38,6 @@ public class MinerData extends RobotData {
 	public MinerData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
 		currentRole = ROLE_SOUP_MINER;
-		searchDirection = spawnerLocation.directionTo(rc.getLocation());
 		soupLocs = new ArrayList<MapLocation>();
 			removedSoupLocs = new ArrayList<MapLocation>();
 		refineryLocs = new ArrayList<MapLocation>();
@@ -51,14 +50,6 @@ public class MinerData extends RobotData {
 	
 	public void setCurrentRole(int currentRole) {
 		this.currentRole = currentRole;
-	}
-
-	public Direction getSearchDirection() {
-		return searchDirection;
-	}
-
-	public void setSearchDirection(Direction searchDirection) {
-		this.searchDirection = searchDirection;
 	}
 
 	public boolean isNorthGunBuilt() {
