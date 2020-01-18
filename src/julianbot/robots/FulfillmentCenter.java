@@ -117,7 +117,7 @@ public class FulfillmentCenter extends Robot {
 
 		for (Transaction message : block) {
 			int[] decodedMessage = decodeTransaction(message);
-			if (!decodedMessage.equals(new int[] {0})) {
+			if (decodedMessage.length == GameConstants.NUMBER_OF_TRANSACTIONS_PER_BLOCK) {
 				Robot.Type category = Robot.Type.enumOfValue(decodedMessage[1]);
 				MapLocation loc = new MapLocation(decodedMessage[2], decodedMessage[3]);
 

@@ -51,6 +51,7 @@ public class Drone extends Robot {
         	if(droneData.getHoldingEnemy()) {
         		for(Direction d : Direction.allDirections()) {
         			if(rc.senseFlooding(rc.adjacentLocation(d))) {
+        				waitUntilReady();
         				rc.dropUnit(d);
         				droneData.setHoldingEnemy(false);
         				break;

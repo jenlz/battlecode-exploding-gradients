@@ -618,7 +618,7 @@ public class Miner extends Robot {
 				MapLocation loc = new MapLocation(decodedMessage[2], decodedMessage[3]);
 
 				if (category == null) {
-					System.out.println("Something is terribly wrong. enumOfValue returns null");
+					System.out.println("Something is terribly wrong. enumOfValue returns null. Miner readTransaction line ~621");
 				}
 				switch(category) {
 					case TRANSACTION_SOUP_AT_LOC:
