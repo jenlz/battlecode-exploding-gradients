@@ -7,7 +7,7 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 
-public class MinerData extends RobotData {
+public class MinerData extends ScoutData {
 
 	private int currentRole;
 	public static final int ROLE_DESIGN_BUILDER = 0;

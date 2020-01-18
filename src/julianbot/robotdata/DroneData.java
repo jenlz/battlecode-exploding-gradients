@@ -7,7 +7,7 @@ import battlecode.common.Team;
 
 import java.util.ArrayList;
 
-public class DroneData extends RobotData {
+public class DroneData extends ScoutData {
 	
 	//ROUTING
 	private MapLocation hqLocation;
