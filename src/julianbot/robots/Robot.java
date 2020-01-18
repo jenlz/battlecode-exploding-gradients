@@ -387,7 +387,9 @@ public class Robot {
 		rc.setIndicatorLine(rc.getLocation(), destination, 0, 0, 255);
 		//If we're already pathfinding, continue on.
 		if(data.hasPath()) {
-			return pathfind(destination);
+			boolean pathfindingSuccessful = pathfind(destination);
+			if(!pathfindingSuccessful) data.setPath(null);
+			return pathfindingSuccessful;
 		}
 		
 		//Otherwise, simply try to move directly towards the destination.

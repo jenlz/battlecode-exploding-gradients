@@ -11,7 +11,7 @@ public class DroneData extends RobotData {
 	
 	//ROUTING
 	private MapLocation hqLocation;
-	private MapLocation enemyHQLocation;
+	private MapLocation enemyHqLocation;
 	private MapLocation[] searchDestinations;
 		private int activeSearchDestinationIndex;
 	private ArrayList<MapLocation> floodedLocs;
@@ -25,7 +25,9 @@ public class DroneData extends RobotData {
 	
 	//ATTACKS
 	private MapLocation attackWaitLocation;
+	private boolean awaitingKillOrder;
 	private boolean receivedKillOrder;
+		private int killOrderReceptionRound;
 	private static final Direction[][] WAIT_LOCATION_ORDER = new Direction[][]{
 		{null, Direction.EAST, Direction.EAST, Direction.EAST, Direction.EAST, Direction.SOUTHEAST, null},
 		{Direction.NORTHEAST, null, null, null, null, null, Direction.SOUTH},
@@ -77,12 +79,12 @@ public class DroneData extends RobotData {
 		this.hqLocation = hqLocation;
 	}
 	
-	public MapLocation getEnemyHQLocation() {
-		return enemyHQLocation;
+	public MapLocation getEnemyHqLocation() {
+		return enemyHqLocation;
 	}
 
-	public void setEnemyHQLocation(MapLocation enemyHQLocation) {
-		this.enemyHQLocation = enemyHQLocation;
+	public void setEnemyHqLocation(MapLocation enemyHQLocation) {
+		this.enemyHqLocation = enemyHQLocation;
 	}
 
 	public boolean searchDestinationsDetermined() {
@@ -143,6 +145,14 @@ public class DroneData extends RobotData {
 		attackWaitLocation = attackWaitLocation.add(WAIT_LOCATION_ORDER[gridY][gridX]);
 	}
 	
+	public boolean isAwaitingKillOrder() {
+		return awaitingKillOrder;
+	}
+
+	public void setAwaitingKillOrder(boolean awaitingKillOrder) {
+		this.awaitingKillOrder = awaitingKillOrder;
+	}
+
 	public boolean receivedKillOrder() {
 		return receivedKillOrder;
 	}
@@ -151,6 +161,14 @@ public class DroneData extends RobotData {
 		this.receivedKillOrder = receivedKillOrder;
 	}
 	
+	public int getKillOrderReceptionRound() {
+		return killOrderReceptionRound;
+	}
+
+	public void setKillOrderReceptionRound(int killOrderReceptionRound) {
+		this.killOrderReceptionRound = killOrderReceptionRound;
+	}
+
 	public int getTransactionRound() {
 		return transactionRound;
 	}
