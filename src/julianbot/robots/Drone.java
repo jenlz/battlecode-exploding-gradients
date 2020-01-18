@@ -25,7 +25,7 @@ public class Drone extends Robot {
 	public void run() throws GameActionException {
 		super.run();
 		
-		if(turnCount == 1) learnHqLocation();
+		if(turnCount == 1) learnHQLocation();
     	if(droneData.getEnemyHqLocation() == null) learnEnemyHqLocation();
     	
     	if(droneData.receivedKillOrder()) {
