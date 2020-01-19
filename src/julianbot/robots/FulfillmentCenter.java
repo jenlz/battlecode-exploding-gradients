@@ -60,7 +60,7 @@ public class FulfillmentCenter extends Robot {
 			return (!fulfillmentCenterData.isEnemyHqLocated()) ? rc.getTeamSoup() >= RobotType.DELIVERY_DRONE.cost + 1 : false;
 		} else {
 			//If a stable soup income is not confirmed, give the miners time to build a refinery before allocating soup to drones.
-			return rc.getTeamSoup() >= RobotType.REFINERY.cost + 5;
+			return rc.getTeamSoup() >= RobotType.VAPORATOR.cost + 5;
 		}
 	}
 	
@@ -91,9 +91,10 @@ public class FulfillmentCenter extends Robot {
     			fulfillmentCenterData.setStableSoupIncomeConfirmed(true);
     		}
     		
-    		fulfillmentCenterData.setSearchedForVaporator(true);
+//    		fulfillmentCenterData.setSearchedForVaporator(true);
     	}
     	
+    	/*
     	for(int i = fulfillmentCenterData.getTransactionRound(); i < rc.getRoundNum(); i++) {
     		for(Transaction transaction : rc.getBlock(i)) {
     			int[] message = decodeTransaction(transaction);
@@ -111,6 +112,7 @@ public class FulfillmentCenter extends Robot {
     			break;
     		}
     	}
+    	*/
     }
     
     private void readTransaction(Transaction[] block) throws GameActionException {

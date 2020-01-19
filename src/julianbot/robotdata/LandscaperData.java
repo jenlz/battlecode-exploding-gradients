@@ -9,6 +9,7 @@ public class LandscaperData extends RobotData {
 	private int currentRole;
 	public static final int TRAVEL_TO_HQ = 0;
 	public static final int DEFEND_HQ_FROM_FLOOD = 1;
+	public static final int ATTACK = 2;
 	
 	private MapLocation hqLocation;
 	private MapLocation enemyHQLocation;

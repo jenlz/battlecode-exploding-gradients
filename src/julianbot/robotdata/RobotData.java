@@ -29,7 +29,13 @@ public class RobotData {
 		hasPendingTransaction = false;
 		setSpawnerLocation(spawnerLocation);
 		if (!rc.getType().isBuilding()) {
-			searchDirection = spawnerLocation.directionTo(rc.getLocation());
+			if(spawnerLocation == null || rc.getLocation() == null) {
+				System.out.println("RobotData constructor on round " + rc.getRoundNum() + ":");
+				System.out.println("Spawner Location = " + spawnerLocation + ", Self Location = " + rc.getLocation());
+				searchDirection = Direction.NORTH;
+			} else {
+				searchDirection = spawnerLocation.directionTo(rc.getLocation());
+			}
 		}
 	}
 	

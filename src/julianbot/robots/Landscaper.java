@@ -51,8 +51,12 @@ public class Landscaper extends Robot {
 		super.run();
 		
     	if(turnCount == 1) learnHQLocation();
+    	discernAttackRole();
+    	
 		RobotInfo enemyDesign = senseUnitType(RobotType.DESIGN_SCHOOL, landscaperData.getOpponent());
     	
+		System.out.println("Landscaper Role = " + landscaperData.getCurrentRole());
+		
     	if(buryEnemyHQ()) {
     		/*Do nothing else*/
     	} else if(enemyDesign!=null){
@@ -68,6 +72,25 @@ public class Landscaper extends Robot {
     	}
 	}
 
+	private void discernAttackRole() throws GameActionException {
+		MapLocation rcLocation = rc.getLocation();
+		MapLocation hqLocation = landscaperData.getHqLocation();
+		
+		int dx = rcLocation.x - hqLocation.x;
+		int dy = rcLocation.y - hqLocation.y;
+				
+		int gridX = dx + DIG_PATTERN_ARRAY_SHIFT;
+		int gridY = -dy + DIG_PATTERN_ARRAY_SHIFT;
+		
+		int distanceSquaredFromHq = landscaperData.getHqLocation().distanceSquaredTo(rc.getLocation());
+		if(distanceSquaredFromHq <= 3 &&
+				rc.senseElevation(rc.getLocation().add(movePattern[gridY][gridX])) - rc.senseElevation(rc.getLocation()) > GameConstants.MAX_DIRT_DIFFERENCE) {
+			landscaperData.setCurrentRole(LandscaperData.ATTACK);
+		} else if(4 <= distanceSquaredFromHq && distanceSquaredFromHq <= 8) {
+			landscaperData.setCurrentRole(LandscaperData.DEFEND_HQ_FROM_FLOOD);
+		}
+	}
+	
 	private boolean dig(Direction dir) throws GameActionException {
 		waitUntilReady();
 		if(rc.isReady() && rc.canDigDirt(dir)) {
@@ -126,7 +149,7 @@ public class Landscaper extends Robot {
 		if(gridX < 0 || gridX >= movePattern[0].length || gridY < 0 || gridY >= movePattern.length) return;
 		
 		//If where we're going is too low, deposit dirt there.
-		if(rc.senseElevation(rcLocation) - rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) > GameConstants.MAX_DIRT_DIFFERENCE) {
+		if(rc.canSenseLocation(rcLocation.add(movePattern[gridY][gridX])) && rc.senseElevation(rcLocation) - rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) > GameConstants.MAX_DIRT_DIFFERENCE) {
 			depositDirt(movePattern[gridY][gridX]);
 			return;
 		}
@@ -138,11 +161,19 @@ public class Landscaper extends Robot {
 		}
 		
 		int[] constructElevations = new int[constructDirections.length];
+		int lowestElevation = Integer.MAX_VALUE;
 		for(int i = 0; i < constructElevations.length; i++) {
-			constructElevations[i] = rc.senseElevation(rcLocation.add(constructDirections[i]));
+			if (rc.canSenseLocation(rcLocation.add(constructDirections[i]))) {
+				constructElevations[i] = rc.senseElevation(rcLocation.add(constructDirections[i]));
+				lowestElevation = (constructElevations[i] < lowestElevation) ? constructElevations[i] : lowestElevation;
+			}
 		}
 		
-		depositDirt(constructDirections[NumberMath.indexOfLeast(constructElevations)]);
+		MapLocation nextLocation = rcLocation.add(movePattern[gridY][gridX]);
+		
+		if(rc.senseFlooding(nextLocation)) depositDirt(rcLocation.directionTo(nextLocation));
+		else if(rc.senseElevation(rcLocation) - rc.senseElevation(nextLocation) < GameConstants.MAX_DIRT_DIFFERENCE) depositDirt(constructDirections[NumberMath.indexOfLeast(constructElevations)]);
+		else move(movePattern[gridY][gridX]);
 	}
 	
 	private void digWallDirt() throws GameActionException {
@@ -158,7 +189,7 @@ public class Landscaper extends Robot {
 		int gridY = -dy + DIG_PATTERN_ARRAY_SHIFT;
 		
 		//If where we're going is too high, dig from there.
-		if(rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) - rc.senseElevation(rcLocation) > GameConstants.MAX_DIRT_DIFFERENCE) {
+		if(rc.canSenseLocation(rcLocation.add(movePattern[gridY][gridX])) && rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) - rc.senseElevation(rcLocation) > GameConstants.MAX_DIRT_DIFFERENCE) {
 			dig(movePattern[gridY][gridX]);
 			return;
 		}
@@ -166,7 +197,7 @@ public class Landscaper extends Robot {
 		digDirection = digPattern[gridY][gridX];
 		
 		if(digDirection != null) dig(digDirection);
-		move(movePattern[gridY][gridX]);
+		if(!rc.senseFlooding(rcLocation.add(movePattern[gridY][gridX]))) move(movePattern[gridY][gridX]);
 	}
 	
 	private boolean buryEnemyHQ() throws GameActionException {
@@ -204,8 +235,12 @@ public class Landscaper extends Robot {
 						routeTo(landscaperData.getEnemyHQLocation());
 					}
 				}
-			} else if(rc.getDirtCarrying() > 0) depositDirt(rc.getLocation().directionTo(landscaperData.getEnemyHQLocation()));
-			else dig(landscaperData.getEnemyHQBuryDigDirection());
+			} else if(rc.getDirtCarrying() > 0) {
+				depositDirt(rc.getLocation().directionTo(landscaperData.getEnemyHQLocation()));
+			} else {
+				determineDigDirection();
+				dig(landscaperData.getEnemyHQBuryDigDirection());
+			}
 			
 			return true;
 		}
@@ -213,7 +248,6 @@ public class Landscaper extends Robot {
 		RobotInfo enemyHQ = senseUnitType(RobotType.HQ, rc.getTeam().opponent());
 		if(enemyHQ != null) {
 			landscaperData.setEnemyHQLocation(enemyHQ.getLocation());
-			determineDigDirection();
 			return true;
 		}
 		
@@ -221,12 +255,19 @@ public class Landscaper extends Robot {
 	}
 	
 	private void determineDigDirection() {
-		Direction enemyHQDirection = rc.getLocation().directionTo(landscaperData.getEnemyHQLocation());
-		if(rc.canDigDirt(enemyHQDirection.rotateLeft())) landscaperData.setEnemyHQBuryDigDirection(enemyHQDirection.rotateLeft());
-		else if(rc.canDigDirt(enemyHQDirection.rotateRight())) landscaperData.setEnemyHQBuryDigDirection(enemyHQDirection.rotateRight());
-		else if(rc.canDigDirt(enemyHQDirection.rotateLeft().rotateLeft())) landscaperData.setEnemyHQBuryDigDirection(enemyHQDirection.rotateLeft().rotateLeft());
-		else if(rc.canDigDirt(enemyHQDirection.rotateRight().rotateRight())) landscaperData.setEnemyHQBuryDigDirection(enemyHQDirection.rotateRight().rotateRight());
+		MapLocation rcLocation = rc.getLocation();
+		
+		Direction enemyHQDirection = rcLocation.directionTo(landscaperData.getEnemyHQLocation());
+		
+		if(rc.canDigDirt(enemyHQDirection.rotateLeft()) && !directionOnEnemyHq(enemyHQDirection.rotateLeft())) landscaperData.setEnemyHQBuryDigDirection(enemyHQDirection.rotateLeft());
+		else if(rc.canDigDirt(enemyHQDirection.rotateRight()) && !directionOnEnemyHq(enemyHQDirection.rotateRight())) landscaperData.setEnemyHQBuryDigDirection(enemyHQDirection.rotateRight());
+		else if(rc.canDigDirt(enemyHQDirection.rotateLeft().rotateLeft()) && !directionOnEnemyHq(enemyHQDirection.rotateLeft().rotateLeft())) landscaperData.setEnemyHQBuryDigDirection(enemyHQDirection.rotateLeft().rotateLeft());
+		else if(rc.canDigDirt(enemyHQDirection.rotateRight().rotateRight()) && !directionOnEnemyHq(enemyHQDirection.rotateRight().rotateRight())) landscaperData.setEnemyHQBuryDigDirection(enemyHQDirection.rotateRight().rotateRight());
 		else landscaperData.setEnemyHQBuryDigDirection(enemyHQDirection);
+	}
+	
+	private boolean directionOnEnemyHq(Direction direction) {
+		return rc.getLocation().add(direction).equals(landscaperData.getEnemyHQLocation());
 	}
 
 	private void buryEnemyDesign(RobotInfo enemy) throws GameActionException {

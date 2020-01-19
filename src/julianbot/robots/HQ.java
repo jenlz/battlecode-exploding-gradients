@@ -36,6 +36,10 @@ public class HQ extends Robot {
         	tryBuild(RobotType.MINER);
         }
         
+        if(wallBuilt() && lacksVaporatorMiner()) {
+        	buildVaporatorMiner();
+        }
+        
         if(hqData.getEnemyHqLocation() == null) readForEnemyHq();
         
         storeForeignTransactions();
@@ -142,6 +146,38 @@ public class HQ extends Robot {
     			}
     		}
     	}
+    }
+    
+    private boolean wallBuilt() throws GameActionException {
+    	MapLocation rcLocation = rc.getLocation();
+    	int hqElevation = rc.senseElevation(rcLocation);
+    	
+    	for(int dx = -2; dx <= 2; dx++) {
+    		for(int dy = -2; dy <= 2; dy++) {
+    			if(Math.abs(dx) == 2 || Math.abs(dy) == 2)
+    			if(rc.senseElevation(rcLocation.translate(dx, dy)) - hqElevation <= GameConstants.MAX_DIRT_DIFFERENCE) return false;
+    		}
+    	}
+    	
+    	return true;
+    }
+    
+    private boolean lacksVaporatorMiner() {
+    	RobotInfo[] potentialMiners = rc.senseNearbyRobots(3, rc.getTeam());
+    	for(RobotInfo robot : potentialMiners) {
+    		if(robot.getType() == RobotType.MINER) return false;
+    	}
+    	
+    	return true;
+    }
+    
+    private boolean buildVaporatorMiner() throws GameActionException {
+    	if (rc.isReady() && rc.canBuildRobot(RobotType.MINER, Direction.SOUTH)) {
+            rc.buildRobot(RobotType.MINER, Direction.SOUTH);
+            return true;
+        } 
+        
+        return false;
     }
     
     private void readForEnemyHq() throws GameActionException {

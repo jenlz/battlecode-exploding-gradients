@@ -33,12 +33,18 @@ public class DroneData extends ScoutData {
 		{Direction.NORTH, null, null, null, null, null, Direction.SOUTHWEST},
 		{null, Direction.NORTHWEST, Direction.WEST, Direction.WEST, Direction.WEST, Direction.WEST, null}};
 	private static final int WAIT_LOCATION_GRID_DIMENSION = 7;
-		
+	
+	//WALL STATUS
+	private boolean wallBuildChecked;
+	private boolean wallBuildConfirmed;
+	private MapLocation nextWallSegment;
+	
 	public DroneData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
 		holdingEnemy = false;
 		transactionRound = 1;
 		floodedLocs = new ArrayList<MapLocation>();
+		nextWallSegment = new MapLocation(0, 0);
 	}
 
 	public ArrayList<MapLocation> getFloodedLocs() {
@@ -123,6 +129,30 @@ public class DroneData extends ScoutData {
 
 	public void setTransactionRound(int transactionRound) {
 		this.transactionRound = transactionRound;
+	}
+	
+	public boolean isWallBuildChecked() {
+		return wallBuildChecked;
+	}
+
+	public void setWallBuildChecked(boolean wallBuildChecked) {
+		this.wallBuildChecked = wallBuildChecked;
+	}
+
+	public boolean isWallBuildConfirmed() {
+		return wallBuildConfirmed;
+	}
+
+	public void setWallBuildConfirmed(boolean wallBuildConfirmed) {
+		this.wallBuildConfirmed = wallBuildConfirmed;
+	}
+
+	public MapLocation getNextWallSegment() {
+		return nextWallSegment;
+	}
+
+	public void setNextWallSegment(MapLocation nextWallSegment) {
+		this.nextWallSegment = nextWallSegment;
 	}
 	
 }
