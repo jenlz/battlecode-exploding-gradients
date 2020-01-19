@@ -230,20 +230,20 @@ public class Miner extends Scout {
 
 		RobotInfo refinery = senseUnitType(RobotType.REFINERY, rc.getTeam());
 		if (refinery != null) {
-			minerData.addRefineryLoc(refinery.getLocation());
-			minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+			if (minerData.addRefineryLoc(refinery.getLocation())) {
+				minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+			}
 			return;
 		}
 
-		if(minerData.getSoupLocs().size() > 0) {
-			for (MapLocation soupLoc : minerData.getSoupLocs()) {
-				if (minerData.getSpawnerLocation().distanceSquaredTo(soupLoc) > 9) {
-					routeTo(soupLoc);
+    	if(oughtBuildRefinery()) {
+			if(minerData.getSoupLocs().size() > 0) {
+				for (MapLocation soupLoc : minerData.getSoupLocs()) {
+					if (minerData.getSpawnerLocation().distanceSquaredTo(soupLoc) > 9) {
+						routeTo(soupLoc);
+					}
 				}
 			}
-		}
-
-    	if(oughtBuildRefinery()) {
 
 	    	if(attemptRefineryConstruction()) {
 	    		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
@@ -265,7 +265,7 @@ public class Miner extends Scout {
     		}
     	} else {
     		//If you ought not build a refinery right now, keep doing soup miner stuff!
-    		if(rc.getSoupCarrying() > RobotType.MINER.soupLimit / 2) fullMinerProtocol();
+    		if(rc.getSoupCarrying() > RobotType.MINER.soupLimit) fullMinerProtocol();
     		else emptyMinerProtocol();
     	}
     }
@@ -371,9 +371,11 @@ public class Miner extends Scout {
 	    	}
 		} else {
 			System.out.println("The HQ cannot be detected.");
-			if(minerData.getRefineryLocs().size() > 0) {
+			MapLocation closestRefinery = null;
+			if (minerData.getRefineryLocs().size() > 0) {closestRefinery = locateClosestLocation(minerData.getRefineryLocs(), rc.getLocation());}
+			if(closestRefinery != null && closestRefinery.distanceSquaredTo(rc.getLocation()) < 52) {
 				System.out.println("Routing to alternative refinery.");
-				routeTo(locateClosestLocation(minerData.getRefineryLocs(), rc.getLocation()));
+				routeTo(closestRefinery);
 			} else {
 				System.out.println("Switching from soup miner to refinery builder.");
 				minerData.setCurrentRole(MinerData.ROLE_REFINERY_BUILDER);
