@@ -518,4 +518,5 @@ public class Robot {
 		}
 		return closestLoc;
 	}
+
 }

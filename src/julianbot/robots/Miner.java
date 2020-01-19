@@ -10,13 +10,14 @@ import battlecode.common.RobotType;
 import battlecode.common.Transaction;
 import julianbot.robotdata.MinerData;
 
-public class Miner extends Robot {
+public class Miner extends Scout {
 	
 	private MinerData minerData;
 	
 	public Miner(RobotController rc) {
 		super(rc);
 		this.data = new MinerData(rc, getSpawnerLocation());
+		this.scoutData = (MinerData) this.data;
 		this.minerData = (MinerData) this.data;
 	}
 
@@ -57,6 +58,9 @@ public class Miner extends Robot {
 				break;
 			case MinerData.ROLE_SCOUT:
 				scoutMinerProtocol();
+				break;
+			case MinerData.ROLE_RUSH:
+				rushMinerProtocol();
 				break;
 			default:
 				break;
@@ -357,6 +361,13 @@ public class Miner extends Robot {
 
 		// Either searches in direction of target or last known position of target
 		continueSearch();
+
+	}
+
+	/**
+	 * Miner that finds enemy HQ and builds design school to bury enemy HQ
+	 */
+	private void rushMinerProtocol() {
 
 	}
 	

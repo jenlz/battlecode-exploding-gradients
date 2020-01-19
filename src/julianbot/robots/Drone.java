@@ -10,15 +10,18 @@ import battlecode.common.RobotType;
 import battlecode.common.Team;
 import battlecode.common.Transaction;
 import julianbot.robotdata.DroneData;
+import julianbot.robotdata.MinerData;
+import julianbot.robotdata.ScoutData;
 
-public class Drone extends Robot {
+public class Drone extends Scout {
 
 	private DroneData droneData;
 	
 	public Drone(RobotController rc) {
 		super(rc);
 		this.data = new DroneData(rc, getSpawnerLocation());
-		this.droneData = (DroneData) data;
+		this.scoutData = (DroneData) this.data;
+		this.droneData = (DroneData) scoutData;
 	}
 
 	@Override
@@ -200,15 +203,6 @@ public class Drone extends Robot {
     	}
 	}
 	
-	private void attemptEnemyHQDetection() {
-		RobotInfo enemyHQ = senseUnitType(RobotType.HQ, rc.getTeam().opponent());
-		if(enemyHQ != null) {
-			droneData.setEnemyHqLocation(enemyHQ.getLocation());
-		} else if(rc.canSenseLocation(droneData.getActiveSearchDestination())){
-			droneData.proceedToNextSearchDestination();
-		}
-	}
-	
 	private boolean oughtPickUpCow() {
 		//Pick up the unit if we are closer to our own base than our opponent's.
 		//This check is just to prevent the drone from moving cows that are already nearer to the opponent's HQ.
@@ -228,13 +222,13 @@ public class Drone extends Robot {
 	private RobotInfo senseAttackLandscaper() throws GameActionException {
 		RobotInfo topLeft = senseAttackLandscaperAt(droneData.getHqLocation().translate(-1, 1));
 		if(topLeft != null) return topLeft;
-		
+
 		RobotInfo topMiddle = senseAttackLandscaperAt(droneData.getHqLocation().translate(0, 1));
 		if(topMiddle != null) return topMiddle;
 		
 		RobotInfo topRight = senseAttackLandscaperAt(droneData.getHqLocation().translate(1, 1));
 		if(topRight != null) return topRight;
-		
+
 		return null;
 	}
 	
@@ -350,5 +344,5 @@ public class Drone extends Robot {
 		
 		return false;
 	}
-	
+
 }
