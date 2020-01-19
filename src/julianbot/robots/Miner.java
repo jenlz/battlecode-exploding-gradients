@@ -367,8 +367,21 @@ public class Miner extends Scout {
 	/**
 	 * Miner that finds enemy HQ and builds design school to bury enemy HQ
 	 */
-	private void rushMinerProtocol() {
+	private void rushMinerProtocol() throws GameActionException {
+		System.out.println("Rush Miner Protocol");
+		if (minerData.getEnemyHqLocation() == null) {
+			if (!minerData.searchDestinationsDetermined()) {
+				minerData.calculateSearchDestinations(rc);
+			}
 
+			routeTo(minerData.getActiveSearchDestination());
+			attemptEnemyHQDetection();
+			if (minerData.getEnemyHqLocation() != null) {
+				sendTransaction(10, Robot.Type.TRANSACTION_ENEMY_HQ_AT_LOC, minerData.getEnemyHqLocation());
+			}
+		} else {
+			routeTo(minerData.getEnemyHqLocation());
+		}
 	}
 	
 	private void discernRole() throws GameActionException {		
@@ -394,6 +407,7 @@ public class Miner extends Scout {
 		else if(designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.FULFILLMENT_CENTER.cost * 0.8f)) minerData.setCurrentRole(MinerData.ROLE_FULFILLMENT_BUILDER);
 		else if(!designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.DESIGN_SCHOOL.cost * 0.8f)) minerData.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
 //		else if (rc.getRoundNum() % 3 == 0) data.setCurrentRole(MinerData.ROLE_SCOUT);
+		else if(rc.getRoundNum() <= 2) minerData.setCurrentRole(MinerData.ROLE_RUSH);
 		else minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
 	}
 	

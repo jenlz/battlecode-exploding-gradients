@@ -41,6 +41,7 @@ public class MinerData extends ScoutData {
 			removedSoupLocs = new ArrayList<MapLocation>();
 		refineryLocs = new ArrayList<MapLocation>();
 		refineryLocs.add(spawnerLocation);
+		setHqLocation(spawnerLocation);
 	}
 
 	public int getCurrentRole() {
