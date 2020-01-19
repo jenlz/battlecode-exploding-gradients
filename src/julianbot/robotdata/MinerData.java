@@ -1,12 +1,11 @@
 package julianbot.robotdata;
 
 import java.util.ArrayList;
-
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 
-public class MinerData extends RobotData {
+public class MinerData extends ScoutData {
 
 	private int currentRole;
 	public static final int ROLE_DESIGN_BUILDER = 0;
@@ -24,7 +23,8 @@ public class MinerData extends RobotData {
 		private RobotInfo targetRobot;
 		private RobotInfo previousTarget;
 		private int turnsScouted;
-	
+	public static final int ROLE_RUSH = 8;
+
 
 	private ArrayList<MapLocation> soupLocs;
 		private ArrayList<MapLocation> removedSoupLocs;
@@ -42,12 +42,13 @@ public class MinerData extends RobotData {
 			removedSoupLocs = new ArrayList<MapLocation>();
 		refineryLocs = new ArrayList<MapLocation>();
 		refineryLocs.add(spawnerLocation);
+		setHqLocation(spawnerLocation);
 	}
-	
+
 	public int getCurrentRole() {
 		return currentRole;
 	}
-	
+
 	public void setCurrentRole(int currentRole) {
 		this.currentRole = currentRole;
 	}
@@ -166,20 +167,20 @@ public class MinerData extends RobotData {
 	public boolean addSoupLoc(MapLocation loc) {
 		for (MapLocation soupLoc : soupLocs) {
 			//21 is default sensor radius besides miner and hq.
-			
+
 			if (/*soupLoc.distanceSquaredTo(loc) < 21 || */soupLoc.equals(loc)) {
 				return false;
 			}
 		}
-		
+
 		for(MapLocation soupLoc : removedSoupLocs) {
 			if(soupLoc.equals(loc)) return false;
 		}
-		
+
 		soupLocs.add(loc);
 		return true;
 	}
-	
+
 	/**
 	 * Adds Refinery Location if not added before
 	 * @param loc

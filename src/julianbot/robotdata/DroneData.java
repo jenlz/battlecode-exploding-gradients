@@ -7,13 +7,9 @@ import battlecode.common.Team;
 
 import java.util.ArrayList;
 
-public class DroneData extends RobotData {
+public class DroneData extends ScoutData {
 	
 	//ROUTING
-	private MapLocation hqLocation;
-	private MapLocation enemyHqLocation;
-	private MapLocation[] searchDestinations;
-		private int activeSearchDestinationIndex;
 	private ArrayList<MapLocation> floodedLocs;
 	
 	//TRANSACTION SEARCHING
@@ -76,57 +72,9 @@ public class DroneData extends RobotData {
 	public void setHoldingEnemy(boolean enemy) {
 		holdingEnemy = enemy;
 	}
-	
-	public MapLocation getHqLocation() {
-		return hqLocation;
-	}
-
-	public void setHqLocation(MapLocation hqLocation) {
-		this.hqLocation = hqLocation;
-	}
-	
-	public MapLocation getEnemyHqLocation() {
-		return enemyHqLocation;
-	}
-
-	public void setEnemyHqLocation(MapLocation enemyHQLocation) {
-		this.enemyHqLocation = enemyHQLocation;
-	}
-
-	public boolean searchDestinationsDetermined() {
-		return searchDestinations != null;
-	}
-	
-	public void calculateSearchDestinations(RobotController rc) {
-		int mapWidth = rc.getMapWidth();
-		int mapHeight = rc.getMapHeight();
-		
-		int centerX = mapWidth / 2;
-		int centerY = mapHeight / 2;
-		
-		MapLocation horizontalSymmetryLocation = new MapLocation(mapWidth - hqLocation.x - 1, hqLocation.y);
-		MapLocation verticalSymmetryLocation = new MapLocation(hqLocation.x, mapHeight - hqLocation.y - 1);
-		MapLocation rotational90SymmetryLocation = new MapLocation(centerX - (hqLocation.y - centerY), centerY + (hqLocation.x - centerX));
-		MapLocation rotational180SymmetryLocation = new MapLocation(centerX - (rotational90SymmetryLocation.y - centerY), centerY + (rotational90SymmetryLocation.x - centerX));
-		MapLocation rotational270SymmetryLocation = new MapLocation(centerX - (rotational180SymmetryLocation.y - centerY), centerY + (rotational180SymmetryLocation.x - centerX));
-		
-		searchDestinations = new MapLocation[] {horizontalSymmetryLocation, verticalSymmetryLocation, rotational180SymmetryLocation, rotational90SymmetryLocation, rotational270SymmetryLocation};
-		activeSearchDestinationIndex = 0;
-	}
-	
-	public MapLocation getActiveSearchDestination() {
-		return searchDestinations[activeSearchDestinationIndex];
-	}
-	
-	public void proceedToNextSearchDestination() {
-		activeSearchDestinationIndex++;
-		activeSearchDestinationIndex %= searchDestinations.length;
-		System.out.println("Active destination is now " + searchDestinations[activeSearchDestinationIndex]);
-	}
 
 	public void setEnemyFrom(Team team) {
 		enemyFrom = team;
-		
 	}
 	
 	public Team getEnemyFrom() {
@@ -142,12 +90,12 @@ public class DroneData extends RobotData {
 	}
 
 	public void calculateInitialAttackWaitLocation() {
-		if(hqLocation != null) attackWaitLocation = hqLocation.translate(3, 0);
+		if(getHqLocation() != null) attackWaitLocation = getHqLocation().translate(3, 0);
 	}
 
 	public void proceedToNextWaitLocation() {
-		int gridX = attackWaitLocation.x - hqLocation.x + (WAIT_LOCATION_GRID_DIMENSION / 2);
-		int gridY = hqLocation.y - attackWaitLocation.y + (WAIT_LOCATION_GRID_DIMENSION / 2);
+		int gridX = attackWaitLocation.x - getHqLocation().x + (WAIT_LOCATION_GRID_DIMENSION / 2);
+		int gridY = getHqLocation().y - attackWaitLocation.y + (WAIT_LOCATION_GRID_DIMENSION / 2);
 		attackWaitLocation = attackWaitLocation.add(WAIT_LOCATION_ORDER[gridY][gridX]);
 	}
 	

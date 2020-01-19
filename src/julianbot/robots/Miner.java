@@ -10,13 +10,14 @@ import battlecode.common.RobotType;
 import battlecode.common.Transaction;
 import julianbot.robotdata.MinerData;
 
-public class Miner extends Robot {
+public class Miner extends Scout {
 	
 	private MinerData minerData;
 	
 	public Miner(RobotController rc) {
 		super(rc);
 		this.data = new MinerData(rc, getSpawnerLocation());
+		this.scoutData = (MinerData) this.data;
 		this.minerData = (MinerData) this.data;
 	}
 
@@ -64,6 +65,9 @@ public class Miner extends Robot {
 				break;
 			case MinerData.ROLE_SCOUT:
 				scoutMinerProtocol();
+				break;
+			case MinerData.ROLE_RUSH:
+				rushMinerProtocol();
 				break;
 			default:
 				break;
@@ -442,6 +446,36 @@ public class Miner extends Robot {
 		continueSearch();
 
 	}
+
+	/**
+	 * Miner that finds enemy HQ and builds design school to bury enemy HQ
+	 */
+	private void rushMinerProtocol() throws GameActionException {
+		System.out.println("Rush Miner Protocol");
+		if (minerData.getEnemyHqLocation() == null) {
+			if (!minerData.searchDestinationsDetermined()) {
+				minerData.calculateSearchDestinations(rc);
+			}
+
+			routeTo(minerData.getActiveSearchDestination());
+			attemptEnemyHQDetection();
+			if (minerData.getEnemyHqLocation() != null) {
+				sendTransaction(10, Robot.Type.TRANSACTION_ENEMY_HQ_AT_LOC, minerData.getEnemyHqLocation());
+			}
+		} else {
+			if (!rc.getLocation().isAdjacentTo(minerData.getEnemyHqLocation())) {
+				routeTo(minerData.getEnemyHqLocation());
+			} else if (senseUnitType(RobotType.DESIGN_SCHOOL, rc.getTeam()) == null) {
+				for (Direction dir : Direction.allDirections()) {
+					if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, dir)) {
+						rc.buildRobot(RobotType.DESIGN_SCHOOL, dir);
+					}
+				}
+			} else {
+				minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+			}
+		}
+	}
 	
 	private void discernRole() throws GameActionException {		
 		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam());
@@ -466,6 +500,7 @@ public class Miner extends Robot {
 		else if(designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.FULFILLMENT_CENTER.cost * 0.8f)) minerData.setCurrentRole(MinerData.ROLE_FULFILLMENT_BUILDER);
 		else if(!designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.DESIGN_SCHOOL.cost * 0.8f)) minerData.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
 //		else if (rc.getRoundNum() % 3 == 0) data.setCurrentRole(MinerData.ROLE_SCOUT);
+		else if(rc.getRoundNum() <= 2) minerData.setCurrentRole(MinerData.ROLE_RUSH);
 		else minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
 	}
 	
