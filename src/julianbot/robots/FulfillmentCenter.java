@@ -1,6 +1,5 @@
 package julianbot.robots;
 
-import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
@@ -86,12 +85,8 @@ public class FulfillmentCenter extends Robot {
     }
     
     private void confirmStableSoupIncome() throws GameActionException {
-    	if(!fulfillmentCenterData.searchedForVaporator()) {
-    		if(senseUnitType(RobotType.VAPORATOR, rc.getTeam()) != null) {
-    			fulfillmentCenterData.setStableSoupIncomeConfirmed(true);
-    		}
-    		
-//    		fulfillmentCenterData.setSearchedForVaporator(true);
+    	if(senseUnitType(RobotType.VAPORATOR, rc.getTeam()) != null) {
+    		fulfillmentCenterData.setStableSoupIncomeConfirmed(true);
     	}
     	
     	/*
@@ -121,7 +116,6 @@ public class FulfillmentCenter extends Robot {
 			int[] decodedMessage = decodeTransaction(message);
 			if (decodedMessage.length == GameConstants.NUMBER_OF_TRANSACTIONS_PER_BLOCK) {
 				Robot.Type category = Robot.Type.enumOfValue(decodedMessage[1]);
-				MapLocation loc = new MapLocation(decodedMessage[2], decodedMessage[3]);
 
 				//System.out.println("Category of message: " + category);
 				switch(category) {

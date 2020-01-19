@@ -16,7 +16,10 @@ public class DesignSchool extends Robot {
 	@Override
 	public void run() throws GameActionException {
 		super.run();
+		
+		if(turnCount == 1) determineBuildDirection();
 
+		//TODO: Either rebuild this for loop not to repeat read or scrap it altogether.
 		if (turnCount < GameConstants.INITIAL_COOLDOWN_TURNS) {
 			for (int i = 1; i < rc.getRoundNum(); i++) {
 				readTransaction(rc.getBlock(i));
@@ -43,18 +46,80 @@ public class DesignSchool extends Robot {
 	        		attackDesignSchoolProtocol();
 				}
 	        }
+        } else {
+        	designSchoolData.setBuildDirection(designSchoolData.getDefaultBuildDirection());
         }
 
         designSchoolData.setPauseBuildTimer(designSchoolData.getPauseBuildTimer() - 1);
         if(!designSchoolData.isStableSoupIncomeConfirmed()) confirmStableSoupIncome();
     	if(oughtBuildLandscaper()) {
-    		if(!tryBuild(RobotType.LANDSCAPER) && designSchoolData.getBuildDirection().equals(Direction.WEST)) {
-    			//If we cannot build a landscaper to the west, it means the wall already exists, so we can start building northwards to generate attack landscapers.
-    			designSchoolData.setBuildDirection(Direction.NORTH);
+    		if(!tryBuild(RobotType.LANDSCAPER) && designSchoolData.getBuildDirection().equals(designSchoolData.getDefaultBuildDirection())) {
+    			MapLocation attemptedBuildLocation = rc.getLocation().add(designSchoolData.getBuildDirection());
+    			if(rc.canSenseLocation(attemptedBuildLocation)) {
+    				if(rc.senseElevation(attemptedBuildLocation) - rc.senseElevation(rc.getLocation()) > GameConstants.MAX_DIRT_DIFFERENCE) {
+    					//The wall already exists, so we can start building northwards to generate attack landscapers.  
+    					designSchoolData.setDefaultBuildDirection(designSchoolData.getDefaultAttackBuildDirection());
+    				}
+    			}
     		}
     	}
 	}
 
+	private void determineBuildDirection() {
+		RobotInfo hq = senseUnitType(RobotType.HQ, rc.getTeam());
+		MapLocation hqLocation = hq.getLocation();
+		
+		int mapWidth = rc.getMapWidth();
+		int mapHeight = rc.getMapHeight();
+		
+		boolean leftEdge = hqLocation.x <= 0;
+		boolean rightEdge = hqLocation.x >= mapWidth - 1;
+		boolean topEdge = hqLocation.y >= mapHeight - 1;
+		boolean bottomEdge = hqLocation.y <= 0;
+		
+		if(leftEdge) {
+			if(bottomEdge) {
+				designSchoolData.setBuildDirection(Direction.NORTH);
+				designSchoolData.setDefaultBuildDirection(Direction.NORTH);
+				designSchoolData.setDefaultAttackBuildDirection(Direction.EAST);
+			} else if(topEdge) {
+				designSchoolData.setBuildDirection(Direction.SOUTH);
+				designSchoolData.setDefaultBuildDirection(Direction.SOUTH);
+				designSchoolData.setDefaultAttackBuildDirection(Direction.EAST);
+			} else {
+				designSchoolData.setBuildDirection(Direction.NORTH);
+				designSchoolData.setDefaultBuildDirection(Direction.NORTH);
+				designSchoolData.setDefaultAttackBuildDirection(Direction.EAST);
+			}
+		} else if(rightEdge) {
+			if(bottomEdge) {
+				designSchoolData.setBuildDirection(Direction.NORTH);
+				designSchoolData.setDefaultBuildDirection(Direction.NORTH);
+				designSchoolData.setDefaultAttackBuildDirection(Direction.WEST);
+			} else if(topEdge) {
+				designSchoolData.setBuildDirection(Direction.SOUTH);
+				designSchoolData.setDefaultBuildDirection(Direction.SOUTH);
+				designSchoolData.setDefaultAttackBuildDirection(Direction.WEST);
+			} else {
+				designSchoolData.setBuildDirection(Direction.SOUTH);
+				designSchoolData.setDefaultBuildDirection(Direction.SOUTH);
+				designSchoolData.setDefaultAttackBuildDirection(Direction.WEST);
+			}
+		} else if(topEdge) {
+			designSchoolData.setBuildDirection(Direction.EAST);
+			designSchoolData.setDefaultBuildDirection(Direction.EAST);
+			designSchoolData.setDefaultAttackBuildDirection(Direction.SOUTH);
+		} else if(bottomEdge) {
+			designSchoolData.setBuildDirection(Direction.WEST);
+			designSchoolData.setDefaultBuildDirection(Direction.WEST);
+			designSchoolData.setDefaultAttackBuildDirection(Direction.NORTH);
+		} else {
+			designSchoolData.setBuildDirection(Direction.WEST);
+			designSchoolData.setDefaultBuildDirection(Direction.WEST);
+			designSchoolData.setDefaultAttackBuildDirection(Direction.NORTH);
+		}
+	}
+	
 	/**
 	 * If design school senses enemy HQ, continually builds landscapers and sends out pause build transaction.
 	 * @throws GameActionException
@@ -99,14 +164,10 @@ public class DesignSchool extends Robot {
     }
     
     private void confirmStableSoupIncome() throws GameActionException {
-    	if(!designSchoolData.searchedForVaporator()) {
-    		if(senseUnitType(RobotType.VAPORATOR, rc.getTeam()) != null) {
-    			designSchoolData.setStableSoupIncomeConfirmed(true);
-    		}
-    		
-//    		designSchoolData.setSearchedForVaporator(true);
+    	if(senseUnitType(RobotType.VAPORATOR, rc.getTeam()) != null) {
+    		designSchoolData.setStableSoupIncomeConfirmed(true);
     	}
-    	
+    		    	
     	/*
     	for(int i = designSchoolData.getTransactionRound(); i < rc.getRoundNum(); i++) {
     		for(Transaction transaction : rc.getBlock(i)) {
@@ -136,7 +197,6 @@ public class DesignSchool extends Robot {
 			int[] decodedMessage = decodeTransaction(message);
 			if (decodedMessage.length == GameConstants.NUMBER_OF_TRANSACTIONS_PER_BLOCK) {
 				Robot.Type category = Robot.Type.enumOfValue(decodedMessage[1]);
-				MapLocation loc = new MapLocation(decodedMessage[2], decodedMessage[3]);
 
 				if (category == null) {
 					System.out.println("Something is terribly wrong. enumOfValue returns null. Miner readTransaction line ~621");

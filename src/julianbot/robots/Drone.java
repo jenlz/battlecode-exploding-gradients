@@ -11,8 +11,6 @@ import battlecode.common.RobotType;
 import battlecode.common.Team;
 import battlecode.common.Transaction;
 import julianbot.robotdata.DroneData;
-import julianbot.robotdata.MinerData;
-import julianbot.robotdata.ScoutData;
 
 public class Drone extends Scout {
 
@@ -42,6 +40,10 @@ public class Drone extends Scout {
 						if(rc.getLocation().isWithinDistanceSquared(droneData.getEnemyHqLocation(), 8)) dropUnitNextToEnemyHq();
 					} else {
 						//Drop enemies in the ocean.
+						Direction adjacentFloodingDirection = getAdjacentFloodingDirection();
+						if(adjacentFloodingDirection != null) {
+							rc.dropUnit(adjacentFloodingDirection);
+						}
 					}
 				} else {
 					RobotInfo[] enemies = rc.senseNearbyRobots(-1, droneData.getOpponent());
@@ -328,6 +330,16 @@ public class Drone extends Scout {
 				droneData.addFloodedLoc(rc.adjacentLocation(dir));
 			}
 		}
+	}
+	
+	private Direction getAdjacentFloodingDirection() throws GameActionException {
+		for(Direction direction : Direction.allDirections()) {
+			if(rc.canSenseLocation(rc.adjacentLocation(direction)) && rc.senseFlooding(rc.adjacentLocation(direction))) {
+				return direction;
+			}
+		}
+		
+		return null;
 	}
 	
 	private boolean dropUnitNextToEnemyHq() throws GameActionException {

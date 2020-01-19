@@ -17,7 +17,7 @@ public class LandscaperData extends RobotData {
 		
 	public LandscaperData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
-		currentRole = TRAVEL_TO_HQ;
+		currentRole = DEFEND_HQ_FROM_FLOOD;
 	}
 	
 	public int getCurrentRole() {

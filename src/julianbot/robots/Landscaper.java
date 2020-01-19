@@ -13,8 +13,11 @@ import julianbot.utils.NumberMath;
 
 public class Landscaper extends Robot {
 
-	private static final int DIG_PATTERN_ARRAY_SHIFT = 2;
-	private static Direction[][] movePattern = new Direction[][]{
+	private static final int DEFAULT_PATTERN_ARRAY_SHIFT = 2;
+	private int gridXShift;
+	private int gridYShift;
+	
+	private static Direction[][] clockwiseMovePattern = new Direction[][]{
 		{Direction.EAST, Direction.EAST, Direction.EAST, Direction.EAST, Direction.SOUTH},
 		{Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.EAST, Direction.SOUTH},
 		{Direction.NORTH, Direction.WEST, Direction.NORTH, Direction.EAST, Direction.SOUTH},
@@ -22,7 +25,7 @@ public class Landscaper extends Robot {
 		{Direction.NORTH, Direction.WEST, Direction.WEST, Direction.WEST, Direction.WEST}
 	};
 	
-	private static Direction[][] digPattern = new Direction[][]{
+	private static Direction[][] clockwiseDigPattern = new Direction[][]{
 		{Direction.NORTH, Direction.NORTHWEST, Direction.NORTH, Direction.NORTHWEST, Direction.EAST},
 		{Direction.SOUTHWEST, null, null, null, Direction.NORTHEAST},
 		{Direction.WEST, null, null, null, Direction.EAST},
@@ -30,7 +33,31 @@ public class Landscaper extends Robot {
 		{Direction.WEST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHEAST, Direction.SOUTH}
 	};
 	
-	private static Direction[][][] buildPattern = new Direction[][][] {
+	private static Direction[][][] clockwiseBuildPattern = new Direction[][][] {
+		{{Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}},
+		{{Direction.CENTER}, {}, {}, {}, {Direction.CENTER}},
+		{{Direction.CENTER}, {}, {}, {}, {Direction.CENTER}},
+		{{Direction.CENTER}, {}, {}, {}, {Direction.CENTER}},
+		{{Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}},
+	};
+	
+	private static Direction[][] counterClockwiseMovePattern = new Direction[][]{
+		{Direction.SOUTH, Direction.WEST, Direction.WEST, Direction.WEST, Direction.WEST},
+		{Direction.SOUTH, Direction.WEST, Direction.NORTH, Direction.NORTH, Direction.NORTH},
+		{Direction.SOUTH, Direction.WEST, Direction.SOUTH, Direction.EAST, Direction.NORTH},
+		{Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.EAST, Direction.NORTH},
+		{Direction.EAST, Direction.EAST, Direction.EAST, Direction.EAST, Direction.NORTH}
+	};
+	
+	private static Direction[][] counterClockwiseDigPattern = new Direction[][]{
+		{Direction.WEST, Direction.NORTHEAST, Direction.NORTH, Direction.NORTHEAST, Direction.NORTH},
+		{Direction.NORTHWEST, null, null, null, Direction.SOUTHEAST},
+		{Direction.WEST, null, null, null, Direction.EAST},
+		{Direction.NORTHWEST, null, null, null, Direction.SOUTHEAST},
+		{Direction.SOUTH, Direction.SOUTHWEST, Direction.SOUTH, Direction.SOUTHWEST, Direction.EAST}
+	};
+	
+	private static Direction[][][] counterClockwiseBuildPattern = new Direction[][][] {
 		{{Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}},
 		{{Direction.CENTER}, {}, {}, {}, {Direction.CENTER}},
 		{{Direction.CENTER}, {}, {}, {}, {Direction.CENTER}},
@@ -39,6 +66,9 @@ public class Landscaper extends Robot {
 	};
 	
 	private LandscaperData landscaperData;
+	private Direction[][] movePattern;
+	private Direction[][] digPattern;
+	private Direction[][][] buildPattern;
 	
 	public Landscaper(RobotController rc) {
 		super(rc);
@@ -50,7 +80,11 @@ public class Landscaper extends Robot {
 	public void run() throws GameActionException {
 		super.run();
 		
-    	if(turnCount == 1) learnHQLocation();
+    	if(turnCount == 1) {
+    		learnHQLocation();
+    		determineWallDirections();
+    	}
+    	
     	discernAttackRole();
     	
 		RobotInfo enemyDesign = senseUnitType(RobotType.DESIGN_SCHOOL, landscaperData.getOpponent());
@@ -71,6 +105,45 @@ public class Landscaper extends Robot {
     		buildHQWall();
     	}
 	}
+	
+	private void learnHQLocation() throws GameActionException {
+		for(Transaction transaction : rc.getBlock(1)) {
+			int[] message = decodeTransaction(transaction);
+			if(message.length > 1 && message[1] == Type.TRANSACTION_FRIENDLY_HQ_AT_LOC.getVal()) {
+				landscaperData.setHqLocation(new MapLocation(message[2], message[3]));
+				return;
+			}
+		}		
+	}
+	
+	private void determineWallDirections() {
+		MapLocation hqLocation = landscaperData.getHqLocation();
+		
+		boolean leftEdge = hqLocation.x <= 0;
+		boolean rightEdge = hqLocation.x >= rc.getMapWidth() - 1;
+		boolean topEdge = hqLocation.y >= rc.getMapHeight() - 1;
+		boolean bottomEdge = hqLocation.y <= 0;
+		
+		if((topEdge && leftEdge) || (bottomEdge && rightEdge)) {
+			digPattern = counterClockwiseDigPattern;
+			movePattern = counterClockwiseMovePattern;
+			buildPattern = counterClockwiseBuildPattern;
+		} else {
+			digPattern = clockwiseDigPattern;
+			movePattern = clockwiseMovePattern;
+			buildPattern = clockwiseBuildPattern;
+		}
+		
+		if(topEdge) {
+			gridXShift = DEFAULT_PATTERN_ARRAY_SHIFT;
+			gridYShift = DEFAULT_PATTERN_ARRAY_SHIFT - 1;
+		} else if(bottomEdge) {
+			gridXShift = DEFAULT_PATTERN_ARRAY_SHIFT;
+			gridYShift = DEFAULT_PATTERN_ARRAY_SHIFT + 1;
+		} else {
+			gridXShift = gridYShift = DEFAULT_PATTERN_ARRAY_SHIFT;
+		}
+	}
 
 	private void discernAttackRole() throws GameActionException {
 		MapLocation rcLocation = rc.getLocation();
@@ -79,8 +152,8 @@ public class Landscaper extends Robot {
 		int dx = rcLocation.x - hqLocation.x;
 		int dy = rcLocation.y - hqLocation.y;
 				
-		int gridX = dx + DIG_PATTERN_ARRAY_SHIFT;
-		int gridY = -dy + DIG_PATTERN_ARRAY_SHIFT;
+		int gridX = dx + gridXShift;
+		int gridY = -dy + gridYShift;
 		
 		int distanceSquaredFromHq = landscaperData.getHqLocation().distanceSquaredTo(rc.getLocation());
 		if(distanceSquaredFromHq <= 3 &&
@@ -113,16 +186,6 @@ public class Landscaper extends Robot {
 		return false;
 	}
 	
-	private void learnHQLocation() throws GameActionException {
-		for(Transaction transaction : rc.getBlock(1)) {
-			int[] message = decodeTransaction(transaction);
-			if(message.length > 1 && message[1] == Type.TRANSACTION_FRIENDLY_HQ_AT_LOC.getVal()) {
-				landscaperData.setHqLocation(new MapLocation(message[2], message[3]));
-				return;
-			}
-		}		
-	}
-	
 	private boolean approachComplete() {
 		MapLocation rcLocation = rc.getLocation();
 		MapLocation hqLocation = landscaperData.getHqLocation();
@@ -143,10 +206,16 @@ public class Landscaper extends Robot {
 		int dx = rcLocation.x - hqLocation.x;
 		int dy = rcLocation.y - hqLocation.y;
 				
-		int gridX = dx + DIG_PATTERN_ARRAY_SHIFT;
-		int gridY = -dy + DIG_PATTERN_ARRAY_SHIFT;
+		int gridX = dx + gridXShift;
+		int gridY = -dy + gridYShift;
 		
 		if(gridX < 0 || gridX >= movePattern[0].length || gridY < 0 || gridY >= movePattern.length) return;
+		
+		//In the event that our wall reaches the end of the map, we just want to make as tall a pillar as possible.
+		if(!rc.onTheMap(rcLocation.add(movePattern[gridY][gridX]))) {
+			depositDirt(Direction.CENTER);
+			return;
+		}
 		
 		//If where we're going is too low, deposit dirt there.
 		if(rc.canSenseLocation(rcLocation.add(movePattern[gridY][gridX])) && rc.senseElevation(rcLocation) - rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) > GameConstants.MAX_DIRT_DIFFERENCE) {
@@ -185,8 +254,14 @@ public class Landscaper extends Robot {
 		int dx = rcLocation.x - hqLocation.x;
 		int dy = rcLocation.y - hqLocation.y;
 		
-		int gridX = dx + DIG_PATTERN_ARRAY_SHIFT;
-		int gridY = -dy + DIG_PATTERN_ARRAY_SHIFT;
+		int gridX = dx + gridXShift;
+		int gridY = -dy + gridYShift;
+		
+		//In the event that our wall reaches the end of the map, we just want to make as tall a pillar as possible.
+		if(!rc.onTheMap(rcLocation.add(movePattern[gridY][gridX]))) {
+			dig(digPattern[gridY][gridX]);
+			return;
+		}
 		
 		//If where we're going is too high, dig from there.
 		if(rc.canSenseLocation(rcLocation.add(movePattern[gridY][gridX])) && rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) - rc.senseElevation(rcLocation) > GameConstants.MAX_DIRT_DIFFERENCE) {
