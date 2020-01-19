@@ -10,11 +10,31 @@ public class DesignSchoolData extends RobotData {
 	private boolean stableSoupIncomeConfirmed;
 		private int transactionRound;
 		private boolean searchedForVaporator;
+	private int pauseBuildTimer;
+	private boolean isAttackSchool;
 	
 	public DesignSchoolData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
 		buildDirection = Direction.WEST;
 		transactionRound = 1;
+		pauseBuildTimer = 0;
+		isAttackSchool = false;
+	}
+
+	public boolean getIsAttackSchool() {
+		return isAttackSchool;
+	}
+
+	public void setIsAttackSchool(boolean bool) {
+		isAttackSchool = bool;
+	}
+
+	public void setPauseBuildTimer(int turns) {
+		pauseBuildTimer = turns;
+	}
+
+	public int getPauseBuildTimer() {
+		return pauseBuildTimer;
 	}
 	
 	public int getLandscapersBuilt() {

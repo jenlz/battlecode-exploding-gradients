@@ -1,12 +1,6 @@
 package julianbot.robots;
 
-import battlecode.common.Clock;
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
-import battlecode.common.Transaction;
+import battlecode.common.*;
 import julianbot.robotdata.DesignSchoolData;
 
 public class DesignSchool extends Robot {
@@ -23,6 +17,19 @@ public class DesignSchool extends Robot {
 	public void run() throws GameActionException {
 		super.run();
 
+		if (turnCount < GameConstants.INITIAL_COOLDOWN_TURNS) {
+			for (int i = 1; i < rc.getRoundNum(); i++) {
+				readTransaction(rc.getBlock(i));
+			}
+		}
+
+		readTransaction(rc.getBlock(rc.getRoundNum() - 1));
+
+		if (designSchoolData.getIsAttackSchool()) {
+			attackDesignSchoolProtocol();
+			return;
+		}
+
     	RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), designSchoolData.getOpponent());
 
         if(enemy.length > 0) {
@@ -32,11 +39,13 @@ public class DesignSchool extends Robot {
 	        		tryBuild(RobotType.LANDSCAPER);
 	        		return;
 	        	} else if (potentialThreat.getType() == RobotType.HQ) {
+	        		designSchoolData.setBuildDirection(rc.getLocation().directionTo(potentialThreat.getLocation()).rotateLeft());
 	        		attackDesignSchoolProtocol();
 				}
 	        }
         }
-        
+
+        designSchoolData.setPauseBuildTimer(designSchoolData.getPauseBuildTimer() - 1);
         if(!designSchoolData.isStableSoupIncomeConfirmed()) confirmStableSoupIncome();
     	if(oughtBuildLandscaper()) {
     		if(!tryBuild(RobotType.LANDSCAPER) && designSchoolData.getBuildDirection().equals(Direction.WEST)) {
@@ -46,14 +55,25 @@ public class DesignSchool extends Robot {
     	}
 	}
 
+	/**
+	 * If design school senses enemy HQ, continually builds landscapers and sends out pause build transaction.
+	 * @throws GameActionException
+	 */
 	private void attackDesignSchoolProtocol() throws GameActionException {
 		System.out.println("Attack Design School Protocol");
-		tryBuild(RobotType.LANDSCAPER);
+		if (!designSchoolData.getIsAttackSchool()) {
+			designSchoolData.setIsAttackSchool(true);
+			sendTransaction(15, Type.TRANSACTION_PAUSE_LANDSCAPER_BUILDING, rc.getLocation());
+		}
+		while(!tryBuild(RobotType.LANDSCAPER)) {
+			designSchoolData.setBuildDirection(designSchoolData.getBuildDirection().rotateRight());
+		}
 	}
 
 	private boolean oughtBuildLandscaper() {
 		//Build a landscaper if the fulfillment center has been built but no landscapers are present.
 //		int landscapersPresent = GeneralCommands.senseNumberOfUnits(rc, RobotType.LANDSCAPER, rc.getTeam());
+		if (designSchoolData.getPauseBuildTimer() > 0) return false;
 		if (designSchoolData.getLandscapersBuilt() == 0) return senseUnitType(RobotType.FULFILLMENT_CENTER, rc.getTeam()) != null;
 		return (designSchoolData.isStableSoupIncomeConfirmed()) ? rc.getTeamSoup() >= RobotType.LANDSCAPER.cost : rc.getTeamSoup() >= RobotType.REFINERY.cost + 5;
 	}
@@ -105,5 +125,31 @@ public class DesignSchool extends Robot {
     		}
     	}
     }
+
+	/**
+	 *
+	 */
+	private void readTransaction(Transaction[] block) throws GameActionException {
+		for (Transaction message : block) {
+			int[] decodedMessage = decodeTransaction(message);
+			if (decodedMessage.length == GameConstants.NUMBER_OF_TRANSACTIONS_PER_BLOCK) {
+				Robot.Type category = Robot.Type.enumOfValue(decodedMessage[1]);
+				MapLocation loc = new MapLocation(decodedMessage[2], decodedMessage[3]);
+
+				if (category == null) {
+					System.out.println("Something is terribly wrong. enumOfValue returns null. Miner readTransaction line ~621");
+				}
+				switch(category) {
+					case TRANSACTION_PAUSE_LANDSCAPER_BUILDING:
+						System.out.println("Pausing building...");
+						designSchoolData.setPauseBuildTimer(150);
+						break;
+					default:
+						break;
+				}
+			}
+
+		}
+	}
 	
 }
