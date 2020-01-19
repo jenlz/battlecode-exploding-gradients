@@ -418,14 +418,13 @@ public class Miner extends Scout {
     			moveMinerFromHQ();
     		}
     	}
-    	
-    	//TODO: Clarify these conditionals. They're causing miners to become idle when they shouldn't be.
+
     	if(hq != null && rc.getTeamSoup() >= RobotType.DESIGN_SCHOOL.cost) {
     		if(getBuildPriority(minerData) == RobotType.REFINERY) {
     			System.out.println("\tSetting role to refinery builder");
     			minerData.setCurrentRole(MinerData.ROLE_REFINERY_BUILDER);
         		return;
-    		} else if(!minerData.isDesignSchoolBuilt()){
+    		} else if(!minerData.isDesignSchoolBuilt() && isClosestMinerTo(designSchoolBuildSite)){
     			System.out.println("\tSetting role to design school builder");
         		minerData.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
         		return;
@@ -571,14 +570,11 @@ public class Miner extends Scout {
 		boolean fulfillmentCenterBuilt = false;
 		boolean designSchoolBuilt = false;
 		boolean enemyDesignSchoolAdjacent = false;
-		
+
 		for(RobotInfo robot : robots) {
 			if (robot.getTeam() == rc.getTeam()) {
 				if (robot.type == RobotType.FULFILLMENT_CENTER) fulfillmentCenterBuilt = true;
 				else if (robot.type == RobotType.DESIGN_SCHOOL) designSchoolBuilt = true;
-				else if (robot.getType() == RobotType.MINER) {
-
-				}
 			} else if (robot.getTeam() == rc.getTeam().opponent()) {
 				if(robot.type == RobotType.DESIGN_SCHOOL) enemyDesignSchoolAdjacent = true;
 			}
