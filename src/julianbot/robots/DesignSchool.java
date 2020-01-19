@@ -22,16 +22,18 @@ public class DesignSchool extends Robot {
 	@Override
 	public void run() throws GameActionException {
 		super.run();
-    	
+
     	RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), designSchoolData.getOpponent());
-        
+
         if(enemy.length > 0) {
 	        for(RobotInfo potentialThreat : enemy) { 
 	        	if(potentialThreat.type.equals(RobotType.DESIGN_SCHOOL)) {
 	        		designSchoolData.setBuildDirection(rc.getLocation().directionTo(potentialThreat.location).rotateLeft());
 	        		tryBuild(RobotType.LANDSCAPER);
 	        		return;
-	        	}
+	        	} else if (potentialThreat.getType() == RobotType.HQ) {
+	        		attackDesignSchoolProtocol();
+				}
 	        }
         }
         
@@ -43,7 +45,12 @@ public class DesignSchool extends Robot {
     		}
     	}
 	}
-	
+
+	private void attackDesignSchoolProtocol() throws GameActionException {
+		System.out.println("Attack Design School Protocol");
+		tryBuild(RobotType.LANDSCAPER);
+	}
+
 	private boolean oughtBuildLandscaper() {
 		//Build a landscaper if the fulfillment center has been built but no landscapers are present.
 //		int landscapersPresent = GeneralCommands.senseNumberOfUnits(rc, RobotType.LANDSCAPER, rc.getTeam());
@@ -55,7 +62,6 @@ public class DesignSchool extends Robot {
      * Attempts to build a given robot in a given direction.
      *
      * @param type The type of the robot to build
-     * @param dir The intended direction of movement
      * @return true if a move was performed
      * @throws GameActionException
      */
