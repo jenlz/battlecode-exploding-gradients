@@ -25,6 +25,10 @@ public class Miner extends Robot {
 		super.run();
 		
     	if(turnCount == 1) discernRole();
+    	if(oughtSelfDestruct()) {
+    		System.out.println("So long, cruel world.");
+    		rc.disintegrate();
+    	}
 
     	//TODO: We can split this up over multiple rounds to avoid reading transactions past initial cooldown turns or finishing early, then starting again on round 9, only to finish after initial cooldown.
     	if(turnCount < GameConstants.INITIAL_COOLDOWN_TURNS) {
@@ -45,6 +49,9 @@ public class Miner extends Robot {
 			case MinerData.ROLE_REFINERY_BUILDER:
 				refineryMinerProtocol();
 				break;
+			case MinerData.ROLE_VAPORATOR_BUILDER:
+				vaporatorMinerProtocol();
+				break;
 			case MinerData.ROLE_SOUP_MINER:
 				if (rc.getSoupCarrying() == RobotType.MINER.soupLimit) {
 					fullMinerProtocol();
@@ -61,6 +68,22 @@ public class Miner extends Robot {
 			default:
 				break;
 		}
+	}
+	
+	private boolean oughtSelfDestruct() throws GameActionException {
+		MapLocation rcLocation = rc.getLocation();
+		MapLocation hqLocation = data.getSpawnerLocation();
+		
+		if(rc.canSenseLocation(hqLocation)) {
+			if(rc.senseElevation(rcLocation) - rc.senseElevation(hqLocation) > GameConstants.MAX_DIRT_DIFFERENCE) {
+				int dx = rcLocation.x - hqLocation.x;
+				int dy = rcLocation.y - hqLocation.y;
+				
+				if((Math.abs(dx) == 2 && Math.abs(dy) <= 2) || (Math.abs(dx) <= 2 && Math.abs(dy) == 2)) return true;
+			}
+		}
+		
+		return false;
 	}
 	
 	/**
@@ -160,6 +183,23 @@ public class Miner extends Robot {
     		else emptyMinerProtocol();
     	}
     }
+    
+    private void vaporatorMinerProtocol() throws GameActionException {
+		System.out.println("vaporator protocol");
+		
+		MapLocation vaporatorBuildSite = data.getSpawnerLocation().translate(0, -1);
+		if(!rc.getLocation().equals(vaporatorBuildSite)) {
+			routeTo(vaporatorBuildSite);
+		} else if(oughtBuildVaporator()) {
+	    	if(attemptVaporatorConstruction()) {
+	    		
+    		}
+    	} else if(rc.getSoupCarrying() == RobotType.MINER.soupLimit || (rc.getSoupCarrying() > 0 && getAdjacentSoupDirection() == Direction.CENTER)) {
+    		depositRawSoup(rc.getLocation().directionTo(data.getSpawnerLocation()));
+    	} else {
+    		mineRawSoup(getAdjacentSoupDirection());
+    	}
+    }
 
 	/**
 	 * Builds fulfillment center near HQ
@@ -184,7 +224,7 @@ public class Miner extends Robot {
 		//Start by trying to deposit into a refinery.
 		Direction adjacentRefineryDirection = getAdjacentRefineryDirection(rc);
 		
-		if (adjacentRefineryDirection != Direction.CENTER) {
+		if (adjacentRefineryDirection != null) {
 			depositRawSoup(adjacentRefineryDirection);
 			minerData.addRefineryLoc(rc.getLocation().add(adjacentRefineryDirection));
 			
@@ -206,12 +246,27 @@ public class Miner extends Robot {
 		
 		if(hq != null) {
 			if(landscaper != null) {
-				System.out.println("Moving from landscaper site.");
-	    		moveMinerFromHQ();
-	    		minerData.removeRefineryLoc(hq.getLocation());
-	    		if(minerData.getRefineryLocs().size() == 0) {
-	        		minerData.setCurrentRole(MinerData.ROLE_REFINERY_BUILDER);
-	        	}
+				MapLocation vaporatorBuildSite = hq.getLocation().translate(0, -1);
+				RobotInfo buildSiteOccupant = null;
+				
+				if(rc.getLocation().equals(vaporatorBuildSite)) {
+					minerData.setCurrentRole(MinerData.ROLE_VAPORATOR_BUILDER);
+					return;
+				}
+				
+				if(rc.canSenseLocation(vaporatorBuildSite)) buildSiteOccupant = rc.senseRobotAtLocation(vaporatorBuildSite);
+				
+				if(buildSiteOccupant == null || buildSiteOccupant.getType() != RobotType.MINER) {
+					routeTo(vaporatorBuildSite);
+				} else {
+					System.out.println("Moving from landscaper site.");
+		    		moveMinerFromHQ();
+		    		minerData.removeRefineryLoc(hq.getLocation());
+		    		if(minerData.getRefineryLocs().size() == 0) {
+		        		minerData.setCurrentRole(MinerData.ROLE_REFINERY_BUILDER);
+		        	}
+				}
+				
 	    		return;
 			} else {
 				System.out.println("No landscaper present.");
@@ -246,21 +301,33 @@ public class Miner extends Robot {
     	RobotInfo fulfillmentCenter = senseUnitType(RobotType.FULFILLMENT_CENTER, rc.getTeam());
     	RobotInfo landscaper = senseUnitType(RobotType.LANDSCAPER, rc.getTeam());
     	
-    	//TODO: Miners can approach again once the landscaper gets high on a wall. We need to test for elevation to see to it that this happens.
     	if(landscaper != null) {
-    		//We only need the miners to back off if the wall is not yet built.
-    		if(rc.getLocation().distanceSquaredTo(minerData.getSpawnerLocation()) <= 8 && rc.senseElevation(landscaper.getLocation()) - rc.senseElevation(rc.getLocation()) <= GameConstants.MAX_DIRT_DIFFERENCE) {
-	    		System.out.println("\tLandscaper detected");
+    		MapLocation vaporatorBuildSite = data.getSpawnerLocation().translate(0, -1);
+    		
+    		if(vaporatorBuildSite != null && isClosestMinerTo(vaporatorBuildSite)) {
+    			System.out.println("Becoming a vaporator builder!");
+    			routeTo(vaporatorBuildSite);
+    			minerData.setCurrentRole(MinerData.ROLE_VAPORATOR_BUILDER);
+    			return;
+    		} else if(rc.getLocation().distanceSquaredTo(data.getSpawnerLocation()) <= 18 && rc.senseElevation(landscaper.getLocation()) - rc.senseElevation(rc.getLocation()) <= GameConstants.MAX_DIRT_DIFFERENCE) {
+	    		System.out.println("\tToo close to HQ -- moving away");
 	        	moveMinerFromHQ();
-	        	minerData.removeRefineryLoc(hq.getLocation());
+	        	minerData.removeRefineryLoc(data.getSpawnerLocation());
 	        	if(minerData.getRefineryLocs().size() == 0) {
 	        		minerData.setCurrentRole(MinerData.ROLE_REFINERY_BUILDER);
 	        	}
 	        	return;
     		}
-    	} else if(fulfillmentCenter != null && rc.getTeamSoup() >= RobotType.LANDSCAPER.cost && rc.getLocation().equals(minerData.getSpawnerLocation().translate(-2, 0))) {
-    		//This miner is standing on the landscaper spawn point, so it needs to mvoe.
-    		moveMinerFromHQ();
+    	} else if(fulfillmentCenter != null) {
+    		//This miner is standing on the landscaper spawn point, so it needs to move.
+    		MapLocation vaporatorBuildSite = data.getSpawnerLocation().translate(0, -1);
+    		if(isClosestMinerTo(vaporatorBuildSite)) {
+    			routeTo(vaporatorBuildSite);
+    			minerData.setCurrentRole(MinerData.ROLE_VAPORATOR_BUILDER);
+    			return;
+    		} else {
+    			moveMinerFromHQ();
+    		}
     	}
     	
     	//TODO: Clarify these conditionals. They're causing miners to become idle when they shouldn't be.
@@ -277,7 +344,6 @@ public class Miner extends Robot {
     	}
     	
     	if(!mineRawSoup(getAdjacentSoupDirection())) {
-    		System.out.println("Could not mine adjacent soup.");
     		if(minerData.getSoupLocs().size() > 0) refreshSoupLocations();
     		if(minerData.getSoupLocs().size() == 0) findNearbySoup();
     		
@@ -291,12 +357,29 @@ public class Miner extends Robot {
 			System.out.println("Mined soup. (" + rc.getSoupCarrying() + ")");
 		}
     }
+	
+	private boolean isClosestMinerTo(MapLocation location) {
+		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam());
+		int thisDistanceSquared = rc.getLocation().distanceSquaredTo(location);
+		
+		for(RobotInfo robot : robots) {
+			int thatDistanceSquared = robot.getLocation().distanceSquaredTo(location);
+			if(thatDistanceSquared < thisDistanceSquared) return false;
+			if(thatDistanceSquared == thisDistanceSquared) {
+				//To break ties, favor the robot on the bottom-right.
+				if(robot.getLocation().x > rc.getLocation().x || robot.getLocation().y < rc.getLocation().y) return false;
+			}
+		}
+		
+		return true;
+	}
     
     private void moveMinerFromHQ() throws GameActionException {
     	Direction fromHQDirection = data.getSpawnerLocation().directionTo(rc.getLocation());
     	routeTo(rc.getLocation().add(fromHQDirection));
+    	data.setSearchDirection(fromHQDirection);
     }
-
+    
 	/**
 	 * Searches map until it finds enemy unit, then follows that unit. Reports enemy building locations.
 	 * @throws GameActionException
@@ -379,7 +462,7 @@ public class Miner extends Robot {
 		
 		
 		if(enemyDesignSchoolAdjacent) minerData.setCurrentRole(MinerData.ROLE_BLOCK);
-		else if(fulfillmentCenterBuilt) minerData.setCurrentRole(MinerData.ROLE_DEFENSE_BUILDER);
+		else if(fulfillmentCenterBuilt) minerData.setCurrentRole(MinerData.ROLE_VAPORATOR_BUILDER);
 		else if(designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.FULFILLMENT_CENTER.cost * 0.8f)) minerData.setCurrentRole(MinerData.ROLE_FULFILLMENT_BUILDER);
 		else if(!designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.DESIGN_SCHOOL.cost * 0.8f)) minerData.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
 //		else if (rc.getRoundNum() % 3 == 0) data.setCurrentRole(MinerData.ROLE_SCOUT);
@@ -436,7 +519,7 @@ public class Miner extends Robot {
 		} else if (hq != null) {
 			return rc.getLocation().directionTo(hq.getLocation());
 		} else {
-			return Direction.CENTER;
+			return null;
 		}
 	}
 	
@@ -460,6 +543,26 @@ public class Miner extends Robot {
 		return false;
 	}
 	
+	private boolean oughtBuildVaporator() {
+		return rc.getTeamSoup() >= RobotType.VAPORATOR.cost;
+	}
+	
+	private boolean attemptVaporatorConstruction() throws GameActionException {		
+		waitUntilReady();
+		
+		for(Direction buildDirection : directions) {
+			//The distance check is to make sure that we don't build the refinery where the wall ought to be.
+			if(rc.canBuildRobot(RobotType.VAPORATOR, buildDirection) && rc.getLocation().add(buildDirection).distanceSquaredTo(data.getSpawnerLocation()) < 18) {
+				rc.buildRobot(RobotType.VAPORATOR, buildDirection);
+				return true;
+			}
+		}
+		
+		System.out.println("Failed to build refinery...");
+		
+		return false;
+	}
+	
 	public void depositRawSoup(Direction dir) throws GameActionException {
 		waitUntilReady();
 		if(rc.canDepositSoup(dir)) rc.depositSoup(dir, rc.getSoupCarrying()); rc.setIndicatorDot(rc.getLocation().add(dir), 255, 0, 0);
@@ -471,12 +574,14 @@ public class Miner extends Robot {
 	 * @throws GameActionException
 	 */
 	private Direction getAdjacentSoupDirection() throws GameActionException {
+		MapLocation rcLocation = rc.getLocation();
 		Direction mostSoupDirection = Direction.CENTER;
 		int mostSoupLocated = 0;
 		
 		for(Direction direction : directions) {
-			if (rc.canSenseLocation(rc.getLocation().add(direction))) {
-				int foundSoup = rc.senseSoup(rc.adjacentLocation(direction));
+			if (rc.canSenseLocation(rcLocation.add(direction))) {
+				int foundSoup = rc.senseSoup(rcLocation.add(direction));
+				System.out.println("\t" + foundSoup + " to the " + direction);
 				mostSoupDirection = foundSoup > mostSoupLocated ? direction : mostSoupDirection;
 			}
 		}
@@ -501,8 +606,7 @@ public class Miner extends Robot {
 					bestSoupCount = rc.senseSoup(soupLoc);
 				}
 			}
-			minerData.addSoupLoc(bestSoupLoc);
-			sendTransaction(3, Type.TRANSACTION_SOUP_AT_LOC, bestSoupLoc);
+			if(minerData.addSoupLoc(bestSoupLoc)) sendTransaction(3, Type.TRANSACTION_SOUP_AT_LOC, bestSoupLoc);
 			System.out.println("Transmitted soup!");
 		}
 
