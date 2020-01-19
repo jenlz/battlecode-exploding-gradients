@@ -5,6 +5,8 @@ import battlecode.common.*;
 public class DesignSchoolData extends RobotData {
 	
 	private Direction buildDirection;
+		private Direction defaultBuildDirection;
+		private Direction defaultAttackBuildDirection;
 	private int landscapersBuilt;
 	
 	private boolean stableSoupIncomeConfirmed;
@@ -16,6 +18,8 @@ public class DesignSchoolData extends RobotData {
 	public DesignSchoolData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
 		buildDirection = Direction.WEST;
+			defaultBuildDirection = Direction.WEST;
+			defaultAttackBuildDirection = Direction.NORTH;
 		transactionRound = 1;
 		pauseBuildTimer = 0;
 		isAttackSchool = false;
@@ -57,6 +61,22 @@ public class DesignSchoolData extends RobotData {
 		this.buildDirection = buildDirection;
 	}
 	
+	public Direction getDefaultBuildDirection() {
+		return defaultBuildDirection;
+	}
+
+	public void setDefaultBuildDirection(Direction defaultBuildDirection) {
+		this.defaultBuildDirection = defaultBuildDirection;
+	}
+
+	public Direction getDefaultAttackBuildDirection() {
+		return defaultAttackBuildDirection;
+	}
+
+	public void setDefaultAttackBuildDirection(Direction defaultAttackBuildDirection) {
+		this.defaultAttackBuildDirection = defaultAttackBuildDirection;
+	}
+
 	public boolean isStableSoupIncomeConfirmed() {
 		return stableSoupIncomeConfirmed;
 	}

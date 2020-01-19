@@ -154,8 +154,9 @@ public class HQ extends Robot {
     	
     	for(int dx = -2; dx <= 2; dx++) {
     		for(int dy = -2; dy <= 2; dy++) {
-    			if(Math.abs(dx) == 2 || Math.abs(dy) == 2)
-    			if(rc.senseElevation(rcLocation.translate(dx, dy)) - hqElevation <= GameConstants.MAX_DIRT_DIFFERENCE) return false;
+    			if((Math.abs(dx) == 2 || Math.abs(dy) == 2) && rc.onTheMap(rcLocation.translate(dx, dy))) {
+    				if(rc.senseElevation(rcLocation.translate(dx, dy)) - hqElevation <= GameConstants.MAX_DIRT_DIFFERENCE) return false;
+    			}
     		}
     	}
     	

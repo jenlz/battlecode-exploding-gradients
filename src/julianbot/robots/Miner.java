@@ -14,21 +14,107 @@ public class Miner extends Scout {
 	
 	private MinerData minerData;
 	
+	private MapLocation designSchoolBuildSite;
+	private MapLocation fulfillmentCenterBuildSite;
+	private MapLocation vaporatorBuildMinerLocation;
+		private MapLocation vaporatorBuildSite;
+	
+	private static final int SELF_DESTRUCT_COUNTDOWN_RESET = 5;
+	private int selfDestructCountdown = SELF_DESTRUCT_COUNTDOWN_RESET;
+	
 	public Miner(RobotController rc) {
 		super(rc);
 		this.data = new MinerData(rc, getSpawnerLocation());
 		this.scoutData = (MinerData) this.data;
 		this.minerData = (MinerData) this.data;
 	}
+	
+	private void initializeBuildSites() {
+		MapLocation hqLocation = data.getSpawnerLocation();
+		
+		boolean leftEdge = hqLocation.x <= 0;
+		boolean rightEdge = hqLocation.x >= rc.getMapWidth() - 1;
+		boolean topEdge = hqLocation.y >= rc.getMapHeight() - 1;
+		boolean bottomEdge = hqLocation.y <= 0;
+		
+		if(leftEdge) {
+			//The HQ is next to the western wall.
+			if(bottomEdge) {
+				//Lucky us, the HQ is also next to the southern wall.
+				designSchoolBuildSite = hqLocation.translate(0, 2);
+				fulfillmentCenterBuildSite = hqLocation.translate(1, 0);
+				vaporatorBuildMinerLocation = hqLocation.translate(1, 1);
+				vaporatorBuildSite = hqLocation.translate(0, 1);
+			} else if(topEdge) {
+				//Lucky us, the HQ is also next to the northern wall.
+				designSchoolBuildSite = hqLocation.translate(0, -2);
+				fulfillmentCenterBuildSite = hqLocation.translate(1, 0);
+				vaporatorBuildMinerLocation = hqLocation.translate(1, -1);
+				vaporatorBuildSite = hqLocation.translate(0, -1);
+			} else {
+				//The HQ is next to the western wall, but not cornered.
+				designSchoolBuildSite = hqLocation.translate(0, 2);
+				fulfillmentCenterBuildSite = hqLocation.translate(1, 0);
+				vaporatorBuildMinerLocation = hqLocation.translate(1, 1);
+				vaporatorBuildSite = hqLocation.translate(0, 1);
+			}
+		} else if(rightEdge) {
+			//The HQ is next to the eastern wall.
+			if(bottomEdge) {
+				//Lucky us, the HQ is also next to the southern wall.
+				designSchoolBuildSite = hqLocation.translate(0, 2);
+				fulfillmentCenterBuildSite = hqLocation.translate(-1, 0);
+				vaporatorBuildMinerLocation = hqLocation.translate(-1, 1);
+				vaporatorBuildSite = hqLocation.translate(0, 1);
+			} else if(topEdge) {
+				//Lucky us, the HQ is also next to the northern wall.
+				designSchoolBuildSite = hqLocation.translate(0, -2);
+				fulfillmentCenterBuildSite = hqLocation.translate(-1, 0);
+				vaporatorBuildMinerLocation = hqLocation.translate(-1, -1);
+				vaporatorBuildSite = hqLocation.translate(0, -1);
+			} else {
+				designSchoolBuildSite = hqLocation.translate(0, -2);
+				fulfillmentCenterBuildSite = hqLocation.translate(-1, 0);
+				vaporatorBuildMinerLocation = hqLocation.translate(-1, -1);
+				vaporatorBuildSite = hqLocation.translate(0, -1);
+			}
+		} else if(topEdge) {
+			//The HQ is next to the northern wall, but not cornered.
+			designSchoolBuildSite = hqLocation.translate(2, 0);
+			fulfillmentCenterBuildSite = hqLocation.translate(0, -1);
+			vaporatorBuildMinerLocation = hqLocation.translate(1, -1);
+			vaporatorBuildSite = hqLocation.translate(1, 0);
+		} else if(bottomEdge) {
+			//The HQ is next to the southern wall, but not cornered.
+			designSchoolBuildSite = hqLocation.translate(-2, 0);
+			fulfillmentCenterBuildSite = hqLocation.translate(0, 1);
+			vaporatorBuildMinerLocation = hqLocation.translate(-1, 1);
+			vaporatorBuildSite = hqLocation.translate(-1, 0);
+		} else {
+			designSchoolBuildSite = hqLocation.translate(-1, 0);
+			fulfillmentCenterBuildSite = hqLocation.translate(1, 0);
+			vaporatorBuildMinerLocation = hqLocation.translate(0, -1);
+			vaporatorBuildSite = hqLocation.translate(1, -1);
+		}
+	}
 
 	@Override
 	public void run() throws GameActionException {
 		super.run();
 		
-    	if(turnCount == 1) discernRole();
+    	if(turnCount == 1) {
+    		discernRole();
+    		initializeBuildSites();
+    	}
+    	
     	if(oughtSelfDestruct()) {
-    		System.out.println("So long, cruel world.");
-    		rc.disintegrate();
+    		selfDestructCountdown--;
+    		if(selfDestructCountdown <= 0) {
+	    		System.out.println("So long, cruel world.");
+	    		rc.disintegrate();
+    		}
+    	} else {
+    		selfDestructCountdown = SELF_DESTRUCT_COUNTDOWN_RESET;
     	}
 
     	//TODO: We can split this up over multiple rounds to avoid reading transactions past initial cooldown turns or finishing early, then starting again on round 9, only to finish after initial cooldown.
@@ -94,9 +180,7 @@ public class Miner extends Scout {
 	 * Builds a design school and then switches to a soup miner
 	 * @throws GameActionException
 	 */
-	private void designMinerProtocol() throws GameActionException {
-    	MapLocation designSchoolBuildSite = minerData.getSpawnerLocation().translate(-1, 0);
-    	
+	private void designMinerProtocol() throws GameActionException {    	
     	RobotInfo designSchool = senseUnitType(RobotType.DESIGN_SCHOOL, rc.getTeam());
     	
     	if(designSchool != null) {
@@ -120,9 +204,7 @@ public class Miner extends Scout {
     	}
     }
     
-    private void fulfillmentMinerProtocol() throws GameActionException {
-    	MapLocation fulfillmentCenterBuildSite = minerData.getSpawnerLocation().translate(1, 0);
-    	   
+    private void fulfillmentMinerProtocol() throws GameActionException {    	   
     	RobotInfo fulfillmentCenter = senseUnitType(RobotType.FULFILLMENT_CENTER, rc.getTeam());
     	
     	if(fulfillmentCenter != null || rc.getTeamSoup() < RobotType.FULFILLMENT_CENTER.cost * 0.8) {
@@ -191,9 +273,13 @@ public class Miner extends Scout {
     private void vaporatorMinerProtocol() throws GameActionException {
 		System.out.println("vaporator protocol");
 		
-		MapLocation vaporatorBuildSite = data.getSpawnerLocation().translate(0, -1);
-		if(!rc.getLocation().equals(vaporatorBuildSite)) {
-			routeTo(vaporatorBuildSite);
+		if(vaporatorBuildMinerLocation == null || vaporatorBuildSite == null) {
+			minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+			return;
+		}
+		
+		if(!rc.getLocation().equals(vaporatorBuildMinerLocation)) {
+			routeTo(vaporatorBuildMinerLocation);
 		} else if(oughtBuildVaporator()) {
 	    	if(attemptVaporatorConstruction()) {
 	    		
@@ -250,18 +336,19 @@ public class Miner extends Scout {
 		
 		if(hq != null) {
 			if(landscaper != null) {
-				MapLocation vaporatorBuildSite = hq.getLocation().translate(0, -1);
 				RobotInfo buildSiteOccupant = null;
 				
-				if(rc.getLocation().equals(vaporatorBuildSite)) {
-					minerData.setCurrentRole(MinerData.ROLE_VAPORATOR_BUILDER);
-					return;
+				if(vaporatorBuildMinerLocation != null) {
+					if(rc.getLocation().equals(vaporatorBuildMinerLocation)) {
+						minerData.setCurrentRole(MinerData.ROLE_VAPORATOR_BUILDER);
+						return;
+					}
+					
+					if(rc.canSenseLocation(vaporatorBuildMinerLocation)) buildSiteOccupant = rc.senseRobotAtLocation(vaporatorBuildMinerLocation);
 				}
 				
-				if(rc.canSenseLocation(vaporatorBuildSite)) buildSiteOccupant = rc.senseRobotAtLocation(vaporatorBuildSite);
-				
-				if(buildSiteOccupant == null || buildSiteOccupant.getType() != RobotType.MINER) {
-					routeTo(vaporatorBuildSite);
+				if(vaporatorBuildMinerLocation != null && (buildSiteOccupant == null || buildSiteOccupant.getType() != RobotType.MINER)) {
+					routeTo(vaporatorBuildMinerLocation);
 				} else {
 					System.out.println("Moving from landscaper site.");
 		    		moveMinerFromHQ();
@@ -305,12 +392,10 @@ public class Miner extends Scout {
     	RobotInfo fulfillmentCenter = senseUnitType(RobotType.FULFILLMENT_CENTER, rc.getTeam());
     	RobotInfo landscaper = senseUnitType(RobotType.LANDSCAPER, rc.getTeam());
     	
-    	if(landscaper != null) {
-    		MapLocation vaporatorBuildSite = data.getSpawnerLocation().translate(0, -1);
-    		
-    		if(vaporatorBuildSite != null && isClosestMinerTo(vaporatorBuildSite)) {
+    	if(landscaper != null) {    		
+    		if(vaporatorBuildMinerLocation != null && isClosestMinerTo(vaporatorBuildMinerLocation)) {
     			System.out.println("Becoming a vaporator builder!");
-    			routeTo(vaporatorBuildSite);
+    			routeTo(vaporatorBuildMinerLocation);
     			minerData.setCurrentRole(MinerData.ROLE_VAPORATOR_BUILDER);
     			return;
     		} else if(rc.getLocation().distanceSquaredTo(data.getSpawnerLocation()) <= 18 && rc.senseElevation(landscaper.getLocation()) - rc.senseElevation(rc.getLocation()) <= GameConstants.MAX_DIRT_DIFFERENCE) {
@@ -510,10 +595,9 @@ public class Miner extends Scout {
 	}
 	
 	private boolean canSenseHubDesignSchool() throws GameActionException {
-		MapLocation designSchoolSite = data.getSpawnerLocation().translate(-1, 0);
-		if(!rc.canSenseLocation(designSchoolSite)) return false;
+		if(!rc.canSenseLocation(designSchoolBuildSite)) return false;
 		
-		RobotInfo designSchoolInfo = rc.senseRobotAtLocation(designSchoolSite);
+		RobotInfo designSchoolInfo = rc.senseRobotAtLocation(designSchoolBuildSite);
 		if(designSchoolInfo == null) return false;
 		return designSchoolInfo.type == RobotType.DESIGN_SCHOOL;
 	}
@@ -583,17 +667,14 @@ public class Miner extends Scout {
 	}
 	
 	private boolean attemptVaporatorConstruction() throws GameActionException {		
-		waitUntilReady();
+		Direction buildDirection = rc.getLocation().directionTo(vaporatorBuildSite);
 		
-		for(Direction buildDirection : directions) {
-			//The distance check is to make sure that we don't build the refinery where the wall ought to be.
-			if(rc.canBuildRobot(RobotType.VAPORATOR, buildDirection) && rc.getLocation().add(buildDirection).distanceSquaredTo(data.getSpawnerLocation()) < 18) {
-				rc.buildRobot(RobotType.VAPORATOR, buildDirection);
-				return true;
-			}
+		if(rc.canBuildRobot(RobotType.VAPORATOR, buildDirection) && rc.getLocation().add(buildDirection).distanceSquaredTo(data.getSpawnerLocation()) <= 3) {
+			rc.buildRobot(RobotType.VAPORATOR, buildDirection);
+			return true;
 		}
 		
-		System.out.println("Failed to build refinery...");
+		System.out.println("Failed to build vaporator...");
 		
 		return false;
 	}
@@ -616,7 +697,6 @@ public class Miner extends Scout {
 		for(Direction direction : directions) {
 			if (rc.canSenseLocation(rcLocation.add(direction))) {
 				int foundSoup = rc.senseSoup(rcLocation.add(direction));
-				System.out.println("\t" + foundSoup + " to the " + direction);
 				mostSoupDirection = foundSoup > mostSoupLocated ? direction : mostSoupDirection;
 			}
 		}
@@ -708,9 +788,11 @@ public class Miner extends Scout {
 	}
 	
 	private boolean canSenseHubFulfillmentCenter() throws GameActionException {
-		RobotInfo designSchoolInfo = rc.senseRobotAtLocation(data.getSpawnerLocation().translate(1, 0));
-		if(designSchoolInfo == null) return false;
-		return designSchoolInfo.type == RobotType.FULFILLMENT_CENTER;
+		if(!rc.canSenseLocation(fulfillmentCenterBuildSite)) return false;
+		
+		RobotInfo fulfillmentCenterInfo = rc.senseRobotAtLocation(fulfillmentCenterBuildSite);
+		if(fulfillmentCenterInfo == null) return false;
+		return fulfillmentCenterInfo.type == RobotType.FULFILLMENT_CENTER;
 	}
 	
 	private boolean buildDefenseFulfillmentCenter() throws GameActionException {
