@@ -1,12 +1,10 @@
 package julianbot.robots;
 
-import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
-import battlecode.common.Transaction;
 import julianbot.robotdata.DesignSchoolData;
 
 public class DesignSchool extends Robot {
@@ -48,7 +46,7 @@ public class DesignSchool extends Robot {
 		//Build a landscaper if the fulfillment center has been built but no landscapers are present.
 //		int landscapersPresent = GeneralCommands.senseNumberOfUnits(rc, RobotType.LANDSCAPER, rc.getTeam());
 		if (designSchoolData.getLandscapersBuilt() == 0) return senseUnitType(RobotType.FULFILLMENT_CENTER, rc.getTeam()) != null;
-		return (designSchoolData.isStableSoupIncomeConfirmed()) ? rc.getTeamSoup() >= RobotType.LANDSCAPER.cost : rc.getTeamSoup() >= RobotType.REFINERY.cost + 5;
+		return (designSchoolData.isStableSoupIncomeConfirmed()) ? rc.getTeamSoup() >= RobotType.LANDSCAPER.cost : rc.getTeamSoup() >= RobotType.VAPORATOR.cost + 5;
 	}
 	
 	/**
@@ -78,9 +76,10 @@ public class DesignSchool extends Robot {
     			designSchoolData.setStableSoupIncomeConfirmed(true);
     		}
     		
-    		designSchoolData.setSearchedForVaporator(true);
+//    		designSchoolData.setSearchedForVaporator(true);
     	}
     	
+    	/*
     	for(int i = designSchoolData.getTransactionRound(); i < rc.getRoundNum(); i++) {
     		for(Transaction transaction : rc.getBlock(i)) {
     			int[] message = decodeTransaction(transaction);
@@ -98,6 +97,7 @@ public class DesignSchool extends Robot {
     			break;
     		}
     	}
+    	*/
     }
 	
 }
