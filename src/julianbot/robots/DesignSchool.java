@@ -1,10 +1,6 @@
 package julianbot.robots;
 
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
+import battlecode.common.*;
 import julianbot.robotdata.DesignSchoolData;
 
 public class DesignSchool extends Robot {
