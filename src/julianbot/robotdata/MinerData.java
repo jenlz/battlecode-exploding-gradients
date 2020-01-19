@@ -22,7 +22,7 @@ public class MinerData extends ScoutData {
 		private RobotInfo targetRobot;
 		private RobotInfo previousTarget;
 		private int turnsScouted;
-	public static final int ROLE_RUSH = 7;
+	public static final int ROLE_RUSH = 8;
 
 
 	private ArrayList<MapLocation> soupLocs;

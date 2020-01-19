@@ -47,7 +47,7 @@ public class ScoutData extends RobotData {
         MapLocation rotational180SymmetryLocation = new MapLocation(centerX - (rotational90SymmetryLocation.y - centerY), centerY + (rotational90SymmetryLocation.x - centerX));
         MapLocation rotational270SymmetryLocation = new MapLocation(centerX - (rotational180SymmetryLocation.y - centerY), centerY + (rotational180SymmetryLocation.x - centerX));
 
-        searchDestinations = new MapLocation[] {horizontalSymmetryLocation, verticalSymmetryLocation, rotational180SymmetryLocation, rotational90SymmetryLocation, rotational270SymmetryLocation};
+        searchDestinations = new MapLocation[] {horizontalSymmetryLocation, rotational180SymmetryLocation, verticalSymmetryLocation, rotational90SymmetryLocation, rotational270SymmetryLocation};
         activeSearchDestinationIndex = 0;
     }
 

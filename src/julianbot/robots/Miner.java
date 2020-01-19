@@ -380,7 +380,17 @@ public class Miner extends Scout {
 				sendTransaction(10, Robot.Type.TRANSACTION_ENEMY_HQ_AT_LOC, minerData.getEnemyHqLocation());
 			}
 		} else {
-			routeTo(minerData.getEnemyHqLocation());
+			if (!rc.getLocation().isAdjacentTo(minerData.getEnemyHqLocation())) {
+				routeTo(minerData.getEnemyHqLocation());
+			} else if (senseUnitType(RobotType.DESIGN_SCHOOL, rc.getTeam()) == null) {
+				for (Direction dir : Direction.allDirections()) {
+					if (rc.canBuildRobot(RobotType.DESIGN_SCHOOL, dir)) {
+						rc.buildRobot(RobotType.DESIGN_SCHOOL, dir);
+					}
+				}
+			} else {
+				minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+			}
 		}
 	}
 	
