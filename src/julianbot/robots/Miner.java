@@ -476,24 +476,28 @@ public class Miner extends Scout {
 			}
 		}
 	}
-	
+
+	/**
+	 * On creation, miner decides what role to take on.
+	 * @throws GameActionException
+	 */
 	private void discernRole() throws GameActionException {		
-		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam());
+		RobotInfo[] robots = rc.senseNearbyRobots();
 		boolean fulfillmentCenterBuilt = false;
 		boolean designSchoolBuilt = false;
-		
-		RobotInfo[] enemy = rc.senseNearbyRobots(-1, data.getOpponent());
 		boolean enemyDesignSchoolAdjacent = false;
 		
 		for(RobotInfo robot : robots) {
-			if(robot.type == RobotType.FULFILLMENT_CENTER) fulfillmentCenterBuilt = true;
-			else if(robot.type == RobotType.DESIGN_SCHOOL) designSchoolBuilt = true;
+			if (robot.getTeam() == rc.getTeam()) {
+				if (robot.type == RobotType.FULFILLMENT_CENTER) fulfillmentCenterBuilt = true;
+				else if (robot.type == RobotType.DESIGN_SCHOOL) designSchoolBuilt = true;
+				else if (robot.getType() == RobotType.MINER) {
+
+				}
+			} else if (robot.getTeam() == rc.getTeam().opponent()) {
+				if(robot.type == RobotType.DESIGN_SCHOOL) enemyDesignSchoolAdjacent = true;
+			}
 		}
-		
-		for(RobotInfo robot : enemy) {
-			if(robot.type == RobotType.DESIGN_SCHOOL) enemyDesignSchoolAdjacent = true;
-		}
-		
 		
 		if(enemyDesignSchoolAdjacent) minerData.setCurrentRole(MinerData.ROLE_BLOCK);
 		else if(fulfillmentCenterBuilt) minerData.setCurrentRole(MinerData.ROLE_VAPORATOR_BUILDER);
