@@ -67,56 +67,59 @@ public class DesignSchool extends Robot {
 
 	private void determineBuildDirection() {
 		RobotInfo hq = senseUnitType(RobotType.HQ, rc.getTeam());
-		MapLocation hqLocation = hq.getLocation();
-		
-		int mapWidth = rc.getMapWidth();
-		int mapHeight = rc.getMapHeight();
-		
-		boolean leftEdge = hqLocation.x <= 0;
-		boolean rightEdge = hqLocation.x >= mapWidth - 1;
-		boolean topEdge = hqLocation.y >= mapHeight - 1;
-		boolean bottomEdge = hqLocation.y <= 0;
-		
-		if(leftEdge) {
-			if(bottomEdge) {
-				designSchoolData.setBuildDirection(Direction.NORTH);
-				designSchoolData.setDefaultBuildDirection(Direction.NORTH);
-				designSchoolData.setDefaultAttackBuildDirection(Direction.EAST);
-			} else if(topEdge) {
-				designSchoolData.setBuildDirection(Direction.SOUTH);
-				designSchoolData.setDefaultBuildDirection(Direction.SOUTH);
-				designSchoolData.setDefaultAttackBuildDirection(Direction.EAST);
+
+		if (hq != null) {
+			MapLocation hqLocation = hq.getLocation();
+
+			int mapWidth = rc.getMapWidth();
+			int mapHeight = rc.getMapHeight();
+
+			boolean leftEdge = hqLocation.x <= 0;
+			boolean rightEdge = hqLocation.x >= mapWidth - 1;
+			boolean topEdge = hqLocation.y >= mapHeight - 1;
+			boolean bottomEdge = hqLocation.y <= 0;
+
+			if (leftEdge) {
+				if (bottomEdge) {
+					designSchoolData.setBuildDirection(Direction.NORTH);
+					designSchoolData.setDefaultBuildDirection(Direction.NORTH);
+					designSchoolData.setDefaultAttackBuildDirection(Direction.EAST);
+				} else if (topEdge) {
+					designSchoolData.setBuildDirection(Direction.SOUTH);
+					designSchoolData.setDefaultBuildDirection(Direction.SOUTH);
+					designSchoolData.setDefaultAttackBuildDirection(Direction.EAST);
+				} else {
+					designSchoolData.setBuildDirection(Direction.NORTH);
+					designSchoolData.setDefaultBuildDirection(Direction.NORTH);
+					designSchoolData.setDefaultAttackBuildDirection(Direction.EAST);
+				}
+			} else if (rightEdge) {
+				if (bottomEdge) {
+					designSchoolData.setBuildDirection(Direction.NORTH);
+					designSchoolData.setDefaultBuildDirection(Direction.NORTH);
+					designSchoolData.setDefaultAttackBuildDirection(Direction.WEST);
+				} else if (topEdge) {
+					designSchoolData.setBuildDirection(Direction.SOUTH);
+					designSchoolData.setDefaultBuildDirection(Direction.SOUTH);
+					designSchoolData.setDefaultAttackBuildDirection(Direction.WEST);
+				} else {
+					designSchoolData.setBuildDirection(Direction.SOUTH);
+					designSchoolData.setDefaultBuildDirection(Direction.SOUTH);
+					designSchoolData.setDefaultAttackBuildDirection(Direction.WEST);
+				}
+			} else if (topEdge) {
+				designSchoolData.setBuildDirection(Direction.EAST);
+				designSchoolData.setDefaultBuildDirection(Direction.EAST);
+				designSchoolData.setDefaultAttackBuildDirection(Direction.SOUTH);
+			} else if (bottomEdge) {
+				designSchoolData.setBuildDirection(Direction.WEST);
+				designSchoolData.setDefaultBuildDirection(Direction.WEST);
+				designSchoolData.setDefaultAttackBuildDirection(Direction.NORTH);
 			} else {
-				designSchoolData.setBuildDirection(Direction.NORTH);
-				designSchoolData.setDefaultBuildDirection(Direction.NORTH);
-				designSchoolData.setDefaultAttackBuildDirection(Direction.EAST);
+				designSchoolData.setBuildDirection(Direction.WEST);
+				designSchoolData.setDefaultBuildDirection(Direction.WEST);
+				designSchoolData.setDefaultAttackBuildDirection(Direction.NORTH);
 			}
-		} else if(rightEdge) {
-			if(bottomEdge) {
-				designSchoolData.setBuildDirection(Direction.NORTH);
-				designSchoolData.setDefaultBuildDirection(Direction.NORTH);
-				designSchoolData.setDefaultAttackBuildDirection(Direction.WEST);
-			} else if(topEdge) {
-				designSchoolData.setBuildDirection(Direction.SOUTH);
-				designSchoolData.setDefaultBuildDirection(Direction.SOUTH);
-				designSchoolData.setDefaultAttackBuildDirection(Direction.WEST);
-			} else {
-				designSchoolData.setBuildDirection(Direction.SOUTH);
-				designSchoolData.setDefaultBuildDirection(Direction.SOUTH);
-				designSchoolData.setDefaultAttackBuildDirection(Direction.WEST);
-			}
-		} else if(topEdge) {
-			designSchoolData.setBuildDirection(Direction.EAST);
-			designSchoolData.setDefaultBuildDirection(Direction.EAST);
-			designSchoolData.setDefaultAttackBuildDirection(Direction.SOUTH);
-		} else if(bottomEdge) {
-			designSchoolData.setBuildDirection(Direction.WEST);
-			designSchoolData.setDefaultBuildDirection(Direction.WEST);
-			designSchoolData.setDefaultAttackBuildDirection(Direction.NORTH);
-		} else {
-			designSchoolData.setBuildDirection(Direction.WEST);
-			designSchoolData.setDefaultBuildDirection(Direction.WEST);
-			designSchoolData.setDefaultAttackBuildDirection(Direction.NORTH);
 		}
 	}
 	
