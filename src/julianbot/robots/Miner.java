@@ -183,27 +183,13 @@ public class Miner extends Scout {
 	}
 	
 	private boolean oughtSelfDestruct() throws GameActionException {
-		MapLocation rcLocation = rc.getLocation();
-		MapLocation hqLocation = data.getSpawnerLocation();
-		
 		if(minerData.getCurrentRole() == MinerData.ROLE_VAPORATOR_BUILDER) {
 			int numVaporators = this.senseNumberOfUnits(RobotType.VAPORATOR, rc.getTeam());
 			return(minerData.isBaseOnEdge()) ? numVaporators >= 1 : numVaporators >= 2;
 		}
 		
 		//TODO: On the wall detection for edge-case maps.
-		if(this.senseUnitType(RobotType.LANDSCAPER, rc.getTeam(), 3) != null) {
-			int dx = rcLocation.x - hqLocation.x;
-			int dy = rcLocation.y - hqLocation.y;
-			
-			if(!minerData.isBaseOnEdge()) {
-				if((Math.abs(dx) == 2 && Math.abs(dy) <= 2) || (Math.abs(dx) <= 2 && Math.abs(dy) == 2)) return true;
-			} else {
-				if((Math.abs(dx) == 2 && Math.abs(dy) <= 3) || (Math.abs(dx) <= 2 && Math.abs(dy) == 3)) return true;
-			}
-		}
-		
-		return false;
+		return (this.senseUnitType(RobotType.LANDSCAPER, rc.getTeam(), 3) != null && isOnWall());
 	}
 	
 	/**
@@ -265,14 +251,19 @@ public class Miner extends Scout {
 		if(minerData.getSoupLocs().size() > 0) {
 			for (MapLocation soupLoc : minerData.getSoupLocs()) {
 				if (minerData.getSpawnerLocation().distanceSquaredTo(soupLoc) > 9) {
+					System.out.println("/tRouting to " + soupLoc);
 					routeTo(soupLoc);
+					//TODO: is this break what we really want?
+					break;
 				}
 			}
 		}
 
     	if(oughtBuildRefinery()) {
-
-	    	if(attemptRefineryConstruction()) {
+    		if(isOnWall()) {
+    			//Move away from range of the wall.
+    			moveMinerFromHQ();
+    		} else if(attemptRefineryConstruction()) {
 	    		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
 	    		
 	    		MapLocation refineryLocation = senseUnitType(RobotType.REFINERY, rc.getTeam(), 3).getLocation();
@@ -282,13 +273,7 @@ public class Miner extends Scout {
 	    			System.out.println("Refinery transaction pending!");
 	    		} else {
 	    			System.out.println("Completed refinery transaction!");
-	    		}
-	    		
-	    		return;
-    		} else if(rc.getLocation().distanceSquaredTo(minerData.getSpawnerLocation()) <= 18) {
-    			//Move away from range of the wall.
-    			moveMinerFromHQ();
-    			return;
+	    		}	    		
     		}
     	} else {
     		//If you ought not build a refinery right now, keep doing soup miner stuff!
@@ -301,6 +286,11 @@ public class Miner extends Scout {
 		System.out.println("vaporator protocol");
 		
 		if(vaporatorBuildMinerLocation == null || vaporatorBuildSite == null) {
+			minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+			return;
+		}
+		
+		if(rc.canSenseLocation(vaporatorBuildMinerLocation) && rc.isLocationOccupied(vaporatorBuildMinerLocation) && !rc.getLocation().equals(vaporatorBuildMinerLocation)) {
 			minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
 			return;
 		}

@@ -224,7 +224,8 @@ public class Landscaper extends Robot {
 		if(gridX < 0 || gridX >= movePattern[0].length || gridY < 0 || gridY >= movePattern.length) return;
 		
 		//In the event that our wall reaches the end of the map, we just want to go back and forth about .
-		if(!rc.onTheMap(rcLocation.add(movePattern[gridY][gridX]))) {
+		if(!rc.onTheMap(rcLocation.add(movePattern[gridY][gridX])) || landscaperAtLocation(rcLocation.add(movePattern[gridY][gridX]))) {
+			System.out.println("Toggling");
 			toggleDirection();
 			return;
 		}
@@ -255,6 +256,16 @@ public class Landscaper extends Robot {
 		if(rc.senseFlooding(nextLocation)) depositDirt(rcLocation.directionTo(nextLocation));
 		else if(rc.senseElevation(rcLocation) - rc.senseElevation(nextLocation) < GameConstants.MAX_DIRT_DIFFERENCE) depositDirt(constructDirections[NumberMath.indexOfLeast(constructElevations)]);
 		else move(movePattern[gridY][gridX]);
+	}
+	
+	private boolean landscaperAtLocation(MapLocation location) throws GameActionException {
+		if(rc.canSenseLocation(location)) {
+			RobotInfo potentialLandscaper = rc.senseRobotAtLocation(location);
+			if(potentialLandscaper == null) return false;
+			return potentialLandscaper.getType() == RobotType.LANDSCAPER;
+		}
+		
+		return false;
 	}
 	
 	private void digWallDirt() throws GameActionException {

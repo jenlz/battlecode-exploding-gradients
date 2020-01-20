@@ -1,12 +1,11 @@
 package julianbot.robotdata;
 
+import java.util.ArrayList;
+
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.Team;
-import julianbot.utils.NumberMath;
-
-import java.util.ArrayList;
 
 public class DroneData extends ScoutData {
 	
@@ -19,6 +18,7 @@ public class DroneData extends ScoutData {
 	//CARGO
 	private Team enemyFrom;
 	private boolean holdingEnemy;
+	private boolean holdingCow;
 	
 	//ATTACKS
 	private MapLocation attackWaitLocation;
@@ -80,6 +80,16 @@ public class DroneData extends ScoutData {
 	
 	public void setHoldingEnemy(boolean enemy) {
 		holdingEnemy = enemy;
+		if(holdingEnemy) holdingCow = false;
+	}
+
+	public boolean getHoldingCow() {
+		return holdingCow;
+	}
+
+	public void setHoldingCow(boolean holdingCow) {
+		this.holdingCow = holdingCow;
+		if(holdingCow) holdingEnemy = false;
 	}
 
 	public void setEnemyFrom(Team team) {
@@ -110,16 +120,13 @@ public class DroneData extends ScoutData {
 		int maxGrid = WAIT_LOCATION_GRID_DIMENSION - 1;
 		
 		System.out.println("Proceeding from base location " + baseAttackWaitLocation);
-		int dx = baseAttackWaitLocation.x - getHqLocation().x;
-		int dy = getHqLocation().y - baseAttackWaitLocation.y;
-		int gridX = NumberMath.clamp(dx + gridXShift, 0, maxGrid);
-		int gridY = NumberMath.clamp(dy + gridYShift, 0, maxGrid);
+		int gridX = baseAttackWaitLocation.x - getHqLocation().x + gridXShift;
+		int gridY = getHqLocation().y - baseAttackWaitLocation.y + gridYShift;
 		
 		baseAttackWaitLocation = baseAttackWaitLocation.add(WAIT_LOCATION_ORDER[gridY][gridX]);
-		attackWaitLocation = baseAttackWaitLocation.add(WAIT_LOCATION_ORDER[gridY][gridX]);
+		attackWaitLocation = new MapLocation(baseAttackWaitLocation.x, baseAttackWaitLocation.y);
 		
 		if(baseAttackWaitLocation.equals(defaultAttackWaitLocation)) {
-			System.out.println("Base Attack Location = Default -- Incrementing");
 			attackLocationCycles++;
 		}
 		
