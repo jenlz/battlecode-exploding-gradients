@@ -411,6 +411,7 @@ public class Robot {
 		rc.setIndicatorLine(rc.getLocation(), destination, 0, 0, 255);
 		//If we're already pathfinding, continue on.
 		if(data.hasPath()) {
+			System.out.println("Has path");
 			boolean pathfindingSuccessful = pathfind(destination);
 			if(!pathfindingSuccessful) data.setPath(null);
 			return pathfindingSuccessful;
@@ -419,7 +420,9 @@ public class Robot {
 		//Otherwise, simply try to move directly towards the destination.
 		MapLocation rcLocation = rc.getLocation();
 		Direction initialDirection = rc.getLocation().directionTo(destination);
+		System.out.println("Initial Direction = " + initialDirection);
 		if(move(initialDirection)) return true;
+		System.out.println("Could not move in initial direction");
 		
 		//If this isn't possible, try to move around whatever is blocking us.
 		//Directions closer to the destination will be favored.

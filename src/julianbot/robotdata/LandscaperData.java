@@ -14,6 +14,9 @@ public class LandscaperData extends RobotData {
 	private MapLocation hqLocation;
 	private MapLocation enemyHQLocation;
 		private Direction enemyHQBuryDigDirection;
+	
+	//WALL DIMENSIONS
+	private int wallOffsetXMin, wallOffsetXMax, wallOffsetYMin, wallOffsetYMax;
 		
 	public LandscaperData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
@@ -50,6 +53,29 @@ public class LandscaperData extends RobotData {
 
 	public void setEnemyHQBuryDigDirection(Direction enemyHQBuryDigDirection) {
 		this.enemyHQBuryDigDirection = enemyHQBuryDigDirection;
+	}
+	
+	public int getWallOffsetXMin() {
+		return wallOffsetXMin;
+	}
+
+	public int getWallOffsetXMax() {
+		return wallOffsetXMax;
+	}
+
+	public int getWallOffsetYMin() {
+		return wallOffsetYMin;
+	}
+
+	public int getWallOffsetYMax() {
+		return wallOffsetYMax;
+	}
+	
+	public void setWallOffsetBounds(int wallOffsetXMin, int wallOffsetXMax, int wallOffsetYMin, int wallOffsetYMax) {
+		this.wallOffsetXMin = wallOffsetXMin;
+		this.wallOffsetXMax = wallOffsetXMax;
+		this.wallOffsetYMin = wallOffsetYMin;
+		this.wallOffsetYMax = wallOffsetYMax;
 	}
 	
 }

@@ -136,7 +136,7 @@ public class DroneData extends ScoutData {
 		else if(gridY == 0) cardinalOffsetFromHq = Direction.NORTH;
 		else if(gridY == maxGrid) cardinalOffsetFromHq = Direction.SOUTH;
 		
-		System.out.println("Cardinal OFfset = " + cardinalOffsetFromHq);
+		System.out.println("Cardinal Offset = " + cardinalOffsetFromHq);
 		
 		for(int i = 0; i < attackLocationCycles; i++) {
 			attackWaitLocation = attackWaitLocation.add(cardinalOffsetFromHq);

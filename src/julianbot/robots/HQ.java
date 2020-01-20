@@ -69,7 +69,6 @@ public class HQ extends Robot {
         
         if(killOrderCooldownCount <= 0) {
         	int projectedFlooding = getFloodingAtRound(rc.getRoundNum() + 150);
-        	System.out.println("Projected Flooding = " + projectedFlooding);
         	
         	if(rc.getRoundNum() > 1000 && projectedFlooding > lowestWallHeight()) {
         		sendKillOrder();

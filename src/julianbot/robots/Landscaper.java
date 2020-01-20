@@ -14,6 +14,7 @@ import julianbot.utils.NumberMath;
 public class Landscaper extends Robot {
 
 	private static final int DEFAULT_PATTERN_ARRAY_SHIFT = 2;
+	private static final int PATTERN_ARRAY_DIMENSION = 5;
 	private int gridXShift;
 	private int gridYShift;
 	
@@ -21,7 +22,7 @@ public class Landscaper extends Robot {
 		{Direction.EAST, Direction.EAST, Direction.EAST, Direction.EAST, Direction.SOUTH},
 		{Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.EAST, Direction.SOUTH},
 		{Direction.NORTH, Direction.WEST, Direction.NORTH, Direction.EAST, Direction.SOUTH},
-		{Direction.NORTH, Direction.NORTH, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH},
+		{Direction.NORTH, Direction.WEST, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH},
 		{Direction.NORTH, Direction.WEST, Direction.WEST, Direction.WEST, Direction.WEST}
 	};
 	
@@ -91,6 +92,7 @@ public class Landscaper extends Robot {
     	
 		System.out.println("Landscaper Role = " + landscaperData.getCurrentRole());
 		
+		System.out.println("Attempting burial of enemy HQ");
     	if(buryEnemyHQ()) {
     		/*Do nothing else*/
     	} else if(enemyDesign!=null){
@@ -102,6 +104,7 @@ public class Landscaper extends Robot {
     			landscaperData.setCurrentRole(LandscaperData.DEFEND_HQ_FROM_FLOOD);
     		}
     	} else if(landscaperData.getCurrentRole() == LandscaperData.DEFEND_HQ_FROM_FLOOD) {
+    		System.out.println("Attempting to build HQ wall");
     		buildHQWall();
     	}
 	}
@@ -143,6 +146,26 @@ public class Landscaper extends Robot {
 		} else {
 			gridXShift = gridYShift = DEFAULT_PATTERN_ARRAY_SHIFT;
 		}
+		
+		if(leftEdge) {
+			//The HQ is next to the western wall.
+			if(bottomEdge) landscaperData.setWallOffsetBounds(0, 2, 0, 3);
+			else if(topEdge) landscaperData.setWallOffsetBounds(0, 2, -3, 0);
+			else landscaperData.setWallOffsetBounds(0, 2, -1, 3);
+		} else if(rightEdge) {
+			//The HQ is next to the eastern wall.
+			if(bottomEdge) landscaperData.setWallOffsetBounds(-2, 0, 0, 3);
+			else if(topEdge) landscaperData.setWallOffsetBounds(-2, 0, -3, 0);
+			else landscaperData.setWallOffsetBounds(-2, 0, -3, 1);
+		} else if(topEdge) {
+			//The HQ is next to the northern wall, but not cornered.
+			landscaperData.setWallOffsetBounds(-1, 3, 0, -2);
+		} else if(bottomEdge) {
+			//The HQ is next to the southern wall, but not cornered.
+			landscaperData.setWallOffsetBounds(-3, 1, 0, 2);
+		} else {
+			landscaperData.setWallOffsetBounds(-2, 2, -2, 2);
+		}
 	}
 	
 	private void toggleDirection() {
@@ -167,13 +190,62 @@ public class Landscaper extends Robot {
 		int gridX = dx + gridXShift;
 		int gridY = -dy + gridYShift;
 		
-		int distanceSquaredFromHq = landscaperData.getHqLocation().distanceSquaredTo(rc.getLocation());
-		if(distanceSquaredFromHq <= 3 &&
-				rc.senseElevation(rc.getLocation().add(movePattern[gridY][gridX])) - rc.senseElevation(rc.getLocation()) > GameConstants.MAX_DIRT_DIFFERENCE) {
+		if(gridX < 0 || gridX >= PATTERN_ARRAY_DIMENSION || gridY < 0 || gridY >= PATTERN_ARRAY_DIMENSION) {
+			//TODO: There's probably a better way to handle this, especially after we start clearing out dirt around our HQ to make room for build sites.
+			//However, this will have to do for now.
 			landscaperData.setCurrentRole(LandscaperData.ATTACK);
-		} else if(4 <= distanceSquaredFromHq && distanceSquaredFromHq <= 8) {
+			return;
+		}
+		
+		boolean withinWall = isWithinWall();
+		
+		MapLocation nextLocation = rc.getLocation().add(movePattern[gridY][gridX]);
+		boolean elevationDifferenceHigh = rc.onTheMap(nextLocation) ? rc.senseElevation(nextLocation) - rc.senseElevation(rc.getLocation()) > GameConstants.MAX_DIRT_DIFFERENCE : true;
+		System.out.println("Within Wall? " + withinWall + " Elevation difference high? " + elevationDifferenceHigh);
+		if(withinWall && elevationDifferenceHigh) {
+			landscaperData.setCurrentRole(LandscaperData.ATTACK);
+		} else if(isOnWall()) {
 			landscaperData.setCurrentRole(LandscaperData.DEFEND_HQ_FROM_FLOOD);
 		}
+	}
+	
+	private boolean isWithinWall() {
+		MapLocation hqLocation = landscaperData.getHqLocation();
+    	
+    	int minDx = landscaperData.getWallOffsetXMin();
+    	int maxDx = landscaperData.getWallOffsetXMax();
+    	int minDy = landscaperData.getWallOffsetYMin();
+    	int maxDy = landscaperData.getWallOffsetYMax();
+    	
+    	int dx = rc.getLocation().x - hqLocation.x;
+    	int dy = rc.getLocation().y - hqLocation.y;
+    	
+    	boolean dxInRange = minDx < dx && dx < maxDx;
+    	boolean dyInRange = minDy < dy && dy < maxDy;
+    	return dxInRange && dyInRange;
+	}
+	
+	private boolean isOnWall() {
+		MapLocation hqLocation = landscaperData.getHqLocation();
+    	
+    	int minDx = landscaperData.getWallOffsetXMin();
+    	int maxDx = landscaperData.getWallOffsetXMax();
+    	int minDy = landscaperData.getWallOffsetYMin();
+    	int maxDy = landscaperData.getWallOffsetYMax();
+    	
+    	int dx = rc.getLocation().x - hqLocation.x;
+    	int dy = rc.getLocation().y - hqLocation.y;
+    	
+    	boolean dxOnBound = (dx == minDx || dx == maxDx);
+    	boolean dyInRange = minDy <= dy && dy <= maxDy;
+    	if(dxOnBound && dyInRange) return true;
+    	
+    	
+    	boolean dyOnBound = (dy == minDy || dy == maxDy);
+    	boolean dxInRange = minDx <= dx && dx <= maxDx;
+    	if(dyOnBound && dxInRange) return true;
+    	
+    	return false;
 	}
 	
 	private boolean dig(Direction dir) throws GameActionException {

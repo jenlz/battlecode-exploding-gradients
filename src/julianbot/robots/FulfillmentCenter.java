@@ -61,22 +61,39 @@ public class FulfillmentCenter extends Robot {
 		
 		if(leftEdge) {
 			//The HQ is next to the western wall.
-			if(bottomEdge) fulfillmentCenterData.setWallOffsetBounds(0, 2, 0, 3);
-			else if(topEdge) fulfillmentCenterData.setWallOffsetBounds(0, 2, -3, 0);
-			else fulfillmentCenterData.setWallOffsetBounds(0, 2, -1, 3);
+			if(bottomEdge) {
+				fulfillmentCenterData.setWallOffsetBounds(0, 2, 0, 3);
+				fulfillmentCenterData.setBuildDirection(Direction.NORTH);
+			} else if(topEdge) {
+				fulfillmentCenterData.setWallOffsetBounds(0, 2, -3, 0);
+				fulfillmentCenterData.setBuildDirection(Direction.SOUTH);
+			} else {
+				fulfillmentCenterData.setWallOffsetBounds(0, 2, -1, 3);
+				fulfillmentCenterData.setBuildDirection(Direction.NORTH);
+			}
 		} else if(rightEdge) {
 			//The HQ is next to the eastern wall.
-			if(bottomEdge) fulfillmentCenterData.setWallOffsetBounds(-2, 0, 0, 3);
-			else if(topEdge) fulfillmentCenterData.setWallOffsetBounds(-2, 0, -3, 0);
-			else fulfillmentCenterData.setWallOffsetBounds(-2, 0, -3, 1);
+			if(bottomEdge) {
+				fulfillmentCenterData.setWallOffsetBounds(-2, 0, 0, 3);
+				fulfillmentCenterData.setBuildDirection(Direction.NORTH);
+			} else if(topEdge) {
+				fulfillmentCenterData.setWallOffsetBounds(-2, 0, -3, 0);
+				fulfillmentCenterData.setBuildDirection(Direction.SOUTH);
+			} else {
+				fulfillmentCenterData.setWallOffsetBounds(-2, 0, -3, 1);
+				fulfillmentCenterData.setBuildDirection(Direction.SOUTH);
+			}
 		} else if(topEdge) {
 			//The HQ is next to the northern wall, but not cornered.
 			fulfillmentCenterData.setWallOffsetBounds(-1, 3, 0, -2);
+			fulfillmentCenterData.setBuildDirection(Direction.EAST);
 		} else if(bottomEdge) {
 			//The HQ is next to the southern wall, but not cornered.
 			fulfillmentCenterData.setWallOffsetBounds(-3, 1, 0, 2);
+			fulfillmentCenterData.setBuildDirection(Direction.WEST);
 		} else {
 			fulfillmentCenterData.setWallOffsetBounds(-2, 2, -2, 2);
+			fulfillmentCenterData.setBuildDirection(Direction.NORTH);
 		}
 	}
 	
