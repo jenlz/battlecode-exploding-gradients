@@ -97,6 +97,26 @@ public class Miner extends Scout {
 			vaporatorBuildMinerLocation = hqLocation.translate(0, -1);
 			vaporatorBuildSite = hqLocation.translate(1, -1);
 		}
+		
+		if(leftEdge) {
+			//The HQ is next to the western wall.
+			if(bottomEdge) minerData.setWallOffsetBounds(0, 2, 0, 3);
+			else if(topEdge) minerData.setWallOffsetBounds(0, 2, -3, 0);
+			else minerData.setWallOffsetBounds(0, 2, -1, 3);
+		} else if(rightEdge) {
+			//The HQ is next to the eastern wall.
+			if(bottomEdge) minerData.setWallOffsetBounds(-2, 0, 0, 3);
+			else if(topEdge) minerData.setWallOffsetBounds(-2, 0, -3, 0);
+			else minerData.setWallOffsetBounds(-2, 0, -3, 1);
+		} else if(topEdge) {
+			//The HQ is next to the northern wall, but not cornered.
+			minerData.setWallOffsetBounds(-1, 3, 0, -2);
+		} else if(bottomEdge) {
+			//The HQ is next to the southern wall, but not cornered.
+			minerData.setWallOffsetBounds(-3, 1, 0, 2);
+		} else {
+			minerData.setWallOffsetBounds(-2, 2, -2, 2);
+		}
 	}
 
 	@Override
@@ -191,15 +211,10 @@ public class Miner extends Scout {
 	 * @throws GameActionException
 	 */
 	private void designMinerProtocol() throws GameActionException {    	
-    	RobotInfo designSchool = senseUnitType(RobotType.DESIGN_SCHOOL, rc.getTeam());
-    	
-    	if(designSchool != null) {
-    		System.out.println("\tDesign School already exists.");
-    		RobotInfo fulfillmentCenter = senseUnitType(RobotType.FULFILLMENT_CENTER, rc.getTeam());
-    		minerData.setCurrentRole((fulfillmentCenter != null) ? MinerData.ROLE_SOUP_MINER : MinerData.ROLE_FULFILLMENT_BUILDER);
-    		minerData.setDesignSchoolBuilt(true);
-    		return;
-    	} else if(rc.getLocation().equals(designSchoolBuildSite)) {
+		if(canSenseHubDesignSchool()) {
+			minerData.setDesignSchoolBuilt(true);
+			minerData.setCurrentRole(canSenseHubFulfillmentCenter() ? MinerData.ROLE_SOUP_MINER : MinerData.ROLE_FULFILLMENT_BUILDER);
+		} else if(rc.getLocation().equals(designSchoolBuildSite)) {
     		//Move off of design school build site.
     		System.out.println("\tMoving off of DS site.");
     		moveAnywhere();
@@ -214,10 +229,12 @@ public class Miner extends Scout {
     	}
     }
     
-    private void fulfillmentMinerProtocol() throws GameActionException {    	   
-    	RobotInfo fulfillmentCenter = senseUnitType(RobotType.FULFILLMENT_CENTER, rc.getTeam());
-    	
-    	if(fulfillmentCenter != null || rc.getTeamSoup() < RobotType.FULFILLMENT_CENTER.cost * 0.8) {
+    private void fulfillmentMinerProtocol() throws GameActionException {    	       	
+    	if(canSenseHubFulfillmentCenter()) {
+    		minerData.setFulfillmentCenterBuilt(true);
+    		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+    		return;
+    	} else if(rc.getTeamSoup() < RobotType.FULFILLMENT_CENTER.cost * 0.8) {
     		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
     		return;
     	} else if(rc.getLocation().equals(fulfillmentCenterBuildSite)) {
@@ -258,7 +275,7 @@ public class Miner extends Scout {
 	    	if(attemptRefineryConstruction()) {
 	    		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
 	    		
-	    		MapLocation refineryLocation = senseUnitType(RobotType.REFINERY, rc.getTeam()).getLocation();
+	    		MapLocation refineryLocation = senseUnitType(RobotType.REFINERY, rc.getTeam(), 3).getLocation();
 	    		minerData.addRefineryLoc(refineryLocation);
 	    		
 	    		if(!sendTransaction(10, Robot.Type.TRANSACTION_FRIENDLY_REFINERY_AT_LOC, refineryLocation)) {
@@ -290,12 +307,18 @@ public class Miner extends Scout {
 		
 		if(!rc.getLocation().equals(vaporatorBuildMinerLocation)) {
 			routeTo(vaporatorBuildMinerLocation);
+			return;
 		} else if(oughtBuildVaporator()) {
 	    	attemptVaporatorConstruction();
-    	} else if(rc.getSoupCarrying() == RobotType.MINER.soupLimit || (rc.getSoupCarrying() > 0 && getAdjacentSoupDirection() == Direction.CENTER)) {
-    		depositRawSoup(rc.getLocation().directionTo(data.getSpawnerLocation()));
-    	} else {
-    		mineRawSoup(getAdjacentSoupDirection());
+	    	return;
+    	}
+		
+		Direction adjacentSoupDirection = getAdjacentSoupDirection();
+		
+		if(adjacentSoupDirection != Direction.CENTER && rc.getSoupCarrying() < RobotType.MINER.soupLimit) {
+			mineRawSoup(getAdjacentSoupDirection());
+		} else if(rc.getSoupCarrying() > 0 && getAdjacentRefineryDirection() != Direction.CENTER) {
+    		depositRawSoup(rc.getLocation().directionTo(minerData.getHqLocation()));
     	}
     }
 
@@ -319,8 +342,14 @@ public class Miner extends Scout {
 	private void fullMinerProtocol() throws GameActionException {
     	System.out.println("full protocol");
     	
-		//Start by trying to deposit into a refinery.
-		Direction adjacentRefineryDirection = getAdjacentRefineryDirection(rc);
+    	//Update refinery locations
+    	RobotInfo[] refineries = this.senseAllUnitsOfType(RobotType.REFINERY, rc.getTeam());
+		for(RobotInfo refinery : refineries) {
+			minerData.addRefineryLoc(refinery.getLocation());
+		}
+    	
+		//Immediately try to deposit into an adjacent refinery.
+		Direction adjacentRefineryDirection = getAdjacentRefineryDirection();
 		
 		if (adjacentRefineryDirection != null) {
 			depositRawSoup(adjacentRefineryDirection);
@@ -329,64 +358,56 @@ public class Miner extends Scout {
 			//TODO: This first condition for refinery building is not yet satisfactory. Soup locations need to be taken into account everywhere and removed when vacant before this yet has entirely desirable effects.
 			System.out.println("This miner knows of " + minerData.getSoupLocs().size() + " soup location(s) and " + minerData.getRefineryLocs().size() + " refiner(ies).");
 			if(getBuildPriority(minerData) == RobotType.REFINERY) minerData.setCurrentRole(MinerData.ROLE_REFINERY_BUILDER);
-			else if(rc.getTeamSoup() >= RobotType.DESIGN_SCHOOL.cost && !canSenseHubDesignSchool()) minerData.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
-			else if(rc.getTeamSoup() >= RobotType.FULFILLMENT_CENTER.cost && !canSenseHubFulfillmentCenter()) minerData.setCurrentRole(MinerData.ROLE_FULFILLMENT_BUILDER);
+			else if(rc.getTeamSoup() >= RobotType.DESIGN_SCHOOL.cost && !minerData.isDesignSchoolBuilt()) {
+				if(!canSenseHubDesignSchool()) minerData.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
+				else minerData.setDesignSchoolBuilt(true);
+			} else if(rc.getTeamSoup() >= RobotType.FULFILLMENT_CENTER.cost && !minerData.isFulfillmentCenterBuilt()) {
+				if(!canSenseHubFulfillmentCenter()) minerData.setCurrentRole(MinerData.ROLE_FULFILLMENT_BUILDER);
+				else minerData.setFulfillmentCenterBuilt(true);
+			}
+			
 			return;
 		}
-
-		//If no refinery is adjacent, look for one.
-		//RobotInfo hq = GeneralCommands.senseUnitType(rc, RobotType.HQ, rc.getTeam(), ((int) Math.sqrt(RobotType.MINER.sensorRadiusSquared)) - 2); //For pathfind, change senseUnitType if add back in
-		
-		//TODO: Once the landscapers get going, miners should no longer return to the HQ to refine soup. We need to communicate that via a transaction.
-		
+						
 		RobotInfo hq = senseUnitType(RobotType.HQ, rc.getTeam());
 		RobotInfo landscaper = senseUnitType(RobotType.LANDSCAPER, rc.getTeam());
 		
 		if(hq != null) {
 			if(landscaper != null) {
+				System.out.println("Miner sees a landscaper! It may become a vaporator builder.");
 				RobotInfo buildSiteOccupant = null;
 				
-				if(vaporatorBuildMinerLocation != null) {
-					if(rc.getLocation().equals(vaporatorBuildMinerLocation)) {
-						minerData.setCurrentRole(MinerData.ROLE_VAPORATOR_BUILDER);
-						return;
-					}
-					
-					if(rc.canSenseLocation(vaporatorBuildMinerLocation)) buildSiteOccupant = rc.senseRobotAtLocation(vaporatorBuildMinerLocation);
+				if(rc.getLocation().equals(vaporatorBuildMinerLocation)) {
+					minerData.setCurrentRole(MinerData.ROLE_VAPORATOR_BUILDER);
+					return;
 				}
 				
-				if(vaporatorBuildMinerLocation != null && (buildSiteOccupant == null || buildSiteOccupant.getType() != RobotType.MINER)) {
+				if(rc.canSenseLocation(vaporatorBuildMinerLocation)) buildSiteOccupant = rc.senseRobotAtLocation(vaporatorBuildMinerLocation);
+				
+				if(buildSiteOccupant == null || buildSiteOccupant.getType() != RobotType.MINER) {
 					routeTo(vaporatorBuildMinerLocation);
 				} else {
-					System.out.println("Moving from landscaper site.");
-		    		moveMinerFromHQ();
 		    		minerData.removeRefineryLoc(hq.getLocation());
 		    		if(minerData.getRefineryLocs().size() == 0) {
 		        		minerData.setCurrentRole(MinerData.ROLE_REFINERY_BUILDER);
 		        	}
 				}
-				
-	    		return;
 			} else {
 				System.out.println("No landscaper present.");
-				if(minerData.getRefineryLocs().size() > 0) {
-					System.out.println("Routing to alternative refinery.");
-					routeTo(locateClosestLocation(minerData.getRefineryLocs(), rc.getLocation()));
-				} else {
-					System.out.println("Switching from soup miner to refinery builder.");
+				if(minerData.getRefineryLocs().size() == 0) {
 					minerData.setCurrentRole(MinerData.ROLE_REFINERY_BUILDER);
+					return;
 				}
 	    	}
 		} else {
 			System.out.println("The HQ cannot be detected.");
-			if(minerData.getRefineryLocs().size() > 0) {
-				System.out.println("Routing to alternative refinery.");
-				routeTo(locateClosestLocation(minerData.getRefineryLocs(), rc.getLocation()));
-			} else {
-				System.out.println("Switching from soup miner to refinery builder.");
+			if(minerData.getRefineryLocs().size() == 0) {
 				minerData.setCurrentRole(MinerData.ROLE_REFINERY_BUILDER);
+				return;
 			}
 		}
+		
+		if(minerData.getRefineryLocs().size() > 0) routeTo(locateClosestLocation(minerData.getRefineryLocs(), rc.getLocation()));
     }
 
 	/**
@@ -396,18 +417,25 @@ public class Miner extends Scout {
 	private void emptyMinerProtocol() throws GameActionException {		
     	System.out.println("empty protocol");
     	
+    	//Update refinery locations
+    	RobotInfo[] refineries = this.senseAllUnitsOfType(RobotType.REFINERY, rc.getTeam());
+		for(RobotInfo refinery : refineries) {
+			minerData.addRefineryLoc(refinery.getLocation());
+		}
+    	
     	RobotInfo hq = senseUnitType(RobotType.HQ, rc.getTeam());
     	RobotInfo fulfillmentCenter = senseUnitType(RobotType.FULFILLMENT_CENTER, rc.getTeam());
     	RobotInfo landscaper = senseUnitType(RobotType.LANDSCAPER, rc.getTeam());
     	
-    	if(landscaper != null) {    		
+    	if(landscaper != null) {
+    		System.out.println("Saw a landscaper!");
     		if(vaporatorBuildMinerLocation != null && isClosestMinerTo(vaporatorBuildMinerLocation)) {
     			System.out.println("Becoming a vaporator builder!");
     			routeTo(vaporatorBuildMinerLocation);
     			minerData.setCurrentRole(MinerData.ROLE_VAPORATOR_BUILDER);
     			return;
-    		} else if(rc.getLocation().distanceSquaredTo(data.getSpawnerLocation()) <= 18 && rc.senseElevation(landscaper.getLocation()) - rc.senseElevation(rc.getLocation()) <= GameConstants.MAX_DIRT_DIFFERENCE) {
-	    		System.out.println("\tToo close to HQ -- moving away");
+    		} else if(isOnWall()) {
+	    		System.out.println("On the wall -- moving away");
 	        	moveMinerFromHQ();
 	        	minerData.removeRefineryLoc(data.getSpawnerLocation());
 	        	if(minerData.getRefineryLocs().size() == 0) {
@@ -416,18 +444,17 @@ public class Miner extends Scout {
 	        	return;
     		}
     	} else if(fulfillmentCenter != null) {
-    		//This miner is standing on the landscaper spawn point, so it needs to move.
-    		MapLocation vaporatorBuildSite = data.getSpawnerLocation().translate(0, -1);
+    		System.out.println("Saw a fulfillment center!");
     		if(isClosestMinerTo(vaporatorBuildSite)) {
     			routeTo(vaporatorBuildSite);
     			minerData.setCurrentRole(MinerData.ROLE_VAPORATOR_BUILDER);
     			return;
-    		} else {
+    		} else if(isOnWall()){
+    			System.out.println("On the wall -- moving away");
     			moveMinerFromHQ();
     		}
     	}
     	
-    	//TODO: Clarify these conditionals. They're causing miners to become idle when they shouldn't be.
     	if(hq != null && rc.getTeamSoup() >= RobotType.DESIGN_SCHOOL.cost) {
     		if(getBuildPriority(minerData) == RobotType.REFINERY) {
     			System.out.println("\tSetting role to refinery builder");
@@ -454,6 +481,29 @@ public class Miner extends Scout {
 			System.out.println("Mined soup. (" + rc.getSoupCarrying() + ")");
 		}
     }
+	
+	private boolean isOnWall() {
+		MapLocation hqLocation = minerData.getHqLocation();
+    	
+    	int minDx = minerData.getWallOffsetXMin();
+    	int maxDx = minerData.getWallOffsetXMax();
+    	int minDy = minerData.getWallOffsetYMin();
+    	int maxDy = minerData.getWallOffsetYMax();
+    	
+    	int dx = rc.getLocation().x - hqLocation.x;
+    	int dy = rc.getLocation().y - hqLocation.y;
+    	
+    	boolean dxOnBound = (dx == minDx || dx == maxDx);
+    	boolean dyInRange = minDy <= dy && dy <= maxDy;
+    	if(dxOnBound && dyInRange) return true;
+    	
+    	
+    	boolean dyOnBound = (dy == minDy || dy == maxDy);
+    	boolean dxInRange = minDx <= dx && dx <= maxDx;
+    	if(dyOnBound && dxInRange) return true;
+    	
+    	return false;
+	}
 	
 	private boolean isClosestMinerTo(MapLocation location) {
 		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam());
@@ -637,7 +687,7 @@ public class Miner extends Scout {
 	}
 
 	//TODO Should be unnecessary once communication is fully running. Should remove if running into bytecode limit
-	private Direction getAdjacentRefineryDirection(RobotController rc) throws GameActionException {
+	private Direction getAdjacentRefineryDirection() throws GameActionException {
 		RobotInfo refinery = senseUnitType(RobotType.REFINERY, rc.getTeam(), 3);
 		RobotInfo hq = senseUnitType(RobotType.HQ, rc.getTeam(), 3);
 
@@ -659,7 +709,7 @@ public class Miner extends Scout {
 		
 		for(Direction buildDirection : directions) {
 			//The distance check is to make sure that we don't build the refinery where the wall ought to be.
-			if(rc.canBuildRobot(RobotType.REFINERY, buildDirection) && rc.getLocation().add(buildDirection).distanceSquaredTo(data.getSpawnerLocation()) > 18) {
+			if(rc.canBuildRobot(RobotType.REFINERY, buildDirection) && rc.getLocation().add(buildDirection).distanceSquaredTo(data.getSpawnerLocation()) > 31) {
 				rc.buildRobot(RobotType.REFINERY, buildDirection);
 				return true;
 			}

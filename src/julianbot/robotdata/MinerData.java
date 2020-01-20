@@ -7,6 +7,7 @@ import battlecode.common.RobotInfo;
 
 public class MinerData extends ScoutData {
 
+	//ROLES
 	private int currentRole;
 	public static final int ROLE_DESIGN_BUILDER = 0;
 	public static final int ROLE_FULFILLMENT_BUILDER = 1;
@@ -24,13 +25,16 @@ public class MinerData extends ScoutData {
 		private RobotInfo previousTarget;
 		private int turnsScouted;
 	public static final int ROLE_RUSH = 8;
-	
-	private boolean baseOnEdge;
 
+	//LANDMARKS
 	private ArrayList<MapLocation> soupLocs;
 		private ArrayList<MapLocation> removedSoupLocs;
 	private ArrayList<MapLocation> refineryLocs;
 
+	//WALL DIMENSIONS
+	private int wallOffsetXMin, wallOffsetXMax, wallOffsetYMin, wallOffsetYMax;
+	private boolean baseOnEdge;
+	
 	/**
 	 * Constructs MinerData
 	 * Initializes role of miner as
@@ -223,6 +227,29 @@ public class MinerData extends ScoutData {
 
 	public void setBaseOnEdge(boolean baseOnEdge) {
 		this.baseOnEdge = baseOnEdge;
+	}
+	
+	public int getWallOffsetXMin() {
+		return wallOffsetXMin;
+	}
+
+	public int getWallOffsetXMax() {
+		return wallOffsetXMax;
+	}
+
+	public int getWallOffsetYMin() {
+		return wallOffsetYMin;
+	}
+
+	public int getWallOffsetYMax() {
+		return wallOffsetYMax;
+	}
+	
+	public void setWallOffsetBounds(int wallOffsetXMin, int wallOffsetXMax, int wallOffsetYMin, int wallOffsetYMax) {
+		this.wallOffsetXMin = wallOffsetXMin;
+		this.wallOffsetXMax = wallOffsetXMax;
+		this.wallOffsetYMin = wallOffsetYMin;
+		this.wallOffsetYMax = wallOffsetYMax;
 	}
 	
 }
