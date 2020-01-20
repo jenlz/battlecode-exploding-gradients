@@ -4,6 +4,7 @@ import battlecode.common.Direction;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.Team;
+import julianbot.utils.NumberMath;
 
 import java.util.ArrayList;
 
@@ -21,6 +22,9 @@ public class DroneData extends ScoutData {
 	
 	//ATTACKS
 	private MapLocation attackWaitLocation;
+	private MapLocation baseAttackWaitLocation;
+	private MapLocation defaultAttackWaitLocation;
+		private int attackLocationCycles;
 	private boolean awaitingKillOrder;
 	private boolean receivedKillOrder;
 		private int killOrderReceptionRound;
@@ -33,18 +37,23 @@ public class DroneData extends ScoutData {
 		{Direction.NORTH, null, null, null, null, null, Direction.SOUTHWEST},
 		{null, Direction.NORTHWEST, Direction.WEST, Direction.WEST, Direction.WEST, Direction.WEST, null}};
 	private static final int WAIT_LOCATION_GRID_DIMENSION = 7;
+		private int gridXShift;
+		private int gridYShift;
 	
 	//WALL STATUS
 	private boolean wallBuildChecked;
 	private boolean wallBuildConfirmed;
 	private MapLocation nextWallSegment;
+	private int wallOffsetXMin, wallOffsetXMax, wallOffsetYMin, wallOffsetYMax;
+	private boolean baseOnEdge;
 	
 	public DroneData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
 		holdingEnemy = false;
 		transactionRound = 1;
 		floodedLocs = new ArrayList<MapLocation>();
-		nextWallSegment = new MapLocation(0, 0);
+		
+		gridXShift = gridYShift = WAIT_LOCATION_GRID_DIMENSION / 2;
 	}
 
 	public ArrayList<MapLocation> getFloodedLocs() {
@@ -90,15 +99,54 @@ public class DroneData extends ScoutData {
 	}
 
 	public void calculateInitialAttackWaitLocation() {
-		if(getHqLocation() != null) attackWaitLocation = getHqLocation().translate(3, 0);
+		if(getHqLocation() != null) {
+			attackWaitLocation = getHqLocation().translate(3, 0);
+			baseAttackWaitLocation = getHqLocation().translate(3, 0);
+			defaultAttackWaitLocation = getHqLocation().translate(3, 0);
+		}
 	}
 
-	public void proceedToNextWaitLocation() {
-		int gridX = attackWaitLocation.x - getHqLocation().x + (WAIT_LOCATION_GRID_DIMENSION / 2);
-		int gridY = getHqLocation().y - attackWaitLocation.y + (WAIT_LOCATION_GRID_DIMENSION / 2);
-		attackWaitLocation = attackWaitLocation.add(WAIT_LOCATION_ORDER[gridY][gridX]);
+	public void proceedToNextAttackWaitLocation() {
+		int maxGrid = WAIT_LOCATION_GRID_DIMENSION - 1;
+		
+		System.out.println("Proceeding from base location " + baseAttackWaitLocation);
+		int dx = baseAttackWaitLocation.x - getHqLocation().x;
+		int dy = getHqLocation().y - baseAttackWaitLocation.y;
+		int gridX = NumberMath.clamp(dx + gridXShift, 0, maxGrid);
+		int gridY = NumberMath.clamp(dy + gridYShift, 0, maxGrid);
+		
+		baseAttackWaitLocation = baseAttackWaitLocation.add(WAIT_LOCATION_ORDER[gridY][gridX]);
+		attackWaitLocation = baseAttackWaitLocation.add(WAIT_LOCATION_ORDER[gridY][gridX]);
+		
+		if(baseAttackWaitLocation.equals(defaultAttackWaitLocation)) {
+			System.out.println("Base Attack Location = Default -- Incrementing");
+			attackLocationCycles++;
+		}
+		
+		Direction cardinalOffsetFromHq = Direction.CENTER;
+		if(gridX == 0) cardinalOffsetFromHq = Direction.WEST;
+		else if(gridX == maxGrid) cardinalOffsetFromHq = Direction.EAST;
+		else if(gridY == 0) cardinalOffsetFromHq = Direction.NORTH;
+		else if(gridY == maxGrid) cardinalOffsetFromHq = Direction.SOUTH;
+		
+		System.out.println("Cardinal OFfset = " + cardinalOffsetFromHq);
+		
+		for(int i = 0; i < attackLocationCycles; i++) {
+			attackWaitLocation = attackWaitLocation.add(cardinalOffsetFromHq);
+		}
+		
+		System.out.println("Final attack wait location = " + attackWaitLocation);
 	}
 	
+	public void setGridOffset(int dx, int dy) {
+		gridXShift = (WAIT_LOCATION_GRID_DIMENSION / 2) + dx;
+		gridYShift = (WAIT_LOCATION_GRID_DIMENSION / 2) + dy;
+	}
+	
+	public int getAttackLocationCycles() {
+		return attackLocationCycles;
+	}
+
 	public boolean isAwaitingKillOrder() {
 		return awaitingKillOrder;
 	}
@@ -153,6 +201,37 @@ public class DroneData extends ScoutData {
 
 	public void setNextWallSegment(MapLocation nextWallSegment) {
 		this.nextWallSegment = nextWallSegment;
+	}
+
+	public int getWallOffsetXMin() {
+		return wallOffsetXMin;
+	}
+
+	public int getWallOffsetXMax() {
+		return wallOffsetXMax;
+	}
+
+	public int getWallOffsetYMin() {
+		return wallOffsetYMin;
+	}
+
+	public int getWallOffsetYMax() {
+		return wallOffsetYMax;
+	}
+	
+	public void setWallOffsetBounds(int wallOffsetXMin, int wallOffsetXMax, int wallOffsetYMin, int wallOffsetYMax) {
+		this.wallOffsetXMin = wallOffsetXMin;
+		this.wallOffsetXMax = wallOffsetXMax;
+		this.wallOffsetYMin = wallOffsetYMin;
+		this.wallOffsetYMax = wallOffsetYMax;
+	}
+	
+	public boolean isBaseOnEdge() {
+		return baseOnEdge;
+	}
+
+	public void setBaseOnEdge(boolean baseOnEdge) {
+		this.baseOnEdge = baseOnEdge;
 	}
 	
 }

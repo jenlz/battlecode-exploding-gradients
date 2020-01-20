@@ -144,6 +144,18 @@ public class Landscaper extends Robot {
 			gridXShift = gridYShift = DEFAULT_PATTERN_ARRAY_SHIFT;
 		}
 	}
+	
+	private void toggleDirection() {
+		if(digPattern == clockwiseDigPattern) {
+			digPattern = counterClockwiseDigPattern;
+			movePattern = counterClockwiseMovePattern;
+			buildPattern = counterClockwiseBuildPattern;
+		} else {
+			digPattern = clockwiseDigPattern;
+			movePattern = clockwiseMovePattern;
+			buildPattern = clockwiseBuildPattern;
+		}
+	}
 
 	private void discernAttackRole() throws GameActionException {
 		MapLocation rcLocation = rc.getLocation();
@@ -211,9 +223,9 @@ public class Landscaper extends Robot {
 		
 		if(gridX < 0 || gridX >= movePattern[0].length || gridY < 0 || gridY >= movePattern.length) return;
 		
-		//In the event that our wall reaches the end of the map, we just want to make as tall a pillar as possible.
+		//In the event that our wall reaches the end of the map, we just want to go back and forth about .
 		if(!rc.onTheMap(rcLocation.add(movePattern[gridY][gridX]))) {
-			depositDirt(Direction.CENTER);
+			toggleDirection();
 			return;
 		}
 		

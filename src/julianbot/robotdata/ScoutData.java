@@ -9,7 +9,7 @@ public class ScoutData extends RobotData {
     private MapLocation enemyHqLocation;
     private MapLocation[] searchDestinations;
     private int activeSearchDestinationIndex;
-
+    
     public ScoutData(RobotController rc, MapLocation spawnerLocation) {
         super(rc, spawnerLocation);
     }

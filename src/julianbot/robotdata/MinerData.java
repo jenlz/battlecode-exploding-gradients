@@ -24,7 +24,8 @@ public class MinerData extends ScoutData {
 		private RobotInfo previousTarget;
 		private int turnsScouted;
 	public static final int ROLE_RUSH = 8;
-
+	
+	private boolean baseOnEdge;
 
 	private ArrayList<MapLocation> soupLocs;
 		private ArrayList<MapLocation> removedSoupLocs;
@@ -216,4 +217,12 @@ public class MinerData extends ScoutData {
 		return refineryLocs.remove(loc);
 	}
 
+	public boolean isBaseOnEdge() {
+		return baseOnEdge;
+	}
+
+	public void setBaseOnEdge(boolean baseOnEdge) {
+		this.baseOnEdge = baseOnEdge;
+	}
+	
 }

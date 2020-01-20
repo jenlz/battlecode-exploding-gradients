@@ -22,17 +22,51 @@ public class Drone extends Scout {
 		this.scoutData = (DroneData) this.data;
 		this.droneData = (DroneData) scoutData;
 	}
+	
+	//MOVEMENT
+	@Override
+	protected boolean move(Direction dir) throws GameActionException {
+		stopFollowingPath();
+		
+		waitUntilReady();
+		
+		if(rc.isReady() && rc.canMove(dir)) {
+			data.setPreviousLocation(rc.getLocation());
+			rc.move(dir);
+			return true;
+		}
+		
+		return false;
+	}
+	
+	@Override
+	protected boolean moveOnPath(Direction dir) throws GameActionException {		
+		waitUntilReady();
+		
+		if(rc.isReady() && rc.canMove(dir)) {
+			data.setPreviousLocation(rc.getLocation());
+			rc.move(dir);
+			return true;
+		}
+		
+		return false;
+	}
 
 	@Override
 	public void run() throws GameActionException {
 		super.run();
 		
-		if(turnCount == 1) learnHQLocation();
+		if(turnCount == 1) {
+			learnHQLocation();
+			droneData.calculateInitialAttackWaitLocation();
+			determineEdgeState();
+		}
+		
     	if(droneData.getEnemyHqLocation() == null) learnEnemyHqLocation();
     	
     	if(droneData.receivedKillOrder()) {
     		if(rc.getRoundNum() - droneData.getKillOrderReceptionRound() >= 75) {
-    			//ATTACK
+    			//ATTACK ENEMY HQ
     			routeTo(droneData.getEnemyHqLocation());
     			
     			if(rc.isCurrentlyHoldingUnit()) {
@@ -55,7 +89,7 @@ public class Drone extends Scout {
 					}
 				}
     		} else {
-	    		//APPROACH
+	    		//APPROACH ENEMY HQ
 				if(rc.getLocation().distanceSquaredTo(droneData.getEnemyHqLocation()) > 25) routeTo(droneData.getEnemyHqLocation());
     		}
 		} else if(droneData.isAwaitingKillOrder()) {
@@ -72,7 +106,7 @@ public class Drone extends Scout {
     			droneData.setKillOrderReceptionRound(rc.getRoundNum());
     		}
     	} else if(droneData.getEnemyHqLocation() != null) {
-    	  senseAdjacentFlooding();    		
+    		senseAdjacentFlooding();    		
     		if(!rc.isCurrentlyHoldingUnit()) {
         		if(senseUnitType(RobotType.LANDSCAPER,data.getOpponent())!=null && (senseUnitType(RobotType.HQ,data.getTeam())!=null || senseUnitType(RobotType.HQ,data.getOpponent())!=null)) {
         			if(!pickUpUnit(RobotType.LANDSCAPER, data.getOpponent())) {
@@ -80,8 +114,7 @@ public class Drone extends Scout {
         					routeTo(droneData.getHqLocation());
         				else
         					routeTo(droneData.getEnemyHqLocation());
-        			}
-        			else {
+        			} else {
         				droneData.setHoldingEnemy(true);
         				if(senseUnitType(RobotType.HQ, data.getTeam())!=null)
         					droneData.setEnemyFrom(data.getTeam());
@@ -93,37 +126,66 @@ public class Drone extends Scout {
         	
         	if(droneData.getHoldingEnemy()) {
         		drownEnemyProtocol();
+        		return;
         	}
     		
     		if(rc.isCurrentlyHoldingUnit() && !droneData.getHoldingEnemy()) {
     			if(droneData.isWallBuildConfirmed()) {
+    				//If the wall build is confirmed, the drone can prepare to attack.
+    				System.out.println("Wall build confirmed!");
 					//Route to appropriate location (any location three units away from the HQ in either direction) and wait for kill order.
 					if(rc.getLocation().equals(droneData.getAttackWaitLocation())) {
+						System.out.println("Waiting on the kill order!");
 						droneData.setAwaitingKillOrder(true);
-					} else if(rc.canSenseLocation(droneData.getAttackWaitLocation())) {
-						if(!rc.isLocationOccupied(droneData.getAttackWaitLocation())) {
-							routeTo(droneData.getAttackWaitLocation());
-						} else {
-							droneData.proceedToNextWaitLocation();
+					} else if(rc.canSenseLocation(droneData.getAttackWaitLocation())) {		
+						System.out.println("We can sense the attack location!");
+						
+						while(!rc.onTheMap(droneData.getAttackWaitLocation()) || onMapEdge(droneData.getAttackWaitLocation()) || rc.isLocationOccupied(droneData.getAttackWaitLocation())) {
+							System.out.println("Cycling a new attack location!");
+							droneData.proceedToNextAttackWaitLocation();
 						}
+						
+						System.out.println("Routing to attack wait location " + droneData.getAttackWaitLocation());
+						routeTo(droneData.getAttackWaitLocation());
 					} else {
+						System.out.println("Blindly routing to attack wait location");
 						routeTo(droneData.getAttackWaitLocation());
 					}
     			} else {
-    				if(rc.getLocation().isWithinDistanceSquared(droneData.getNextWallSegment(), 3)) {
-    					dropUnit(rc.getLocation().directionTo(droneData.getNextWallSegment()));
-    				} else {
-    					if(rc.canSenseLocation(droneData.getNextWallSegment()) && rc.isLocationOccupied(droneData.getNextWallSegment())) {
-    						//As far as this drone is concerned, the wall is built. It will prepare to attack.
+    				//If the wall build is not confirmed, the drone can proceed to move a landscaper to the next wall segment.
+    				System.out.println("Wall build NOT confirmed!");
+    				
+    				MapLocation nextWallSegment = droneData.getNextWallSegment();
+    				if(nextWallSegment == null) {
+    					System.out.println("Null next wall segment. Have we checked yet? " + droneData.isWallBuildChecked());
+    					
+    					if(!droneData.isWallBuildChecked()) checkWallBuild();
+    					else droneData.setWallBuildConfirmed(true);
+    					
+    					System.out.println("Wall build confirmed now? " + droneData.isWallBuildConfirmed());
+    				} else if(rc.canSenseLocation(nextWallSegment)) {
+    					System.out.println("Can sense next wall segment " + nextWallSegment);
+    					
+    					if(rc.getLocation().isWithinDistanceSquared(droneData.getNextWallSegment(), 3)) {
+    						System.out.println("Dropping on adjacent wall segment.");
+        					dropUnit(rc.getLocation().directionTo(droneData.getNextWallSegment()));
+        				} else if(rc.isLocationOccupied(nextWallSegment)) {
+        					System.out.println("Next wall segment is occupied, so the wall will be considered built!");
     						droneData.setWallBuildConfirmed(true);
     					} else {
-    						routeTo(droneData.getNextWallSegment());
+    						System.out.println("Routing to next wall segment!");
+    						routeTo(nextWallSegment);
     					}
+    				} else {
+    					if(rc.onTheMap(nextWallSegment)) routeTo(nextWallSegment);
+    					else droneData.setWallBuildConfirmed(true);	
     				}
     			}
     		} else if (!rc.isCurrentlyHoldingUnit()) {
     			boolean oughtPickUpCow = oughtPickUpCow();
     			boolean oughtPickUpLandscaper = oughtPickUpLandscaper();
+    			
+    			System.out.println("No unit held! Lift Cow? " + oughtPickUpCow + " Lift Landscaper? " + oughtPickUpLandscaper);
     			
     			if(senseUnitType(RobotType.COW) != null && oughtPickUpCow) {
     				System.out.println("Sensed a cow that ought be lifted.");
@@ -135,8 +197,21 @@ public class Drone extends Scout {
 	    		} else if(oughtPickUpLandscaper) {
 	    			System.out.println("Ought lift a landscaper rather than a cow.");
 	    			RobotInfo idleAttackLandscaper = senseAttackLandscaper();
-	    			
-	    			if(idleAttackLandscaper != null) {
+	    			if(!rc.canSenseLocation(droneData.getHqLocation())) {
+	    				routeTo(droneData.getHqLocation());
+	    			} else if(!findVacanciesOnWall()) {
+    					RobotInfo[] adjacentLandscapers = senseAllUnitsOfType(RobotType.LANDSCAPER, rc.getTeam());
+    					for(RobotInfo adjacentLandscaper : adjacentLandscapers) {
+    						if(idleAttackLandscaper != null && adjacentLandscaper.getID() == idleAttackLandscaper.getID()) continue;
+    						System.out.println(idleAttackLandscaper.getID() + " =/= " + adjacentLandscaper.getID());
+    						
+    						if(adjacentLandscaper.getLocation().isWithinDistanceSquared(rc.getLocation(), 3)) {
+    							pickUpUnit(adjacentLandscaper);
+    							break;
+    						}
+    					}
+    					
+    				} else if(idleAttackLandscaper != null) {
 	    				System.out.println("\tFound an idle attack landscaper");
 	    				if(!pickUpUnit(idleAttackLandscaper)) {
 		    				routeTo(idleAttackLandscaper.getLocation());
@@ -167,8 +242,56 @@ public class Drone extends Scout {
     		}
     	}
 	}
+	
+	private void learnHQLocation() throws GameActionException {
+		for(Transaction transaction : rc.getBlock(1)) {
+			int[] message = decodeTransaction(transaction);
+			if(message.length > 1 && message[1] == Type.TRANSACTION_FRIENDLY_HQ_AT_LOC.getVal()) {
+				droneData.setHqLocation(new MapLocation(message[2], message[3]));
+				return;
+			}
+		}
+	}
 
+	private void determineEdgeState() {
+		MapLocation hqLocation = droneData.getHqLocation();
+		
+		boolean leftEdge = hqLocation.x <= 0;
+		boolean rightEdge = hqLocation.x >= rc.getMapWidth() - 1;
+		boolean topEdge = hqLocation.y >= rc.getMapHeight() - 1;
+		boolean bottomEdge = hqLocation.y <= 0;
+		droneData.setBaseOnEdge(leftEdge || rightEdge || topEdge || bottomEdge);
+		
+		if(leftEdge) {
+			//The HQ is next to the western wall.
+			if(bottomEdge) droneData.setWallOffsetBounds(0, 2, 0, 3);
+			else if(topEdge) droneData.setWallOffsetBounds(0, 2, -3, 0);
+			else droneData.setWallOffsetBounds(0, 2, -1, 3);
+		} else if(rightEdge) {
+			//The HQ is next to the eastern wall.
+			if(bottomEdge) droneData.setWallOffsetBounds(-2, 0, 0, 3);
+			else if(topEdge) droneData.setWallOffsetBounds(-2, 0, -3, 0);
+			else droneData.setWallOffsetBounds(-2, 0, -3, 1);
+		} else if(topEdge) {
+			//The HQ is next to the northern wall, but not cornered.
+			droneData.setWallOffsetBounds(-1, 3, 0, -2);
+		} else if(bottomEdge) {
+			//The HQ is next to the southern wall, but not cornered.
+			droneData.setWallOffsetBounds(-3, 1, 0, 2);
+		} else {
+			droneData.setWallOffsetBounds(-2, 2, -2, 2);
+		}
+		
 
+		if(topEdge) {
+			droneData.setGridOffset(0, -1);
+		} else if(bottomEdge) {
+			droneData.setGridOffset(0, 1);
+		} else {
+			droneData.setGridOffset(0, 0);
+		}
+	}
+	
 	/**
 	 * Once drone is holding enemy, will search for flooded area and drop it there.
 	 */
@@ -193,17 +316,6 @@ public class Drone extends Scout {
 				System.out.println("Moving and searching for flooding");
 				continueSearch();
 				senseAdjacentFlooding();
-			}
-		}
-	}
-
-	private void learnHQLocation() throws GameActionException {
-		for(Transaction transaction : rc.getBlock(1)) {
-			int[] message = decodeTransaction(transaction);
-			if(message.length > 1 && message[1] == Type.TRANSACTION_FRIENDLY_HQ_AT_LOC.getVal()) {
-				droneData.setHqLocation(new MapLocation(message[2], message[3]));
-				droneData.calculateInitialAttackWaitLocation();
-				return;
 			}
 		}
 	}
@@ -244,24 +356,25 @@ public class Drone extends Scout {
 	}
 	
 	private RobotInfo senseAttackLandscaper() throws GameActionException {
-		RobotInfo topLeft = senseAttackLandscaperAt(droneData.getHqLocation().translate(-1, 1));
-		if(topLeft != null) return topLeft;
-
-		RobotInfo topMiddle = senseAttackLandscaperAt(droneData.getHqLocation().translate(0, 1));
-		if(topMiddle != null) return topMiddle;
+		MapLocation hqLocation = droneData.getHqLocation();
 		
-		RobotInfo topRight = senseAttackLandscaperAt(droneData.getHqLocation().translate(1, 1));
-		if(topRight != null) return topRight;
-
-		return null;
-	}
-	
-	private RobotInfo senseAttackLandscaperAt(MapLocation location) throws GameActionException {
-		if(rc.canSenseLocation(location)) {
-			RobotInfo info = rc.senseRobotAtLocation(location);
-			if(info != null && info.type == RobotType.LANDSCAPER) return info;
+		RobotInfo[] landscapers = senseAllUnitsOfType(RobotType.LANDSCAPER, rc.getTeam());
+		int xMin = droneData.getWallOffsetXMin();
+		int xMax = droneData.getWallOffsetYMax();
+		int yMin = droneData.getWallOffsetYMin();
+		int yMax = droneData.getWallOffsetYMax();
+		
+		for(RobotInfo landscaper : landscapers) {
+			MapLocation location = landscaper.getLocation();
+			int dx = location.x - hqLocation.x;
+			int dy = location.y - hqLocation.y;
+			
+			boolean xInWall = xMin < dx && dx < xMax;
+			boolean yInWall = yMin < dy && dy < yMax;
+			
+			if(xInWall && yInWall) return landscaper;
 		}
-		
+
 		return null;
 	}
 	
@@ -385,22 +498,59 @@ public class Drone extends Scout {
     	droneData.setWallBuildChecked(true);
     	droneData.setWallBuildConfirmed(true);
     	
-    	for(int dx = -2; dx <= 2; dx++) {
-    		for(int dy = -2; dy <= 2; dy++) {
-    			if(Math.abs(dx) == 2 || Math.abs(dy) == 2) {
+    	int minDx = droneData.getWallOffsetXMin();
+    	int maxDx = droneData.getWallOffsetXMax();
+    	int minDy = droneData.getWallOffsetYMin();
+    	int maxDy = droneData.getWallOffsetYMax();
+    	
+    	for(int dx = minDx; dx <= maxDx; dx++) {
+    		for(int dy = minDy; dy <= maxDy; dy++) {
+    			if(((dx == minDx || dx == maxDx) && dx != 0) || ((dy == minDy || dy == maxDy) && dy != 0)) {
     				MapLocation wallLocation = hqLocation.translate(dx, dy);
     				if(rc.canSenseLocation(wallLocation) && rc.senseElevation(wallLocation) - hqElevation <= GameConstants.MAX_DIRT_DIFFERENCE) {
     					droneData.setWallBuildConfirmed(false);
     					if(!rc.isLocationOccupied(wallLocation)) {
     						MapLocation nextWallSegment = droneData.getNextWallSegment();
-    						if(wallLocation.x > nextWallSegment.x) droneData.setNextWallSegment(wallLocation);
-    						else if(wallLocation.x == nextWallSegment.x && wallLocation.y > nextWallSegment.y) droneData.setNextWallSegment(wallLocation);
+    						
+    						if(nextWallSegment == null) {
+    							droneData.setNextWallSegment(wallLocation);
+    						} else {
+    							if(wallLocation.x > nextWallSegment.x) droneData.setNextWallSegment(wallLocation);
+        						else if(wallLocation.x == nextWallSegment.x && wallLocation.y > nextWallSegment.y) droneData.setNextWallSegment(wallLocation);
+    						}    						
+    					}
+    				}
+    			}
+    		}
+    	}
+	}
+	
+	private boolean findVacanciesOnWall() throws GameActionException {
+		MapLocation hqLocation = droneData.getHqLocation();
+    	
+    	int minDx = droneData.getWallOffsetXMin();
+    	int maxDx = droneData.getWallOffsetXMax();
+    	int minDy = droneData.getWallOffsetYMin();
+    	int maxDy = droneData.getWallOffsetYMax();
+    	
+    	for(int dx = minDx; dx <= maxDx; dx++) {
+    		for(int dy = minDy; dy <= maxDy; dy++) {
+    			if((dx == minDx || dx == maxDx) || (dy == minDy || dy == maxDy)) {
+    				MapLocation wallLocation = hqLocation.translate(dx, dy);
+    				if(rc.canSenseLocation(wallLocation)) {
+    					if(!rc.isLocationOccupied(wallLocation)) {
+    						return true;
     					}
     				}
     			}
     		}
     	}
     	
+    	return false;
+	}
+	
+	private boolean onMapEdge(MapLocation location) {
+		return location.x <= 0 || location.y <= 0 || location.x >= rc.getMapWidth() - 1 || location.y >= rc.getMapHeight() - 1;
 	}
 	
 }

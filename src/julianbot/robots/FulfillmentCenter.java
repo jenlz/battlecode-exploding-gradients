@@ -24,7 +24,10 @@ public class FulfillmentCenter extends Robot {
 	public void run() throws GameActionException {
 		super.run();
 		
-		if(turnCount == 1) learnHQLocation();
+		if(turnCount == 1) {
+			learnHQLocation();
+			determineEdgeState();
+		}
 		
 		if(turnCount < GameConstants.INITIAL_COOLDOWN_TURNS) {
     		for(int i = (rc.getRoundNum() > 100) ? rc.getRoundNum() - 100 : 1; i < rc.getRoundNum(); i++)
@@ -47,12 +50,56 @@ public class FulfillmentCenter extends Robot {
 		}		
 	}
 
+	private void determineEdgeState() {
+		MapLocation hqLocation = fulfillmentCenterData.getHqLocation();
+		
+		boolean leftEdge = hqLocation.x <= 0;
+		boolean rightEdge = hqLocation.x >= rc.getMapWidth() - 1;
+		boolean topEdge = hqLocation.y >= rc.getMapHeight() - 1;
+		boolean bottomEdge = hqLocation.y <= 0;
+		fulfillmentCenterData.setBaseOnEdge(leftEdge || rightEdge || topEdge || bottomEdge);
+		
+		if(leftEdge) {
+			//The HQ is next to the western wall.
+			if(bottomEdge) fulfillmentCenterData.setWallOffsetBounds(0, 2, 0, 3);
+			else if(topEdge) fulfillmentCenterData.setWallOffsetBounds(0, 2, -3, 0);
+			else fulfillmentCenterData.setWallOffsetBounds(0, 2, -1, 3);
+		} else if(rightEdge) {
+			//The HQ is next to the eastern wall.
+			if(bottomEdge) fulfillmentCenterData.setWallOffsetBounds(-2, 0, 0, 3);
+			else if(topEdge) fulfillmentCenterData.setWallOffsetBounds(-2, 0, -3, 0);
+			else fulfillmentCenterData.setWallOffsetBounds(-2, 0, -3, 1);
+		} else if(topEdge) {
+			//The HQ is next to the northern wall, but not cornered.
+			fulfillmentCenterData.setWallOffsetBounds(-1, 3, 0, -2);
+		} else if(bottomEdge) {
+			//The HQ is next to the southern wall, but not cornered.
+			fulfillmentCenterData.setWallOffsetBounds(-3, 1, 0, 2);
+		} else {
+			fulfillmentCenterData.setWallOffsetBounds(-2, 2, -2, 2);
+		}
+	}
+	
 	private boolean oughtBuildDrone() {
 		if(fulfillmentCenterData.isStableSoupIncomeConfirmed()) {
-			RobotInfo[] robots = rc.senseNearbyRobots(fulfillmentCenterData.getHqLocation(), 3, rc.getTeam());
-			for(RobotInfo robot : robots) {
-				//A landscaper right next to the HQ is an attack landscaper.
-				if(robot.getType() == RobotType.LANDSCAPER) return true;
+			MapLocation hqLocation = fulfillmentCenterData.getHqLocation();
+			
+			RobotInfo[] landscapers = senseAllUnitsOfType(RobotType.LANDSCAPER, rc.getTeam());
+			int xMin = fulfillmentCenterData.getWallOffsetXMin();
+			int xMax = fulfillmentCenterData.getWallOffsetYMax();
+			int yMin = fulfillmentCenterData.getWallOffsetYMin();
+			int yMax = fulfillmentCenterData.getWallOffsetYMax();
+			
+			for(RobotInfo landscaper : landscapers) {
+				MapLocation location = landscaper.getLocation();
+				int dx = location.x - hqLocation.x;
+				int dy = location.y - hqLocation.y;
+				
+				boolean xInWall = xMin < dx && dx < xMax;
+				boolean yInWall = yMin < dy && dy < yMax;
+				
+				//A landscaper inside the wall is an attack landscaper. We ought to build a drone to pair with it.
+				if(xInWall && yInWall) return true;
 			}
 			
 			//Otherwise, we can still produce scouting drones if we need to.

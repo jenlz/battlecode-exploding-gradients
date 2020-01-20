@@ -91,6 +91,11 @@ public class Robot {
 		 turnCount = rc.getRoundNum() - spawnRound + 1;
 	}
 	
+	//FLOODING
+	protected int getFloodingAtRound(double roundNumber) {
+		return (int) (Math.pow(Math.E, (0.0028 * roundNumber) - (1.38 * Math.sin(0.00157 * roundNumber - 1.73)) + (1.38 * Math.sin(-1.73))) - 1);
+	}
+	
 	//RECONNAISSANCE
 	protected MapLocation getSpawnerLocation() {
 		RobotInfo[] robots = rc.senseNearbyRobots(3, rc.getTeam());
@@ -205,11 +210,11 @@ public class Robot {
 	 * @param rc
 	 * @param type
 	 * @param team
-	 * @param radius
+	 * @param radiusSquared
 	 * @return First unit of given type and team. Null if not found.
 	 */
-	protected RobotInfo senseUnitType(RobotType type, Team team, int radius) {
-		RobotInfo[] robots = rc.senseNearbyRobots(radius, team);
+	protected RobotInfo senseUnitType(RobotType type, Team team, int radiusSquared) {
+		RobotInfo[] robots = rc.senseNearbyRobots(radiusSquared, team);
 		for (RobotInfo robot : robots) {
 			if (robot.getType() == type) {
 				return robot;
@@ -223,13 +228,13 @@ public class Robot {
 	 * @param rc
 	 * @param type
 	 * @param team
-	 * @param radius
+	 * @param radiusSquared
 	 * @return Number of units of given type and team
 	 */
-	protected int senseNumberOfUnits(RobotType type, Team team, int radius) {
+	protected int senseNumberOfUnits(RobotType type, Team team, int radiusSquared) {
 		int unitCount = 0;
 		
-		RobotInfo[] robots = rc.senseNearbyRobots(radius, team);
+		RobotInfo[] robots = rc.senseNearbyRobots(radiusSquared, team);
 		for (RobotInfo robot : robots) {
 			if (robot.getType() == type) {
 				unitCount++;
@@ -249,10 +254,11 @@ public class Robot {
 	//MOVEMENT
 	protected boolean move(Direction dir) throws GameActionException {
 		stopFollowingPath();
+		MapLocation targetLocation = rc.getLocation().add(dir);
 		
 		waitUntilReady();
 		
-		if(rc.isReady() && rc.canMove(dir)) {
+		if(rc.isReady() && rc.canMove(dir) && !rc.senseFlooding(targetLocation)) {
 			data.setPreviousLocation(rc.getLocation());
 			rc.move(dir);
 			return true;
@@ -262,9 +268,11 @@ public class Robot {
 	}
 	
 	protected boolean moveOnPath(Direction dir) throws GameActionException {
+		MapLocation targetLocation = rc.getLocation().add(dir);
+		
 		waitUntilReady();
 		
-		if(rc.isReady() && rc.canMove(dir)) {
+		if(rc.isReady() && rc.canMove(dir) && !rc.senseFlooding(targetLocation)) {
 			data.setPreviousLocation(rc.getLocation());
 			rc.move(dir);
 			return true;

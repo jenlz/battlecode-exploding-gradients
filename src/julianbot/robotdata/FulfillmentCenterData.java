@@ -14,6 +14,9 @@ public class FulfillmentCenterData extends RobotData {
 	private MapLocation hqLocation;
 	private boolean enemyHqLocated;
 	
+	private int wallOffsetXMin, wallOffsetXMax, wallOffsetYMin, wallOffsetYMax;
+	private boolean baseOnEdge;
+	
 	public FulfillmentCenterData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
 		buildDirection = Direction.NORTH;
@@ -78,5 +81,36 @@ public class FulfillmentCenterData extends RobotData {
 
 	public void setEnemyHqLocated(boolean enemyHqLocated) {
 		this.enemyHqLocated = enemyHqLocated;
+	}
+	
+	public int getWallOffsetXMin() {
+		return wallOffsetXMin;
+	}
+
+	public int getWallOffsetXMax() {
+		return wallOffsetXMax;
+	}
+
+	public int getWallOffsetYMin() {
+		return wallOffsetYMin;
+	}
+
+	public int getWallOffsetYMax() {
+		return wallOffsetYMax;
+	}
+	
+	public void setWallOffsetBounds(int wallOffsetXMin, int wallOffsetXMax, int wallOffsetYMin, int wallOffsetYMax) {
+		this.wallOffsetXMin = wallOffsetXMin;
+		this.wallOffsetXMax = wallOffsetXMax;
+		this.wallOffsetYMin = wallOffsetYMin;
+		this.wallOffsetYMax = wallOffsetYMax;
+	}
+	
+	public boolean isBaseOnEdge() {
+		return baseOnEdge;
+	}
+
+	public void setBaseOnEdge(boolean baseOnEdge) {
+		this.baseOnEdge = baseOnEdge;
 	}
 }

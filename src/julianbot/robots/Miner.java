@@ -36,6 +36,7 @@ public class Miner extends Scout {
 		boolean rightEdge = hqLocation.x >= rc.getMapWidth() - 1;
 		boolean topEdge = hqLocation.y >= rc.getMapHeight() - 1;
 		boolean bottomEdge = hqLocation.y <= 0;
+		minerData.setBaseOnEdge(leftEdge || rightEdge || topEdge || bottomEdge);
 		
 		if(leftEdge) {
 			//The HQ is next to the western wall.
@@ -109,6 +110,7 @@ public class Miner extends Scout {
     	
     	if(oughtSelfDestruct()) {
     		selfDestructCountdown--;
+    		System.out.println("SELF-DESTRUCT COUNTDOWN " + selfDestructCountdown);
     		if(selfDestructCountdown <= 0) {
 	    		System.out.println("So long, cruel world.");
 	    		rc.disintegrate();
@@ -164,12 +166,20 @@ public class Miner extends Scout {
 		MapLocation rcLocation = rc.getLocation();
 		MapLocation hqLocation = data.getSpawnerLocation();
 		
-		if(rc.canSenseLocation(hqLocation)) {
-			if(rc.senseElevation(rcLocation) - rc.senseElevation(hqLocation) > GameConstants.MAX_DIRT_DIFFERENCE) {
-				int dx = rcLocation.x - hqLocation.x;
-				int dy = rcLocation.y - hqLocation.y;
-				
+		if(minerData.getCurrentRole() == MinerData.ROLE_VAPORATOR_BUILDER) {
+			int numVaporators = this.senseNumberOfUnits(RobotType.VAPORATOR, rc.getTeam());
+			return(minerData.isBaseOnEdge()) ? numVaporators >= 1 : numVaporators >= 2;
+		}
+		
+		//TODO: On the wall detection for edge-case maps.
+		if(this.senseUnitType(RobotType.LANDSCAPER, rc.getTeam(), 3) != null) {
+			int dx = rcLocation.x - hqLocation.x;
+			int dy = rcLocation.y - hqLocation.y;
+			
+			if(!minerData.isBaseOnEdge()) {
 				if((Math.abs(dx) == 2 && Math.abs(dy) <= 2) || (Math.abs(dx) <= 2 && Math.abs(dy) == 2)) return true;
+			} else {
+				if((Math.abs(dx) == 2 && Math.abs(dy) <= 3) || (Math.abs(dx) <= 2 && Math.abs(dy) == 3)) return true;
 			}
 		}
 		
@@ -281,9 +291,7 @@ public class Miner extends Scout {
 		if(!rc.getLocation().equals(vaporatorBuildMinerLocation)) {
 			routeTo(vaporatorBuildMinerLocation);
 		} else if(oughtBuildVaporator()) {
-	    	if(attemptVaporatorConstruction()) {
-	    		
-    		}
+	    	attemptVaporatorConstruction();
     	} else if(rc.getSoupCarrying() == RobotType.MINER.soupLimit || (rc.getSoupCarrying() > 0 && getAdjacentSoupDirection() == Direction.CENTER)) {
     		depositRawSoup(rc.getLocation().directionTo(data.getSpawnerLocation()));
     	} else {
@@ -425,7 +433,7 @@ public class Miner extends Scout {
     			System.out.println("\tSetting role to refinery builder");
     			minerData.setCurrentRole(MinerData.ROLE_REFINERY_BUILDER);
         		return;
-    		} else if(!minerData.isDesignSchoolBuilt()){
+    		} else if(!minerData.isDesignSchoolBuilt() && isClosestMinerTo(designSchoolBuildSite)){
     			System.out.println("\tSetting role to design school builder");
         		minerData.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
         		return;

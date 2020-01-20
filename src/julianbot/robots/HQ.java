@@ -68,6 +68,14 @@ public class HQ extends Robot {
         }
         
         if(killOrderCooldownCount <= 0) {
+        	int projectedFlooding = getFloodingAtRound(rc.getRoundNum() + 150);
+        	System.out.println("Projected Flooding = " + projectedFlooding);
+        	
+        	if(rc.getRoundNum() > 1000 && projectedFlooding > lowestWallHeight()) {
+        		sendKillOrder();
+        		return;
+        	}
+        	
 	        RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
 	        int attackDroneCount = 0;
 	        
@@ -75,10 +83,7 @@ public class HQ extends Robot {
 	        	if(ally.type == RobotType.DELIVERY_DRONE && (Math.abs(ally.getLocation().x - rc.getLocation().x) == 3 || Math.abs(ally.getLocation().y - rc.getLocation().y) == 3)) attackDroneCount++;
 	        }
 	        
-	        if(attackDroneCount >= 15) {
-	        	sendTransaction(10, Type.TRANSACTION_KILL_ORDER, hqData.getEnemyHqLocation());
-	        	killOrderCooldownCount = KILL_ORDER_COOLDOWN_ROUNDS;
-	        }
+	        if(attackDroneCount >= 15) sendKillOrder();
         } else {
         	killOrderCooldownCount--;
         }
@@ -148,6 +153,7 @@ public class HQ extends Robot {
     	}
     }
     
+    //TODO: Fix these wall functions in the context of edge maps.
     private boolean wallBuilt() throws GameActionException {
     	MapLocation rcLocation = rc.getLocation();
     	int hqElevation = rc.senseElevation(rcLocation);
@@ -161,6 +167,22 @@ public class HQ extends Robot {
     	}
     	
     	return true;
+    }
+    
+    private int lowestWallHeight() throws GameActionException {
+    	MapLocation rcLocation = rc.getLocation();
+    	int lowestElevation = Integer.MAX_VALUE;
+    	
+    	for(int dx = -2; dx <= 2; dx++) {
+    		for(int dy = -2; dy <= 2; dy++) {
+    			if((Math.abs(dx) == 2 || Math.abs(dy) == 2) && rc.onTheMap(rcLocation.translate(dx, dy))) {
+    				int elevation = rc.senseElevation(rcLocation.translate(dx, dy));
+    				if(elevation < lowestElevation) lowestElevation = elevation;
+    			}
+    		}
+    	}
+    	
+    	return lowestElevation;
     }
     
     private boolean lacksVaporatorMiner() {
@@ -195,6 +217,11 @@ public class HQ extends Robot {
 		}
     }
 	
+    private void sendKillOrder() throws GameActionException {
+        sendTransaction(10, Type.TRANSACTION_KILL_ORDER, hqData.getEnemyHqLocation());
+        killOrderCooldownCount = KILL_ORDER_COOLDOWN_ROUNDS;
+    }
+    
     private void storeForeignTransactions() throws GameActionException {
     	if(rc.getRoundNum() > 1) {
     		Transaction[] block = rc.getBlock(rc.getRoundNum() - 1);
