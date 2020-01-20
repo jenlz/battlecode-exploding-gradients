@@ -16,7 +16,14 @@ public class DesignSchool extends Robot {
 	@Override
 	public void run() throws GameActionException {
 		super.run();
-		
+
+		readTransaction(rc.getBlock(rc.getRoundNum() - 1));
+
+		if (designSchoolData.getIsAttackSchool()) {
+			attackDesignSchoolProtocol();
+			return;
+		}
+
 		if(turnCount == 1) determineBuildDirection();
 
 		//TODO: Either rebuild this for loop not to repeat read or scrap it altogether.
@@ -24,13 +31,6 @@ public class DesignSchool extends Robot {
 			for (int i = 1; i < rc.getRoundNum(); i++) {
 				readTransaction(rc.getBlock(i));
 			}
-		}
-
-		readTransaction(rc.getBlock(rc.getRoundNum() - 1));
-
-		if (designSchoolData.getIsAttackSchool()) {
-			attackDesignSchoolProtocol();
-			return;
 		}
 
     	RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), designSchoolData.getOpponent());

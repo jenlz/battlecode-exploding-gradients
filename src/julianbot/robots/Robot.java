@@ -338,7 +338,7 @@ public class Robot {
 	 */
 	protected boolean sendTransaction(int soupBid, Type type, MapLocation loc, int desc1) throws GameActionException {
 		int transactionTag = (int) (Math.random()*500); //This use of parentheses will prevent truncation of the random number.
-		int[] message = new int[]{transactionTag, type.getVal()+transactionTag, loc.x+transactionTag, loc.y+transactionTag, rc.getRoundNum()+transactionTag, desc1, 0};
+		int[] message = new int[]{transactionTag, type.getVal()+transactionTag, loc.x+transactionTag, loc.y+transactionTag, rc.getRoundNum()+transactionTag, desc1+transactionTag, 0};
 		int odd = 0;
 		for (int i : message) {
 			if (i%2 == 1)

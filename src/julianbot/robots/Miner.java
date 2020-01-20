@@ -227,7 +227,7 @@ public class Miner extends Scout {
     
     private void refineryMinerProtocol() throws GameActionException {
 		System.out.println("refinery protocol");
-
+		sendTransaction(1, Type.TRANSACTION_PAUSE_LANDSCAPER_BUILDING, rc.getLocation(), 2);
 		RobotInfo refinery = senseUnitType(RobotType.REFINERY, rc.getTeam());
 		if (refinery != null) {
 			if (minerData.addRefineryLoc(refinery.getLocation())) {
