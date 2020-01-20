@@ -128,7 +128,7 @@ public class DesignSchool extends Robot {
 		System.out.println("Attack Design School Protocol");
 		if (!designSchoolData.getIsAttackSchool()) {
 			designSchoolData.setIsAttackSchool(true);
-			sendTransaction(15, Type.TRANSACTION_PAUSE_LANDSCAPER_BUILDING, rc.getLocation());
+			sendTransaction(15, Type.TRANSACTION_PAUSE_LANDSCAPER_BUILDING, rc.getLocation(), 50);
 		}
 		while(!tryBuild(RobotType.LANDSCAPER)) {
 			designSchoolData.setBuildDirection(designSchoolData.getBuildDirection().rotateRight());
@@ -197,6 +197,7 @@ public class DesignSchool extends Robot {
 			int[] decodedMessage = decodeTransaction(message);
 			if (decodedMessage.length == GameConstants.NUMBER_OF_TRANSACTIONS_PER_BLOCK) {
 				Robot.Type category = Robot.Type.enumOfValue(decodedMessage[1]);
+				int desc = decodedMessage[5];
 
 				if (category == null) {
 					System.out.println("Something is terribly wrong. enumOfValue returns null. Miner readTransaction line ~621");
@@ -204,7 +205,7 @@ public class DesignSchool extends Robot {
 				switch(category) {
 					case TRANSACTION_PAUSE_LANDSCAPER_BUILDING:
 						System.out.println("Pausing building...");
-						designSchoolData.setPauseBuildTimer(150);
+						designSchoolData.setPauseBuildTimer(desc);
 						break;
 					default:
 						break;
