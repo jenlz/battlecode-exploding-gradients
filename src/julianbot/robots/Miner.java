@@ -586,6 +586,7 @@ public class Miner extends Scout {
 	private void rushMinerProtocol() throws GameActionException {
 		System.out.println("Rush Miner Protocol");
 		findNearbySoup();
+		if (rc.getRoundNum() > 250) {minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);};
 		if (minerData.getEnemyHqLocation() == null) {
 			if (!minerData.searchDestinationsDetermined()) {
 				minerData.calculateSearchDestinations(rc);
