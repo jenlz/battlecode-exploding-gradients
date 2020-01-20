@@ -291,12 +291,12 @@ public class Landscaper extends Robot {
 		if(landscaperData.getEnemyHQLocation() != null) {
 			Direction dirToHQ = rc.getLocation().directionTo(landscaperData.getEnemyHQLocation());
 			if(!rc.getLocation().isAdjacentTo(landscaperData.getEnemyHQLocation())) {
-				if (!move(dirToHQ)) {
+				if (!routeTo(landscaperData.getEnemyHQLocation())) {
 					int dirtDifference = rc.senseElevation(rc.getLocation()) - rc.senseElevation(rc.adjacentLocation(dirToHQ));
 					RobotInfo[] robots = rc.senseNearbyRobots();
 					boolean robotInTheWay = false;
 					for (RobotInfo robot : robots) {
-						if (!robot.getType().isBuilding() && robot.getLocation() == rc.getLocation().add(dirToHQ)) {
+						if ((!robot.getType().isBuilding() || robot.getTeam() == rc.getTeam()) && robot.getLocation() == rc.getLocation().add(dirToHQ)) {
 							robotInTheWay = true;
 						}
 					}
