@@ -585,6 +585,7 @@ public class Miner extends Scout {
 	 */
 	private void rushMinerProtocol() throws GameActionException {
 		System.out.println("Rush Miner Protocol");
+		findNearbySoup();
 		if (minerData.getEnemyHqLocation() == null) {
 			if (!minerData.searchDestinationsDetermined()) {
 				minerData.calculateSearchDestinations(rc);
@@ -769,7 +770,10 @@ public class Miner extends Scout {
 					bestSoupCount = rc.senseSoup(soupLoc);
 				}
 			}
-			if(minerData.addSoupLoc(bestSoupLoc)) sendTransaction(3, Type.TRANSACTION_SOUP_AT_LOC, bestSoupLoc);
+			if(minerData.addSoupLoc(bestSoupLoc)) {
+				sendTransaction(1, Type.TRANSACTION_SOUP_AT_LOC, bestSoupLoc);
+				rc.setIndicatorDot(bestSoupLoc, 255, 165, 0);
+			}
 			System.out.println("Transmitted soup!");
 		}
 
