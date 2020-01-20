@@ -237,15 +237,13 @@ public class Miner extends Scout {
 		}
 
     	if(oughtBuildRefinery()) {
+    		System.out.println("Ought Build Refinery");
 			if(minerData.getSoupLocs().size() > 0) {
-				for (MapLocation soupLoc : minerData.getSoupLocs()) {
-					if (minerData.getSpawnerLocation().distanceSquaredTo(soupLoc) > 9) {
-						routeTo(soupLoc);
-					}
-				}
+				routeTo(locateClosestLocation(minerData.getSoupLocs(), rc.getLocation()));
 			}
 
 	    	if(attemptRefineryConstruction()) {
+	    		System.out.println("Built Refinery");
 	    		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
 	    		
 	    		MapLocation refineryLocation = senseUnitType(RobotType.REFINERY, rc.getTeam()).getLocation();
@@ -258,7 +256,8 @@ public class Miner extends Scout {
 	    		}
 	    		
 	    		return;
-    		} else if(rc.getLocation().distanceSquaredTo(minerData.getSpawnerLocation()) <= 18) {
+    		}
+	    	else if(rc.getLocation().distanceSquaredTo(minerData.getSpawnerLocation()) <= 18) {
     			//Move away from range of the wall.
     			moveMinerFromHQ();
     			return;

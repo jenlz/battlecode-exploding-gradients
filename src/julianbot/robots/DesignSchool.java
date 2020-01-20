@@ -50,7 +50,7 @@ public class DesignSchool extends Robot {
         	designSchoolData.setBuildDirection(designSchoolData.getDefaultBuildDirection());
         }
 
-        designSchoolData.setPauseBuildTimer(designSchoolData.getPauseBuildTimer() - 1);
+        designSchoolData.setPauseBuildTimer(designSchoolData.getPauseBuildTimer() - 1); //Increments pause build timer down by 1
         if(!designSchoolData.isStableSoupIncomeConfirmed()) confirmStableSoupIncome();
     	if(oughtBuildLandscaper()) {
     		if(!tryBuild(RobotType.LANDSCAPER) && designSchoolData.getBuildDirection().equals(designSchoolData.getDefaultBuildDirection())) {
@@ -61,7 +61,9 @@ public class DesignSchool extends Robot {
     					designSchoolData.setDefaultBuildDirection(designSchoolData.getDefaultAttackBuildDirection());
     				}
     			}
-    		}
+    		} else {
+    			System.out.println("Built a landscaper.");
+			}
     	}
 	}
 
@@ -133,6 +135,7 @@ public class DesignSchool extends Robot {
 		while(!tryBuild(RobotType.LANDSCAPER)) {
 			designSchoolData.setBuildDirection(designSchoolData.getBuildDirection().rotateRight());
 		}
+		System.out.println("Built a landscaper.");
 	}
 
 	private boolean oughtBuildLandscaper() {
