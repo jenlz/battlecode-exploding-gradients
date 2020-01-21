@@ -476,6 +476,7 @@ public class Robot {
 			while (!move(dirToDest)) {
 				dirToDest = dirToDest.rotateRight();
 			}
+			rc.setIndicatorLine(rc.getLocation(), rc.getLocation().add(dirToDest), 102, 255, 255);
 
 		} else if (rc.getLocation() == destination) {
 			// After robot moves, checks if it is now at its destination
