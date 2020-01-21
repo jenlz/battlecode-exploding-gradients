@@ -14,6 +14,7 @@ public class MinerData extends ScoutData {
 	public static final int ROLE_SOUP_MINER = 2;
 	public static final int ROLE_REFINERY_BUILDER = 3;
 	public static final int ROLE_VAPORATOR_BUILDER = 4;
+		private boolean vaporatorBuilderClaimed;
 	public static final int ROLE_DEFENSE_BUILDER = 5;
 	public static final int ROLE_BLOCK = 6;
 		private boolean northGunBuilt;
@@ -35,6 +36,15 @@ public class MinerData extends ScoutData {
 	private int wallOffsetXMin, wallOffsetXMax, wallOffsetYMin, wallOffsetYMax;
 	private boolean baseOnEdge;
 	
+	//BUILDING
+	private MapLocation designSchoolBuildSite;
+	private MapLocation fulfillmentCenterBuildSite;
+	private MapLocation vaporatorBuildMinerLocation;
+		private MapLocation vaporatorBuildSite;
+	
+	//TRANSACTION READING
+	private int transactionRound;
+	
 	/**
 	 * Constructs MinerData
 	 * Initializes role of miner as
@@ -43,11 +53,14 @@ public class MinerData extends ScoutData {
 	public MinerData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
 		currentRole = ROLE_SOUP_MINER;
+		
 		soupLocs = new ArrayList<MapLocation>();
 			removedSoupLocs = new ArrayList<MapLocation>();
 		refineryLocs = new ArrayList<MapLocation>();
 		refineryLocs.add(spawnerLocation);
 		setHqLocation(spawnerLocation);
+		
+		transactionRound = 1;
 	}
 
 	public int getCurrentRole() {
@@ -56,6 +69,14 @@ public class MinerData extends ScoutData {
 
 	public void setCurrentRole(int currentRole) {
 		this.currentRole = currentRole;
+	}
+	
+	public boolean isVaporatorBuilderClaimed() {
+		return vaporatorBuilderClaimed;
+	}
+
+	public void setVaporatorBuilderClaimed(boolean vaporatorBuilderClaimed) {
+		this.vaporatorBuilderClaimed = vaporatorBuilderClaimed;
 	}
 
 	public boolean isNorthGunBuilt() {
@@ -250,6 +271,46 @@ public class MinerData extends ScoutData {
 		this.wallOffsetXMax = wallOffsetXMax;
 		this.wallOffsetYMin = wallOffsetYMin;
 		this.wallOffsetYMax = wallOffsetYMax;
+	}
+
+	public MapLocation getDesignSchoolBuildSite() {
+		return designSchoolBuildSite;
+	}
+
+	public void setDesignSchoolBuildSite(MapLocation designSchoolBuildSite) {
+		this.designSchoolBuildSite = designSchoolBuildSite;
+	}
+
+	public MapLocation getFulfillmentCenterBuildSite() {
+		return fulfillmentCenterBuildSite;
+	}
+
+	public void setFulfillmentCenterBuildSite(MapLocation fulfillmentCenterBuildSite) {
+		this.fulfillmentCenterBuildSite = fulfillmentCenterBuildSite;
+	}
+
+	public MapLocation getVaporatorBuildMinerLocation() {
+		return vaporatorBuildMinerLocation;
+	}
+
+	public void setVaporatorBuildMinerLocation(MapLocation vaporatorBuildMinerLocation) {
+		this.vaporatorBuildMinerLocation = vaporatorBuildMinerLocation;
+	}
+
+	public MapLocation getVaporatorBuildSite() {
+		return vaporatorBuildSite;
+	}
+
+	public void setVaporatorBuildSite(MapLocation vaporatorBuildSite) {
+		this.vaporatorBuildSite = vaporatorBuildSite;
+	}
+
+	public int getTransactionRound() {
+		return transactionRound;
+	}
+
+	public void setTransactionRound(int transactionRound) {
+		this.transactionRound = transactionRound;
 	}
 	
 }

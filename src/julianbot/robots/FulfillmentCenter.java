@@ -1,5 +1,6 @@
 package julianbot.robots;
 
+import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
@@ -28,13 +29,8 @@ public class FulfillmentCenter extends Robot {
 			learnHQLocation();
 			determineEdgeState();
 		}
-		
-		if(turnCount < GameConstants.INITIAL_COOLDOWN_TURNS) {
-    		for(int i = (rc.getRoundNum() > 100) ? rc.getRoundNum() - 100 : 1; i < rc.getRoundNum(); i++)
-    		readTransaction(rc.getBlock(i));
-    	}
 
-    	readTransaction(rc.getBlock(rc.getRoundNum() - 1));
+    	readTransactions();
 		
 		if(!fulfillmentCenterData.isStableSoupIncomeConfirmed()) confirmStableSoupIncome();
     	if(oughtBuildDrone()) tryBuild(RobotType.DELIVERY_DRONE);
@@ -174,24 +170,30 @@ public class FulfillmentCenter extends Robot {
     	*/
     }
     
-    private void readTransaction(Transaction[] block) throws GameActionException {
-
-		for (Transaction message : block) {
-			int[] decodedMessage = decodeTransaction(message);
-			if (decodedMessage.length == GameConstants.NUMBER_OF_TRANSACTIONS_PER_BLOCK) {
-				Robot.Type category = Robot.Type.enumOfValue(decodedMessage[1]);
-
-				//System.out.println("Category of message: " + category);
-				switch(category) {
-					case TRANSACTION_ENEMY_HQ_AT_LOC:
-						fulfillmentCenterData.setEnemyHqLocated(true);
-						break;
-					default:
-						break;
-				}
-			}
-
-		}
-	}
+    private void readTransactions() throws GameActionException {
+    	for(int i = fulfillmentCenterData.getTransactionRound(); i < rc.getRoundNum(); i++) {
+    		for(Transaction transaction : rc.getBlock(i)) {
+    			int[] message = decodeTransaction(transaction);
+    			
+    			if (message.length == GameConstants.NUMBER_OF_TRANSACTIONS_PER_BLOCK) {
+	    			Robot.Type category = Robot.Type.enumOfValue(message[1]);
+	
+					//System.out.println("Category of message: " + category);
+					switch(category) {
+						case TRANSACTION_ENEMY_HQ_AT_LOC:
+							fulfillmentCenterData.setEnemyHqLocated(true);
+							break;
+						default:
+							break;
+					}
+    			}
+    		}
+    		
+    		if(Clock.getBytecodesLeft() <= 500) {
+    			fulfillmentCenterData.setTransactionRound(i);
+    			break;
+    		}
+    	}
+    }
 	
 }

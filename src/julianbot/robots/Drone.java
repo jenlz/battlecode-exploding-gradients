@@ -185,10 +185,10 @@ public class Drone extends Scout {
 	
 	private void drownCowProtocol() throws GameActionException {
 		System.out.println("Entered Drown Dow Protocol");
-		MapLocation rcLoation = rc.getLocation();
+		MapLocation rcLocation = rc.getLocation();
 		
 		for(Direction direction : Direction.allDirections()) {
-			if(rc.senseFlooding(rcLoation.add(direction))) {
+			if(rc.canSenseLocation(rcLocation.add(direction)) && rc.senseFlooding(rcLocation.add(direction))) {
 				if(dropUnit(direction)) {
 					droneData.setHoldingCow(false);
 					return;
@@ -198,10 +198,10 @@ public class Drone extends Scout {
 		
 		if (droneData.getFloodedLocs().size() > 0) {
 			System.out.println("Moving toward flooded loc");
-			MapLocation closestLoc = locateClosestLocation(droneData.getFloodedLocs(), rcLoation);
-			if (rcLoation.distanceSquaredTo(closestLoc) > 3) {
+			MapLocation closestLoc = locateClosestLocation(droneData.getFloodedLocs(), rcLocation);
+			if (rcLocation.distanceSquaredTo(closestLoc) > 3) {
 				routeTo(closestLoc);
-			} else if (dropUnit(rcLoation.directionTo(closestLoc))) {
+			} else if (dropUnit(rcLocation.directionTo(closestLoc))) {
 				droneData.setHoldingCow(false);
 			}
 
