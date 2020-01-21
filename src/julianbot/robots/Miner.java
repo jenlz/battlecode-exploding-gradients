@@ -215,7 +215,9 @@ public class Miner extends Scout {
     	}
     }
     
-    private void fulfillmentMinerProtocol() throws GameActionException {    	       	
+    private void fulfillmentMinerProtocol() throws GameActionException {    
+    	System.out.println("fulfillment protocol");
+    	
     	if(canSenseHubFulfillmentCenter()) {
     		minerData.setFulfillmentCenterBuilt(true);
     		minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
@@ -249,14 +251,8 @@ public class Miner extends Scout {
 		}
 
 		if(minerData.getSoupLocs().size() > 0) {
-			for (MapLocation soupLoc : minerData.getSoupLocs()) {
-				if (minerData.getSpawnerLocation().distanceSquaredTo(soupLoc) > 9) {
-					System.out.println("/tRouting to " + soupLoc);
-					routeTo(soupLoc);
-					//TODO: is this break what we really want?
-					break;
-				}
-			}
+			MapLocation closestSoupLocation = this.locateClosestLocation(minerData.getSoupLocs(), rc.getLocation());
+			if(!routeTo(closestSoupLocation)) minerData.removeSoupLoc(closestSoupLocation);
 		}
 
     	if(oughtBuildRefinery()) {

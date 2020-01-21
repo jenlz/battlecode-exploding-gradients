@@ -448,15 +448,7 @@ public class Robot {
 			if(move(direction)) return true;
 		}
 		
-		/*
-		Direction canMoveDir = initialDirection.rotateRight();
-		int rotateLimit = 8;
-		while (rotateLimit > 0) {
-			if(GeneralCommands.move(rc, canMoveDir, data)) return;
-			canMoveDir.rotateRight();
-			rotateLimit--;
-		}
-		*/
+		//TODO: MAXIMO'S DOMAIN DO NOT TOUCH (FUTURE SITE OF BUG NAV)
 		
 		//If all of these measures have failed, we'll need to use pathfinding to get around.
 		//However, just in case, we will allow for the previous location to be used next turn.
