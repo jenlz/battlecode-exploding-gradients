@@ -446,13 +446,47 @@ public class Robot {
 		}
 		
 		//TODO: MAXIMO'S DOMAIN DO NOT TOUCH (FUTURE SITE OF BUG NAV)
+		if (bugNav(destination)) {return true;}
+
 		
 		//If all of these measures have failed, we'll need to use pathfinding to get around.
 		//However, just in case, we will allow for the previous location to be used next turn.
 		data.setPreviousLocation(rcLocation);
 		return pathfind(destination);
 	}
-	
+
+	/**
+	 * Tries to move closer to destination. If it can't follows wall until it can move closer.
+	 * @param destination
+	 * @return
+	 */
+	public boolean bugNav(MapLocation destination) throws GameActionException {
+		if (data.getClosestDist() == -1) {
+			data.setClosestDist(rc.getLocation().distanceSquaredTo(destination));
+		}
+
+		Direction dirToDest = rc.getLocation().directionTo(destination);
+		if (rc.getLocation().add(dirToDest).distanceSquaredTo(destination) > data.getClosestDist() && !move(dirToDest)) {
+			if (rc.getLocation().add(dirToDest) == destination) {
+				// Prevents case where robot attempts to move onto occupied space which is its destination
+				data.setClosestDist(-1);
+				return true;
+			}
+			// Follows wall on left side
+			while (!move(dirToDest)) {
+				dirToDest = dirToDest.rotateRight();
+			}
+
+		} else if (rc.getLocation() == destination) {
+			// After robot moves, checks if it is now at its destination
+			data.setClosestDist(-1);
+			return true;
+		} else {
+			data.setClosestDist(rc.getLocation().add(dirToDest).distanceSquaredTo(destination));
+		}
+		return true;
+	}
+
 	/**
 	 *
 	 * @param destination
