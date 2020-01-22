@@ -31,16 +31,6 @@ public class MinerData extends ScoutData {
 	private ArrayList<MapLocation> soupLocs;
 		private ArrayList<MapLocation> removedSoupLocs;
 	private ArrayList<MapLocation> refineryLocs;
-
-	//WALL DIMENSIONS
-	private int wallOffsetXMin, wallOffsetXMax, wallOffsetYMin, wallOffsetYMax;
-	private boolean baseOnEdge;
-	
-	//BUILDING
-	private MapLocation designSchoolBuildSite;
-	private MapLocation fulfillmentCenterBuildSite;
-	private MapLocation vaporatorBuildMinerLocation;
-		private MapLocation vaporatorBuildSite;
 	
 	//TRANSACTION READING
 	private int transactionRound;
@@ -240,69 +230,6 @@ public class MinerData extends ScoutData {
 	 */
 	public boolean removeRefineryLoc(MapLocation loc) {
 		return refineryLocs.remove(loc);
-	}
-
-	public boolean isBaseOnEdge() {
-		return baseOnEdge;
-	}
-
-	public void setBaseOnEdge(boolean baseOnEdge) {
-		this.baseOnEdge = baseOnEdge;
-	}
-	
-	public int getWallOffsetXMin() {
-		return wallOffsetXMin;
-	}
-
-	public int getWallOffsetXMax() {
-		return wallOffsetXMax;
-	}
-
-	public int getWallOffsetYMin() {
-		return wallOffsetYMin;
-	}
-
-	public int getWallOffsetYMax() {
-		return wallOffsetYMax;
-	}
-	
-	public void setWallOffsetBounds(int wallOffsetXMin, int wallOffsetXMax, int wallOffsetYMin, int wallOffsetYMax) {
-		this.wallOffsetXMin = wallOffsetXMin;
-		this.wallOffsetXMax = wallOffsetXMax;
-		this.wallOffsetYMin = wallOffsetYMin;
-		this.wallOffsetYMax = wallOffsetYMax;
-	}
-
-	public MapLocation getDesignSchoolBuildSite() {
-		return designSchoolBuildSite;
-	}
-
-	public void setDesignSchoolBuildSite(MapLocation designSchoolBuildSite) {
-		this.designSchoolBuildSite = designSchoolBuildSite;
-	}
-
-	public MapLocation getFulfillmentCenterBuildSite() {
-		return fulfillmentCenterBuildSite;
-	}
-
-	public void setFulfillmentCenterBuildSite(MapLocation fulfillmentCenterBuildSite) {
-		this.fulfillmentCenterBuildSite = fulfillmentCenterBuildSite;
-	}
-
-	public MapLocation getVaporatorBuildMinerLocation() {
-		return vaporatorBuildMinerLocation;
-	}
-
-	public void setVaporatorBuildMinerLocation(MapLocation vaporatorBuildMinerLocation) {
-		this.vaporatorBuildMinerLocation = vaporatorBuildMinerLocation;
-	}
-
-	public MapLocation getVaporatorBuildSite() {
-		return vaporatorBuildSite;
-	}
-
-	public void setVaporatorBuildSite(MapLocation vaporatorBuildSite) {
-		this.vaporatorBuildSite = vaporatorBuildSite;
 	}
 
 	public int getTransactionRound() {

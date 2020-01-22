@@ -30,6 +30,8 @@ public class HQ extends Robot {
     	if(rc.getRoundNum() == 1) {
     		makeInitialReport();
     		setBuildDirectionTowardsSoup();
+    		hqData.initializeWallData(rc.getLocation(), rc.getMapWidth(), rc.getMapHeight());
+    		reportBlockedBuildSites();
     	}
     	    	
         if(oughtBuildMiner()) {        	
@@ -98,6 +100,22 @@ public class HQ extends Robot {
 		
 		return rc.getTeamSoup() >= RobotType.MINER.cost + hqData.getMinersBuilt() * 30 || rc.getRoundNum() < 50;
 	}
+	
+	private void reportBlockedBuildSites() throws GameActionException {
+		MapLocation hqLocation = rc.getLocation();		
+		int hqElevation = rc.senseElevation(hqLocation);
+    	int designSchoolElevation = rc.senseElevation(hqData.getDesignSchoolBuildSite());
+    	int fulfillmentCenterElevation = rc.senseElevation(hqData.getFulfillmentCenterBuildSite());
+    	int vaporatorElevation = rc.senseElevation(hqData.getVaporatorBuildSite());
+    	int vaporatorMinerElevation = rc.senseElevation(hqData.getVaporatorBuildMinerLocation());
+		
+		if(designSchoolElevation - hqElevation > GameConstants.MAX_DIRT_DIFFERENCE) sendTransaction(1, Type.TRANSACTION_BUILD_SITE_BLOCKED, hqData.getDesignSchoolBuildSite());
+		else if(fulfillmentCenterElevation - hqElevation > GameConstants.MAX_DIRT_DIFFERENCE) sendTransaction(1, Type.TRANSACTION_BUILD_SITE_BLOCKED, hqData.getFulfillmentCenterBuildSite());
+		else if(vaporatorElevation - hqElevation > GameConstants.MAX_DIRT_DIFFERENCE) sendTransaction(1, Type.TRANSACTION_BUILD_SITE_BLOCKED, hqData.getVaporatorBuildSite());
+		else if(vaporatorMinerElevation - hqElevation > GameConstants.MAX_DIRT_DIFFERENCE) sendTransaction(1, Type.TRANSACTION_BUILD_SITE_BLOCKED, hqData.getVaporatorBuildMinerLocation());
+	}
+	
+	
 	
 	//DEFENSE
 	private void sendSOS() throws GameActionException {
