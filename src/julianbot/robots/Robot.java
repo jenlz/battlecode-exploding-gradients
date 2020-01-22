@@ -97,6 +97,11 @@ public class Robot {
 		return (int) (Math.pow(Math.E, (0.0028 * roundNumber) - (1.38 * Math.sin(0.00157 * roundNumber - 1.73)) + (1.38 * Math.sin(-1.73))) - 1);
 	}
 	
+	//BOUNDS
+	public boolean onMapEdge(MapLocation location) {
+		return location.x == 0 || location.x == rc.getMapWidth() - 1 || location.y == 0 || location.y == rc.getMapHeight() - 1;
+	}
+	
 	//WALL
 	public boolean isOnWall(MapLocation location, MapLocation hqLocation) {    	
     	int minDx = data.getWallOffsetXMin();

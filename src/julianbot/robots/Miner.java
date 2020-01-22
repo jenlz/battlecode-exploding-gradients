@@ -146,7 +146,7 @@ public class Miner extends Scout {
     
     private void refineryMinerProtocol() throws GameActionException {
 		System.out.println("refinery protocol");
-
+		
 		//If we have found another refinery via reading transactions, go back to soup mining.
 		//TODO: Should we only accept refineries within a certain distance? Is it worth paying 200 more soup?
 		for(MapLocation refineryLocation : minerData.getRefineryLocs()) {
@@ -386,7 +386,7 @@ public class Miner extends Scout {
 	
 	private boolean oughtBecomeVaporatorMiner() throws GameActionException {
 		MapLocation vaporatorBuildMinerLocation = minerData.getVaporatorBuildMinerLocation();
-		RobotInfo buildSiteOccupant = rc.canSenseLocation(vaporatorBuildMinerLocation) ? rc.senseRobotAtLocation(vaporatorBuildMinerLocation) : null;
+		RobotInfo buildSiteOccupant = (rc.canSenseLocation(vaporatorBuildMinerLocation) && !rc.getLocation().equals(vaporatorBuildMinerLocation)) ? rc.senseRobotAtLocation(vaporatorBuildMinerLocation) : null;
 				
 		return !minerData.isVaporatorBuilderClaimed() && (buildSiteOccupant == null || buildSiteOccupant.getType() != RobotType.MINER) && isClosestMinerTo(vaporatorBuildMinerLocation);
 	}

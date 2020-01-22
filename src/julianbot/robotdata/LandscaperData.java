@@ -67,7 +67,7 @@ public class LandscaperData extends RobotData {
 	public void setEnemyHQBuryDigDirection(Direction enemyHQBuryDigDirection) {
 		this.enemyHQBuryDigDirection = enemyHQBuryDigDirection;
 	}
-	
+
 	public int getWallOffsetXMin() {
 		return wallOffsetXMin;
 	}
