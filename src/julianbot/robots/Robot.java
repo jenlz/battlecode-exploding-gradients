@@ -15,6 +15,8 @@ import battlecode.common.Transaction;
 import julianbot.robotdata.RobotData;
 import julianbot.utils.pathfinder.Pathfinder;
 
+import javax.print.attribute.standard.Destination;
+
 public class Robot {
 	
 	protected RobotController rc;
@@ -415,9 +417,10 @@ public class Robot {
 			if(!pathfindingSuccessful) data.setPath(null);
 			return pathfindingSuccessful;
 		}
-		
+
 		//Otherwise, simply try to move directly towards the destination.
 		MapLocation rcLocation = rc.getLocation();
+		/*
 		Direction initialDirection = rc.getLocation().directionTo(destination);
 		if(move(initialDirection)) return true;
 		
@@ -443,7 +446,7 @@ public class Robot {
 		for(Direction direction : nextDirections) {
 			if(rcLocation.add(direction).equals(data.getPreviousLocation())) continue;
 			if(move(direction)) return true;
-		}
+		} */
 		
 		//TODO: MAXIMO'S DOMAIN DO NOT TOUCH (FUTURE SITE OF BUG NAV)
 		if (bugNav(destination)) {return true;}
@@ -467,30 +470,49 @@ public class Robot {
 		}
 
 		Direction dirToDest = rc.getLocation().directionTo(destination);
-		if (rc.getLocation().add(dirToDest).distanceSquaredTo(destination) >= data.getClosestDist() && !move(dirToDest)) {
-			if (rc.getLocation() == destination) {
-				// After robot moves, checks if it is now at its destination
-				System.out.println("Reached destination");
+		rc.setIndicatorDot(rc.getLocation().add(dirToDest), 255, 182, 193);
+		if (rc.getLocation().add(dirToDest).distanceSquaredTo(destination) < data.getClosestDist()) {
+			// If the next move toward the destination is closer than the closest its been
+			if (move(dirToDest)) {
+				//If you can move in that direction
+				data.setClosestDist(rc.getLocation().add(dirToDest).distanceSquaredTo(destination));
+				System.out.println("Moved to new closest location. Dist: " + data.getClosestDist());
+
+			} else if (rc.getLocation().add(dirToDest) == destination) {
+				// Prevents case where robot attempts to move onto occupied space which is its destination
+				System.out.println("Adjacent to destination");
 				data.setClosestDist(-1);
 				return true;
-			}
-			System.out.println("Can't move in closer direction. Resorting to wall hugging.");
-			// Follows wall on left side
-			while (!move(dirToDest)) {
-				dirToDest = dirToDest.rotateRight();
-			}
-			rc.setIndicatorLine(rc.getLocation().subtract(dirToDest), rc.getLocation(), 102, 255, 255);
 
-		} else if (rc.getLocation().add(dirToDest) == destination) {
-			// Prevents case where robot attempts to move onto occupied space which is its destination
-			System.out.println("Adjacent to destination");
-			data.setClosestDist(-1);
-			return true;
+			} else {
+				followWall(destination, dirToDest);
+			}
 		} else {
-			data.setClosestDist(rc.getLocation().add(dirToDest).distanceSquaredTo(destination));
-			System.out.println("Moved to new closest location. Dist: " + data.getClosestDist());
+			followWall(destination, dirToDest);
+		}
+
+		if (rc.getLocation() == destination) {
+			// After robot moves, checks if it is now at its destination
+			System.out.println("Reached destination");
+			data.setClosestDist(-1);
 		}
 		return true;
+	}
+
+	/**
+	 *
+	 * @param destination
+	 * @param dirToDest
+	 * @throws GameActionException
+	 */
+	public void followWall(MapLocation destination, Direction dirToDest) throws GameActionException {
+
+		System.out.println("Can't move in closer direction. Resorting to wall hugging.");
+		// Follows wall on left side
+		while (!move(dirToDest)) {
+			dirToDest = dirToDest.rotateRight();
+		}
+		rc.setIndicatorLine(rc.getLocation().subtract(dirToDest), rc.getLocation(), 102, 255, 255);
 	}
 
 	/**
