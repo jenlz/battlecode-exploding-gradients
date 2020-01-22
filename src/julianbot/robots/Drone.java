@@ -15,6 +15,8 @@ import julianbot.utils.NumberMath;
 
 public class Drone extends Scout {
 
+	private static final int CARGO_DRONE_ATTACK_DELAY = 7;
+	
 	private DroneData droneData;
 	
 	public Drone(RobotController rc) {
@@ -228,7 +230,7 @@ public class Drone extends Scout {
 	}
 	
 	private void killDroneProtocol() throws GameActionException {
-		if(rc.getRoundNum() - droneData.getKillOrderReceptionRound() >= 75) {
+		if(rc.getRoundNum() - droneData.getKillOrderReceptionRound() >= NumberMath.clamp(rc.getMapWidth() + rc.getMapHeight(), 75, Integer.MAX_VALUE) + CARGO_DRONE_ATTACK_DELAY) {
 			//ATTACK ENEMY HQ
 			routeTo(droneData.getEnemyHqLocation());
 			
@@ -254,6 +256,9 @@ public class Drone extends Scout {
 			}
 		} else {
     		//APPROACH ENEMY HQ
+			
+			//Let those not holding units go first to clear spaces.
+			if(rc.isCurrentlyHoldingUnit() && rc.getRoundNum() - droneData.getKillOrderReceptionRound() < CARGO_DRONE_ATTACK_DELAY) return;
 			if(rc.getLocation().distanceSquaredTo(droneData.getEnemyHqLocation()) > 25) routeTo(droneData.getEnemyHqLocation());
 		}
 	}
@@ -639,9 +644,9 @@ public class Drone extends Scout {
     	
     	for(int dx = minDx; dx <= maxDx; dx++) {
     		for(int dy = minDy; dy <= maxDy; dy++) {
-    			if(((dx == minDx || dx == maxDx) && dx != 0) || ((dy == minDy || dy == maxDy) && dy != 0)) {
-    				MapLocation wallLocation = hqLocation.translate(dx, dy);
-    				if(rc.canSenseLocation(wallLocation) && rc.senseElevation(wallLocation) - hqElevation <= GameConstants.MAX_DIRT_DIFFERENCE) {
+    			MapLocation wallLocation = hqLocation.translate(dx, dy);
+    			if(isOnWall(wallLocation, hqLocation) && rc.canSenseLocation(wallLocation)) {
+    				if(rc.senseElevation(wallLocation) - hqElevation <= GameConstants.MAX_DIRT_DIFFERENCE) {
     					droneData.setWallBuildConfirmed(false);
     					if(!rc.isLocationOccupied(wallLocation)) {
     						MapLocation nextWallSegment = droneData.getNextWallSegment();
@@ -669,12 +674,10 @@ public class Drone extends Scout {
     	
     	for(int dx = minDx; dx <= maxDx; dx++) {
     		for(int dy = minDy; dy <= maxDy; dy++) {
-    			if((dx == minDx || dx == maxDx) || (dy == minDy || dy == maxDy)) {
-    				MapLocation wallLocation = hqLocation.translate(dx, dy);
-    				if(rc.canSenseLocation(wallLocation)) {
-    					if(!rc.isLocationOccupied(wallLocation)) {
-    						return true;
-    					}
+    			MapLocation wallLocation = hqLocation.translate(dx, dy);
+    			if(isOnWall(wallLocation, hqLocation) && rc.canSenseLocation(wallLocation)) {
+    				if(!rc.isLocationOccupied(wallLocation)) {
+    					return true;
     				}
     			}
     		}

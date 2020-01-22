@@ -83,7 +83,9 @@ public class Landscaper extends Robot {
 		
     	if(turnCount == 1) {
     		learnHQLocation();
+    		landscaperData.initializeWallData(landscaperData.getHqLocation(), rc.getMapWidth(), rc.getMapHeight());
     		determineWallDirections();
+    		determineHqElevation();
     	}
     	
     	discernAttackRole();
@@ -146,26 +148,11 @@ public class Landscaper extends Robot {
 		} else {
 			gridXShift = gridYShift = DEFAULT_PATTERN_ARRAY_SHIFT;
 		}
-		
-		if(leftEdge) {
-			//The HQ is next to the western wall.
-			if(bottomEdge) landscaperData.setWallOffsetBounds(0, 2, 0, 3);
-			else if(topEdge) landscaperData.setWallOffsetBounds(0, 2, -3, 0);
-			else landscaperData.setWallOffsetBounds(0, 2, -1, 3);
-		} else if(rightEdge) {
-			//The HQ is next to the eastern wall.
-			if(bottomEdge) landscaperData.setWallOffsetBounds(-2, 0, 0, 3);
-			else if(topEdge) landscaperData.setWallOffsetBounds(-2, 0, -3, 0);
-			else landscaperData.setWallOffsetBounds(-2, 0, -3, 1);
-		} else if(topEdge) {
-			//The HQ is next to the northern wall, but not cornered.
-			landscaperData.setWallOffsetBounds(-1, 3, 0, -2);
-		} else if(bottomEdge) {
-			//The HQ is next to the southern wall, but not cornered.
-			landscaperData.setWallOffsetBounds(-3, 1, 0, 2);
-		} else {
-			landscaperData.setWallOffsetBounds(-2, 2, -2, 2);
-		}
+	}
+	
+	private void determineHqElevation() throws GameActionException {
+		if(!rc.canSenseLocation(landscaperData.getHqLocation())) return;
+		landscaperData.setHqElevation(rc.senseElevation(landscaperData.getHqLocation()));
 	}
 	
 	private void toggleDirection() {
@@ -197,55 +184,15 @@ public class Landscaper extends Robot {
 			return;
 		}
 		
-		boolean withinWall = isWithinWall();
 		
 		MapLocation nextLocation = rc.getLocation().add(movePattern[gridY][gridX]);
 		boolean elevationDifferenceHigh = rc.onTheMap(nextLocation) ? rc.senseElevation(nextLocation) - rc.senseElevation(rc.getLocation()) > GameConstants.MAX_DIRT_DIFFERENCE : true;
-		System.out.println("Within Wall? " + withinWall + " Elevation difference high? " + elevationDifferenceHigh);
-		if(withinWall && elevationDifferenceHigh) {
+
+		if(isWithinWall(rcLocation, hqLocation) && elevationDifferenceHigh) {
 			landscaperData.setCurrentRole(LandscaperData.ATTACK);
-		} else if(isOnWall()) {
+		} else if(isOnWall(rcLocation, hqLocation)) {
 			landscaperData.setCurrentRole(LandscaperData.DEFEND_HQ_FROM_FLOOD);
 		}
-	}
-	
-	private boolean isWithinWall() {
-		MapLocation hqLocation = landscaperData.getHqLocation();
-    	
-    	int minDx = landscaperData.getWallOffsetXMin();
-    	int maxDx = landscaperData.getWallOffsetXMax();
-    	int minDy = landscaperData.getWallOffsetYMin();
-    	int maxDy = landscaperData.getWallOffsetYMax();
-    	
-    	int dx = rc.getLocation().x - hqLocation.x;
-    	int dy = rc.getLocation().y - hqLocation.y;
-    	
-    	boolean dxInRange = minDx < dx && dx < maxDx;
-    	boolean dyInRange = minDy < dy && dy < maxDy;
-    	return dxInRange && dyInRange;
-	}
-	
-	private boolean isOnWall() {
-		MapLocation hqLocation = landscaperData.getHqLocation();
-    	
-    	int minDx = landscaperData.getWallOffsetXMin();
-    	int maxDx = landscaperData.getWallOffsetXMax();
-    	int minDy = landscaperData.getWallOffsetYMin();
-    	int maxDy = landscaperData.getWallOffsetYMax();
-    	
-    	int dx = rc.getLocation().x - hqLocation.x;
-    	int dy = rc.getLocation().y - hqLocation.y;
-    	
-    	boolean dxOnBound = (dx == minDx || dx == maxDx);
-    	boolean dyInRange = minDy <= dy && dy <= maxDy;
-    	if(dxOnBound && dyInRange) return true;
-    	
-    	
-    	boolean dyOnBound = (dy == minDy || dy == maxDy);
-    	boolean dxInRange = minDx <= dx && dx <= maxDx;
-    	if(dyOnBound && dxInRange) return true;
-    	
-    	return false;
 	}
 	
 	private boolean dig(Direction dir) throws GameActionException {
@@ -277,15 +224,22 @@ public class Landscaper extends Robot {
 	}
 	
 	private void buildHQWall() throws GameActionException {
-		if(rc.getDirtCarrying() > 0) constructWallUnits();
+		if((rc.getDirtCarrying() > 0 && !landscaperData.isClearingObstruction()) || rc.getDirtCarrying() == RobotType.LANDSCAPER.dirtLimit) constructWallUnits();
 		else digWallDirt();
 	}
 	
 	private void constructWallUnits() throws GameActionException {
-		Direction[] constructDirections = new Direction[0];
-		
 		MapLocation rcLocation = rc.getLocation();
 		MapLocation hqLocation = landscaperData.getHqLocation();
+		
+		if(landscaperData.isClearingObstruction()) {
+			if(depositDirt(hqLocation.directionTo(rcLocation))) return;
+			if(depositDirt(hqLocation.directionTo(rcLocation).rotateLeft())) return;
+			if(depositDirt(hqLocation.directionTo(rcLocation).rotateRight())) return;
+			return;
+		}
+		
+		Direction[] constructDirections = new Direction[0];
 		
 		int dx = rcLocation.x - hqLocation.x;
 		int dy = rcLocation.y - hqLocation.y;
@@ -323,9 +277,11 @@ public class Landscaper extends Robot {
 			}
 		}
 		
+		MapLocation innerWallLocation = rcLocation.add(rcLocation.directionTo(hqLocation));
 		MapLocation nextLocation = rcLocation.add(movePattern[gridY][gridX]);
 		
-		if(rc.senseFlooding(nextLocation)) depositDirt(rcLocation.directionTo(nextLocation));
+		if(rc.senseFlooding(innerWallLocation)) depositDirt(rcLocation.directionTo(hqLocation));
+		else if(rc.senseFlooding(nextLocation)) depositDirt(rcLocation.directionTo(nextLocation));
 		else if(rc.senseElevation(rcLocation) - rc.senseElevation(nextLocation) < GameConstants.MAX_DIRT_DIFFERENCE) depositDirt(constructDirections[NumberMath.indexOfLeast(constructElevations)]);
 		else move(movePattern[gridY][gridX]);
 	}
@@ -358,16 +314,34 @@ public class Landscaper extends Robot {
 			return;
 		}
 		
-		//If where we're going is too high, dig from there.
-		if(rc.canSenseLocation(rcLocation.add(movePattern[gridY][gridX])) && rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) - rc.senseElevation(rcLocation) > GameConstants.MAX_DIRT_DIFFERENCE) {
-			dig(movePattern[gridY][gridX]);
+		if(!rc.isLocationOccupied(rcLocation.add(rcLocation.directionTo(hqLocation))) && innerWallObstructed()) {
+			System.out.println("Inner wall obstructed");
+			//If we are next to an obstructed build site, dig from there.
+			dig(rcLocation.directionTo(hqLocation));
+			landscaperData.setClearingObstruction(true);
 			return;
+		} else {
+			System.out.println("Inner wall clear");
+			landscaperData.setClearingObstruction(false);
+			
+			if(rc.canSenseLocation(rcLocation.add(movePattern[gridY][gridX])) && rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) - rc.senseElevation(rcLocation) > GameConstants.MAX_DIRT_DIFFERENCE) {
+				//If where we're going is too high, dig from there.
+				dig(movePattern[gridY][gridX]);
+				return;
+			}
 		}
 		
 		digDirection = digPattern[gridY][gridX];
 		
 		if(digDirection != null) dig(digDirection);
 		if(!rc.senseFlooding(rcLocation.add(movePattern[gridY][gridX]))) move(movePattern[gridY][gridX]);
+	}
+	
+	private boolean innerWallObstructed() throws GameActionException {
+		MapLocation innerWallLocation = rc.getLocation().add(rc.getLocation().directionTo(landscaperData.getHqLocation()));
+		if(!rc.canSenseLocation(innerWallLocation)) return false;
+		
+		return rc.senseElevation(innerWallLocation) - landscaperData.getHqElevation() > GameConstants.MAX_DIRT_DIFFERENCE;
 	}
 	
 	private boolean buryEnemyHQ() throws GameActionException {
