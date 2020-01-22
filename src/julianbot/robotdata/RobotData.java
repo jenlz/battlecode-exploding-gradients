@@ -24,6 +24,7 @@ public class RobotData {
 
 	//BugNav Data
 	private int bugNavClosestDist;
+	private MapLocation obstacleLoc;
 
 	public RobotData(RobotController rc, MapLocation spawnerLocation) {
 		team = rc.getTeam();
@@ -54,6 +55,10 @@ public class RobotData {
 	public int getClosestDist() {return bugNavClosestDist;}
 
 	public void setClosestDist(int dist) {bugNavClosestDist = dist;}
+
+	public MapLocation getObstacleLoc() {return obstacleLoc;}
+
+	public void setObstacleLoc(MapLocation loc) {obstacleLoc = loc;}
 
 	public MapLocation getSpawnerLocation() {
 		return spawnerLocation;

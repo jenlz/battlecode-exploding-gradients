@@ -2,6 +2,7 @@ package julianbot.robots;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -502,10 +503,10 @@ public class Robot {
 				return true;
 
 			} else {
-				followWall();
+				followLeftWall(dirToDest);
 			}
 		} else {
-			followWall();
+			followLeftWall(dirToDest);
 		}
 
 		if (rc.getLocation().equals(destination)) {
@@ -520,15 +521,20 @@ public class Robot {
 	 * Attempts to move in same direction as last turn, otherwise rotates right
 	 * @throws GameActionException
 	 */
-	public void followWall() throws GameActionException {
-
+	public void followLeftWall(Direction dirToDest) throws GameActionException {
 		System.out.println("Can't move in closer direction. Resorting to wall hugging.");
+
+		if (data.getSearchDirection() == null) {
+			data.setSearchDirection(dirToDest);
+		}
+
 		// Follows wall on left side
 		while (!continueSearchNonRandom()) {
+			data.setObstacleLoc(rc.getLocation().add(data.getSearchDirection()));
 			data.setSearchDirection(data.getSearchDirection().rotateRight());
 		}
-		data.setSearchDirection(data.getSearchDirection().rotateLeft().rotateLeft());
 		rc.setIndicatorLine(rc.getLocation().subtract(data.getSearchDirection()), rc.getLocation(), 102, 255, 255); //Teal line
+		data.setSearchDirection(rc.getLocation().directionTo(data.getObstacleLoc()));
 	}
 
 	/**
