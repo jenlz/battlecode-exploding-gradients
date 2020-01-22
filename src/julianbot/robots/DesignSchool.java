@@ -51,10 +51,17 @@ public class DesignSchool extends Robot {
         designSchoolData.setPauseBuildTimer(designSchoolData.getPauseBuildTimer() - 1);
         if(!designSchoolData.isStableSoupIncomeConfirmed()) confirmStableSoupIncome();
     	if(oughtBuildLandscaper()) {
+    		if(designSchoolData.getLandscapersBuilt() > 0 && onMapEdge(rc.getLocation().add(designSchoolData.getDefaultBuildDirection()))) {
+    			designSchoolData.setDefaultBuildDirection(designSchoolData.getDefaultAttackBuildDirection());
+    			designSchoolData.setBuildDirection(designSchoolData.getDefaultAttackBuildDirection());
+    		}
+    		
     		if(!tryBuild(RobotType.LANDSCAPER) && designSchoolData.getBuildDirection().equals(designSchoolData.getDefaultBuildDirection())) {
     			MapLocation attemptedBuildLocation = rc.getLocation().add(designSchoolData.getBuildDirection());
     			if(rc.canSenseLocation(attemptedBuildLocation)) {
-    				if(rc.senseElevation(attemptedBuildLocation) - rc.senseElevation(rc.getLocation()) > GameConstants.MAX_DIRT_DIFFERENCE) {
+    				boolean wallAtBuildLocation = rc.senseElevation(attemptedBuildLocation) - rc.senseElevation(rc.getLocation()) > GameConstants.MAX_DIRT_DIFFERENCE;
+    				boolean mapEdgeAtBuildLocation = onMapEdge(attemptedBuildLocation);
+    				if(wallAtBuildLocation || mapEdgeAtBuildLocation && rc.getTeamSoup() >= RobotType.LANDSCAPER.cost) {
     					//The wall already exists, so we can start building northwards to generate attack landscapers.  
     					designSchoolData.setDefaultBuildDirection(designSchoolData.getDefaultAttackBuildDirection());
     				}
@@ -171,7 +178,7 @@ public class DesignSchool extends Robot {
 		if (designSchoolData.getPauseBuildTimer() > 0) return false;
 		if (designSchoolData.getLandscapersBuilt() == 0) return designSchoolData.getBuildSitesBlocked() || senseUnitType(RobotType.FULFILLMENT_CENTER, rc.getTeam()) != null;
 		
-		return (designSchoolData.isStableSoupIncomeConfirmed()) ? rc.getTeamSoup() >= RobotType.LANDSCAPER.cost : rc.getTeamSoup() >= RobotType.VAPORATOR.cost + 5;
+		return (designSchoolData.isStableSoupIncomeConfirmed() || designSchoolData.getBuildSitesBlocked()) ? rc.getTeamSoup() >= RobotType.LANDSCAPER.cost : rc.getTeamSoup() >= RobotType.VAPORATOR.cost + 5;
 	}
 	
 	/**

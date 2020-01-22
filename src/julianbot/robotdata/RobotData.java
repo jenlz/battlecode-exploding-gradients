@@ -12,6 +12,7 @@ public class RobotData {
 	//GENERAL
 	protected final Team team;
 	protected final Team opponent;
+	protected MapLocation spawnLocation;
 	protected MapLocation spawnerLocation;
 	
 	//ROUTING
@@ -40,9 +41,12 @@ public class RobotData {
 	public RobotData(RobotController rc, MapLocation spawnerLocation) {
 		team = rc.getTeam();
 		opponent = team.opponent();
-		previousLocation = rc.getLocation();
-		hasPendingTransaction = false;
+		spawnLocation = rc.getLocation();
 		setSpawnerLocation(spawnerLocation);
+		previousLocation = rc.getLocation();
+		
+		hasPendingTransaction = false;
+		
 		if (!rc.getType().isBuilding()) {
 			if(spawnerLocation == null || rc.getLocation() == null) {
 				System.out.println("RobotData constructor on round " + rc.getRoundNum() + ":");
@@ -157,6 +161,14 @@ public class RobotData {
 	
 	public Team getOpponent() {
 		return opponent;
+	}
+	
+	public MapLocation getSpawnLocation() {
+		return spawnLocation;
+	}
+
+	public void setSpawnLocation(MapLocation spawnLocation) {
+		this.spawnLocation = spawnLocation;
 	}
 
 	public MapLocation getSpawnerLocation() {
