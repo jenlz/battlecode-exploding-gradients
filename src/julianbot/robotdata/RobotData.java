@@ -25,11 +25,13 @@ public class RobotData {
 	//BugNav Data
 	private int bugNavClosestDist;
 	private MapLocation obstacleLoc;
+	private MapLocation currentDestination;
 
 	public RobotData(RobotController rc, MapLocation spawnerLocation) {
 		team = rc.getTeam();
 		opponent = team.opponent();
 		previousLocation = rc.getLocation();
+		currentDestination = rc.getLocation();
 		hasPendingTransaction = false;
 		bugNavClosestDist = -1;
 		setSpawnerLocation(spawnerLocation);
@@ -162,5 +164,12 @@ public class RobotData {
 	public void setPendingTransactionSoupBid(int pendingTransactionSoupBid) {
 		this.pendingTransactionSoupBid = pendingTransactionSoupBid;
 	}
-	
+
+	public MapLocation getCurrentDestination() {
+		return currentDestination;
+	}
+
+	public void setCurrentDestination(MapLocation currentDestination) {
+		this.currentDestination = currentDestination;
+	}
 }

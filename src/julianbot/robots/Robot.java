@@ -481,6 +481,12 @@ public class Robot {
 	 * @return
 	 */
 	public boolean bugNav(MapLocation destination) throws GameActionException {
+
+		if (data.getCurrentDestination() != destination) {
+			data.setCurrentDestination(destination);
+			data.setClosestDist(-1);
+		}
+
 		if (data.getClosestDist() == -1) {
 			System.out.println("Initializing closestDist");
 			data.setClosestDist(rc.getLocation().distanceSquaredTo(destination));
@@ -527,7 +533,7 @@ public class Robot {
 		if (data.getSearchDirection() == null) {
 			data.setSearchDirection(dirToDest);
 		}
-
+		rc.setIndicatorLine(rc.getLocation(), rc.adjacentLocation(data.getSearchDirection()), 0, 0, 255);
 		// Follows wall on left side
 		for (int i = 0; i < 8; i++) {
 			if (continueSearchNonRandom()) {
