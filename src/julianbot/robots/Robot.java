@@ -316,6 +316,22 @@ public class Robot {
 		data.setSearchDirection(directions[(int) (Math.random() * directions.length)]);
 	}
 
+	/**
+	 * Moves in search direction, returns false if unable to.
+	 * @return
+	 * @throws GameActionException
+	 */
+	public boolean continueSearchNonRandom() throws GameActionException {
+		//The move function is deliberately unused here.
+		waitUntilReady();
+
+		if(rc.canMove(data.getSearchDirection()) && !rc.senseFlooding(rc.getLocation().add(data.getSearchDirection()))) {
+			rc.move(data.getSearchDirection());
+			return true;
+		}
+		return false;
+	}
+
 	//TRANSACTIONS
 	protected boolean sendTransaction(int soupBid, Type type, MapLocation loc) throws GameActionException {		
 		int transactionTag = (int) (Math.random()*500); //This use of parentheses will prevent truncation of the random number.
@@ -470,28 +486,29 @@ public class Robot {
 		}
 
 		Direction dirToDest = rc.getLocation().directionTo(destination);
-		rc.setIndicatorDot(rc.getLocation().add(dirToDest), 255, 182, 193);
+		rc.setIndicatorDot(rc.getLocation().add(dirToDest), 255, 182, 193); // Pink dot
 		if (rc.getLocation().add(dirToDest).distanceSquaredTo(destination) < data.getClosestDist()) {
 			// If the next move toward the destination is closer than the closest its been
 			if (move(dirToDest)) {
 				//If you can move in that direction
-				data.setClosestDist(rc.getLocation().add(dirToDest).distanceSquaredTo(destination));
+				data.setClosestDist(rc.getLocation().distanceSquaredTo(destination));
 				System.out.println("Moved to new closest location. Dist: " + data.getClosestDist());
 
-			} else if (rc.getLocation().add(dirToDest) == destination) {
+			} else if (rc.getLocation().add(dirToDest).equals(destination)) {
+				//TODO Check if building is in the way
 				// Prevents case where robot attempts to move onto occupied space which is its destination
 				System.out.println("Adjacent to destination");
-				data.setClosestDist(-1);
+				data.setClosestDist(-1); // Should stop nav. But honestly probably doesn't
 				return true;
 
 			} else {
-				followWall(destination, dirToDest);
+				followWall();
 			}
 		} else {
-			followWall(destination, dirToDest);
+			followWall();
 		}
 
-		if (rc.getLocation() == destination) {
+		if (rc.getLocation().equals(destination)) {
 			// After robot moves, checks if it is now at its destination
 			System.out.println("Reached destination");
 			data.setClosestDist(-1);
@@ -500,19 +517,18 @@ public class Robot {
 	}
 
 	/**
-	 *
-	 * @param destination
-	 * @param dirToDest
+	 * Attempts to move in same direction as last turn, otherwise rotates right
 	 * @throws GameActionException
 	 */
-	public void followWall(MapLocation destination, Direction dirToDest) throws GameActionException {
+	public void followWall() throws GameActionException {
 
 		System.out.println("Can't move in closer direction. Resorting to wall hugging.");
 		// Follows wall on left side
-		while (!move(dirToDest)) {
-			dirToDest = dirToDest.rotateRight();
+		while (!continueSearchNonRandom()) {
+			data.setSearchDirection(data.getSearchDirection().rotateRight());
 		}
-		rc.setIndicatorLine(rc.getLocation().subtract(dirToDest), rc.getLocation(), 102, 255, 255);
+		data.setSearchDirection(data.getSearchDirection().rotateLeft().rotateLeft());
+		rc.setIndicatorLine(rc.getLocation().subtract(data.getSearchDirection()), rc.getLocation(), 102, 255, 255); //Teal line
 	}
 
 	/**
