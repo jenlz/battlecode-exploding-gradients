@@ -529,10 +529,18 @@ public class Robot {
 		}
 
 		// Follows wall on left side
-		while (!continueSearchNonRandom()) {
+		for (int i = 0; i < 8; i++) {
+			if (continueSearchNonRandom()) {
+				break;
+			} else {
+				data.setObstacleLoc(rc.getLocation().add(data.getSearchDirection()));
+				data.setSearchDirection(data.getSearchDirection().rotateRight());
+			}
+		}
+		/*while (!continueSearchNonRandom()) {
 			data.setObstacleLoc(rc.getLocation().add(data.getSearchDirection()));
 			data.setSearchDirection(data.getSearchDirection().rotateRight());
-		}
+		} */
 		rc.setIndicatorLine(rc.getLocation().subtract(data.getSearchDirection()), rc.getLocation(), 102, 255, 255); //Teal line
 		data.setSearchDirection(rc.getLocation().directionTo(data.getObstacleLoc()));
 	}
