@@ -163,7 +163,7 @@ public class Drone extends Scout {
 	}
 	
 	private void drownCowProtocol() throws GameActionException {
-		System.out.println("Entered Drown Dow Protocol");
+		System.out.println("Entered Drown Cow Protocol");
 		MapLocation rcLocation = rc.getLocation();
 		
 		for(Direction direction : Direction.allDirections()) {
@@ -183,7 +183,9 @@ public class Drone extends Scout {
 			} else if (dropUnit(rcLocation.directionTo(closestLoc))) {
 				droneData.setHoldingCow(false);
 			}
-
+		} else {
+			//TODO: Add a clause to keep them from net guns.
+			continueSearch();
 		}
 	}
 	
@@ -223,6 +225,8 @@ public class Drone extends Scout {
 							return;
 						}
 					}
+				} else if(liftAdjacentEnemy()) {
+					return;
 				}
 				
 				routeTo(droneData.getEnemyHqLocation());
@@ -242,14 +246,7 @@ public class Drone extends Scout {
 						return;
 					}
 				} else {
-					RobotInfo[] enemies = rc.senseNearbyRobots(-1, droneData.getOpponent());
-					
-					for(RobotInfo enemy : enemies) {
-						if(pickUpUnit(enemy)) {
-							droneData.setHoldingEnemy(true);
-							return;
-						}
-					}
+					if(liftAdjacentEnemy()) return;
 					
 					//We failed to pick up an enemy if we got here, so we need to continue trying to get in close.
 					routeTo(droneData.getEnemyHqLocation());
@@ -293,6 +290,19 @@ public class Drone extends Scout {
 					droneData.setEnemyFrom(data.getTeam());
 				else
 					droneData.setEnemyFrom(data.getOpponent());
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	private boolean liftAdjacentEnemy() throws GameActionException {
+		RobotInfo[] enemies = rc.senseNearbyRobots(-1, droneData.getOpponent());
+		
+		for(RobotInfo enemy : enemies) {
+			if(pickUpUnit(enemy)) {
+				droneData.setHoldingEnemy(true);
 				return true;
 			}
 		}
