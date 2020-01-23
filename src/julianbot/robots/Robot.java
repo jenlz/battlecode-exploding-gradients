@@ -154,6 +154,7 @@ public class Robot {
 		if(type == RobotType.MINER) return RobotType.HQ;
 		if(type == RobotType.REFINERY) return RobotType.MINER;
 		if(type == RobotType.LANDSCAPER) return RobotType.DESIGN_SCHOOL;
+		if(type == RobotType.DELIVERY_DRONE) return RobotType.FULFILLMENT_CENTER;
 		return RobotType.HQ;
 	}
 	

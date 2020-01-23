@@ -29,17 +29,16 @@ public class DesignSchool extends Robot {
 		readTransactions();
 
     	RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), designSchoolData.getOpponent());
-
+    	RobotInfo enemyHq = this.senseUnitType(RobotType.HQ, rc.getTeam().opponent());
+    	
         if(enemy.length > 0) {
-	        for(RobotInfo potentialThreat : enemy) {
-	        	if (potentialThreat.getType() == RobotType.HQ) {
-	        		attackDesignSchoolProtocol(potentialThreat.getLocation());
-	        		return;
-				}
-	        }
+        	if (enemyHq != null) {
+	        	attackDesignSchoolProtocol(enemyHq.getLocation());
+	        	return;
+			}
 	        
 	        for(RobotInfo potentialThreat : enemy) {
-	        	if(potentialThreat.type.equals(RobotType.DESIGN_SCHOOL)) {
+	        	if(potentialThreat.type.isBuilding()) {
 	        		attackDesignSchoolProtocol(potentialThreat.getLocation());
 	        		return;
 	        	} 

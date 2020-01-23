@@ -89,7 +89,7 @@ public class FulfillmentCenter extends Robot {
 			RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
 			for(RobotInfo enemy : enemies) {
 				if(enemy.type.canBePickedUp()) {
-					return forceBuild();
+					return defensiveBuild();
 				}
 			}
 		}
@@ -148,15 +148,27 @@ public class FulfillmentCenter extends Robot {
         return false;
     }
     
-    private boolean forceBuild() throws GameActionException {
+    private boolean defensiveBuild() throws GameActionException {
     	waitUntilReady();
     	
+    	RobotInfo[] netGuns = this.senseAllUnitsOfType(RobotType.NET_GUN, rc.getTeam().opponent());
+    	
     	for(Direction direction : Direction.allDirections()) {
-    		if(rc.canBuildRobot(RobotType.DELIVERY_DRONE, direction)) {
+    		if(rc.canBuildRobot(RobotType.DELIVERY_DRONE, direction) && !buildIntoNetGunRange(netGuns, direction)) {
                 rc.buildRobot(RobotType.DELIVERY_DRONE, direction);
                 fulfillmentCenterData.incrementDronesBuilt();
                 return true;
             }
+    	}
+    	
+    	return false;
+    }
+    
+    private boolean buildIntoNetGunRange(RobotInfo[] netGuns, Direction buildDirection) {
+    	MapLocation buildLocation = rc.getLocation().add(buildDirection);
+    	
+    	for(RobotInfo netGun : netGuns) {
+    		if(buildLocation.isWithinDistanceSquared(netGun.getLocation(), RobotType.NET_GUN.sensorRadiusSquared)) return true;
     	}
     	
     	return false;

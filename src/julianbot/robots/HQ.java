@@ -38,10 +38,6 @@ public class HQ extends Robot {
         	tryBuild(RobotType.MINER);
         }
         
-        if(wallBuilt() && lacksVaporatorMiner()) {
-        	buildVaporatorMiner();
-        }
-        
         if(hqData.getEnemyHqLocation() == null) readForEnemyHq();
         
         storeForeignTransactions();
@@ -54,9 +50,10 @@ public class HQ extends Robot {
 	        	sendSOS();
 	        }
         	
-	        for(RobotInfo enemy : enemies) { 
-	        	if(enemy.type.equals(RobotType.DESIGN_SCHOOL)) {
+	        for(RobotInfo enemy : enemies) {
+	        	if(enemy.type.equals(RobotType.LANDSCAPER) && senseUnitType(RobotType.FULFILLMENT_CENTER, rc.getTeam()) == null) {
 	        		hqData.setBuildDirection(rc.getLocation().directionTo(enemy.location).rotateLeft());
+	        		//TODO: We should likely try more build directions.
 	        		tryBuild(RobotType.MINER);
 	        	}
 	        	
@@ -64,6 +61,10 @@ public class HQ extends Robot {
 		    		shootUnit(enemy.getID());
 		    	}
 	        }
+        }
+        
+        if(wallBuilt() && lacksVaporatorMiner()) {
+        	buildVaporatorMiner();
         }
         
         if(killOrderCooldownCount <= 0) {

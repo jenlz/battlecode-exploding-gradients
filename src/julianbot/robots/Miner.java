@@ -90,7 +90,8 @@ public class Miner extends Scout {
 		}
 		
 		//TODO: On the wall detection for edge-case maps.
-		return (this.senseUnitType(RobotType.LANDSCAPER, rc.getTeam(), 3) != null && isOnWall(rc.getLocation(), minerData.getSpawnerLocation()));
+		boolean interferingWithBase = isOnWall(rc.getLocation(), minerData.getSpawnerLocation()) || isWithinWall(rc.getLocation(), minerData.getSpawnerLocation());
+		return this.senseUnitType(RobotType.LANDSCAPER, rc.getTeam(), 3) != null && interferingWithBase;
 	}
 	
 	private void respondToThreats() {
@@ -262,41 +263,74 @@ public class Miner extends Scout {
 	private void defenseMinerProtocol() throws GameActionException {
 		System.out.println("defense protocol");
 		
-    	if(!minerData.isFulfillmentCenterBuilt()) {
-    		System.out.println("Fulfillment center not yet built.");
-    		
-    		MapLocation fulfillmentCenterBuildSite = minerData.getFulfillmentCenterBuildSite();
-    		if(rc.canSenseLocation(fulfillmentCenterBuildSite)) {
-    			RobotInfo fulfillmentCenter = rc.senseRobotAtLocation(fulfillmentCenterBuildSite);
-    			if(fulfillmentCenter != null && fulfillmentCenter.getType() == RobotType.FULFILLMENT_CENTER) {
-    				System.out.println("Fulfillment center confirmed built!");
-    				minerData.setFulfillmentCenterBuilt(true);
-    				return;
-    			}
-    		}
-    		
-    		if(rc.getLocation().equals(fulfillmentCenterBuildSite) && rc.getTeamSoup() >= RobotType.FULFILLMENT_CENTER.cost) {
-    			//TODO: This rudimentary move is a bit of a risk, but it's intended to allow for the building of a fulfillment center to carry the enemies away.
-    			//We will likely need to add logic to make this work as desired, and may even need to draw upon other miners building other fulfillment centers.
-    			moveMinerFromHQ();
-    		} else if(rc.getLocation().isWithinDistanceSquared(fulfillmentCenterBuildSite, 3) && rc.getTeamSoup() >= RobotType.FULFILLMENT_CENTER.cost) {
-    			System.out.println("Attempting to build fulfillment center...");
-    			if(attemptFulfillmentCenterConstruction(rc.getLocation().directionTo(fulfillmentCenterBuildSite))) minerData.setFulfillmentCenterBuilt(true);
-    		} else if(!rc.getLocation().isWithinDistanceSquared(minerData.getSpawnerLocation(), 3)) {
-    			System.out.println("Routing to HQ...");
-    			routeTo(data.getSpawnerLocation());
-    			//TODO: Add logic to favor routing to locations that are closest to the most enemies.
-    		}
-    	} else {
-    		System.out.println("Fulfillment center confirmed built.");
-    		
-    		RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-    		System.out.println("Scouting nearby region yielded " + enemies.length + " enemies.");
-    		if(enemies.length < 2) minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
-    		else if(!rc.getLocation().isWithinDistanceSquared(minerData.getSpawnerLocation(), 3)) routeTo(minerData.getSpawnerLocation());
-    	}
+		if(senseUnitType(RobotType.NET_GUN, rc.getTeam().opponent()) != null) {
+			defensiveDesignSchoolBuild();
+			defensiveFulfillmentCenterBuild();
+		} else {
+			defensiveFulfillmentCenterBuild();
+			defensiveDesignSchoolBuild();
+		}
+		
+		defensiveHqBlock();
     }
+	
+	private void defensiveFulfillmentCenterBuild() throws GameActionException {
+		MapLocation fulfillmentCenterBuildSite = minerData.getFulfillmentCenterBuildSite();
+		if(rc.canSenseLocation(fulfillmentCenterBuildSite)) {
+			RobotInfo fulfillmentCenter = rc.senseRobotAtLocation(fulfillmentCenterBuildSite);
+			if(fulfillmentCenter != null && fulfillmentCenter.getType() == RobotType.FULFILLMENT_CENTER) {
+				System.out.println("Fulfillment center confirmed built!");
+				minerData.setFulfillmentCenterBuilt(true);
+				return;
+			}
+		}
+		
+		if(rc.getLocation().equals(fulfillmentCenterBuildSite) && rc.getTeamSoup() >= RobotType.FULFILLMENT_CENTER.cost) {
+			//TODO: This rudimentary move is a bit of a risk, but it's intended to allow for the building of a fulfillment center to carry the enemies away.
+			//We will likely need to add logic to make this work as desired, and may even need to draw upon other miners building other fulfillment centers.
+			moveMinerFromHQ();
+		} else if(rc.getLocation().isWithinDistanceSquared(fulfillmentCenterBuildSite, 3) && rc.getTeamSoup() >= RobotType.FULFILLMENT_CENTER.cost) {
+			System.out.println("Attempting to build fulfillment center...");
+			if(attemptFulfillmentCenterConstruction(rc.getLocation().directionTo(fulfillmentCenterBuildSite))) minerData.setFulfillmentCenterBuilt(true);
+		} else if(!rc.getLocation().isWithinDistanceSquared(minerData.getSpawnerLocation(), 3)) {
+			System.out.println("Routing to HQ...");
+			routeTo(data.getSpawnerLocation());
+			//TODO: Add logic to favor routing to locations that are closest to the most enemies.
+		}
+	}
+	
+	private void defensiveDesignSchoolBuild() throws GameActionException {
+		MapLocation designSchoolBuildSite = minerData.getDesignSchoolBuildSite();
+		if(rc.canSenseLocation(designSchoolBuildSite)) {
+			RobotInfo designSchool = rc.senseRobotAtLocation(designSchoolBuildSite);
+			if(designSchool != null && designSchool.getType() == RobotType.DESIGN_SCHOOL) {
+				System.out.println("Design school confirmed built!");
+				minerData.setDesignSchoolBuilt(true);
+				return;
+			}
+		}
+		
+		if(rc.getLocation().equals(designSchoolBuildSite) && rc.getTeamSoup() >= RobotType.DESIGN_SCHOOL.cost) {
+			//TODO: This rudimentary move is a bit of a risk, but it's intended to allow for the building of a fulfillment center to carry the enemies away.
+			//We will likely need to add logic to make this work as desired, and may even need to draw upon other miners building other fulfillment centers.
+			moveMinerFromHQ();
+		} else if(rc.getLocation().isWithinDistanceSquared(designSchoolBuildSite, 3) && rc.getTeamSoup() >= RobotType.DESIGN_SCHOOL.cost) {
+			System.out.println("Attempting to build fulfillment center...");
+			if(attemptDesignSchoolConstruction(rc.getLocation().directionTo(designSchoolBuildSite))) minerData.setDesignSchoolBuilt(true);
+		} else if(!rc.getLocation().isWithinDistanceSquared(minerData.getSpawnerLocation(), 3)) {
+			System.out.println("Routing to HQ...");
+			routeTo(data.getSpawnerLocation());
+			//TODO: Add logic to favor routing to locations that are closest to the most enemies.
+		}
+	}
 
+	private void defensiveHqBlock() throws GameActionException {
+		RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+		System.out.println("Scouting nearby region yielded " + enemies.length + " enemies.");
+		if(enemies.length < 2) minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+		else if(!rc.getLocation().isWithinDistanceSquared(minerData.getSpawnerLocation(), 3)) routeTo(minerData.getSpawnerLocation());
+	}
+	
 	/**
 	 * Miner whose soup carrying capacity is full
 	 * @throws GameActionException

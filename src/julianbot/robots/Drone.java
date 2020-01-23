@@ -168,7 +168,8 @@ public class Drone extends Scout {
 		MapLocation rcLoation = rc.getLocation();
 		
 		for(Direction direction : Direction.allDirections()) {
-			if(rc.senseFlooding(rcLoation.add(direction))) {
+			MapLocation potentialFloodLocation = rc.getLocation().add(direction);
+			if(rc.canSenseLocation(potentialFloodLocation) && rc.senseFlooding(potentialFloodLocation)) {
 				if(dropUnit(direction)) {
 					droneData.setHoldingEnemy(false);
 					return;
@@ -185,6 +186,10 @@ public class Drone extends Scout {
 				droneData.setHoldingEnemy(false);
 			}
 
+		} else {
+			//TODO: Add a clause to protect them from net guns.
+			continueSearchCautiously();
+			senseAdjacentFlooding();
 		}
 	}
 	
@@ -210,9 +215,37 @@ public class Drone extends Scout {
 				droneData.setHoldingCow(false);
 			}
 		} else {
-			//TODO: Add a clause to keep them from net guns.
-			continueSearch();
+			//TODO: Add a clause to protect them from net guns.
+			continueSearchCautiously();
+			senseAdjacentFlooding();
 		}
+	}
+	
+	public void continueSearchCautiously() throws GameActionException {
+		//The move function is deliberately unused here.
+		waitUntilReady();
+		
+		RobotInfo enemyHq = this.senseUnitType(RobotType.HQ, rc.getTeam().opponent());
+		RobotInfo[] netGuns = this.senseAllUnitsOfType(RobotType.NET_GUN, rc.getTeam().opponent());
+		MapLocation nextLocation = rc.getLocation().add(data.getSearchDirection());
+		
+		boolean inNetGunRange = enemyHq != null && enemyHq.getLocation().isWithinDistanceSquared(nextLocation, RobotType.NET_GUN.sensorRadiusSquared);
+		
+		if(!inNetGunRange) {
+			for(RobotInfo netGun : netGuns) {
+				if(netGun.getLocation().isWithinDistanceSquared(nextLocation, RobotType.NET_GUN.sensorRadiusSquared)) {
+					inNetGunRange = true;
+					break;
+				}
+			}
+		}
+		
+		if(rc.canMove(data.getSearchDirection()) && !rc.senseFlooding(nextLocation) && !inNetGunRange) {
+			rc.move(data.getSearchDirection());
+			return;
+		}
+
+		data.setSearchDirection(directions[(int) (Math.random() * directions.length)]);
 	}
 	
 	private void learnEnemyHqLocation() throws GameActionException {
@@ -426,12 +459,11 @@ public class Drone extends Scout {
 	}
 	
 	private void cargoSeekerProtocol() throws GameActionException {
-		boolean oughtPickUpCow = oughtPickUpCow();
 		boolean oughtPickUpLandscaper = oughtPickUpLandscaper();
 		
-		System.out.println("No unit held! Lift Cow? " + oughtPickUpCow + " Lift Landscaper? " + oughtPickUpLandscaper);
+		System.out.println("No unit held! Lift Landscaper? " + oughtPickUpLandscaper);
 		
-		if(senseUnitType(RobotType.COW) != null && oughtPickUpCow) {
+		if(senseUnitType(RobotType.COW) != null) {
 			System.out.println("Sensed a cow that ought be lifted.");
 			if(!pickUpUnit(RobotType.COW)) {
 				routeTo(droneData.getHqLocation());
@@ -475,17 +507,15 @@ public class Drone extends Scout {
 		}
 	}
 	
-	private boolean oughtPickUpCow() {
-		//Pick up the unit if we are closer to our own base than our opponent's.
-		//This check is just to prevent the drone from moving cows that are already nearer to the opponent's HQ.
-		MapLocation rcLocation = rc.getLocation();
-		return rcLocation.distanceSquaredTo(droneData.getSpawnerLocation()) < rcLocation.distanceSquaredTo(droneData.getEnemyHqLocation());
-	}
-	
 	private boolean oughtPickUpLandscaper() {		
 		//Pick up the unit if we are closer to our own base than our opponent's.
 		//This check is just to prevent the drone from dropping of a landscaper, then immediately detecting it and picking it up again.
 		//Also, don't pick up landscapers until there is a surplus so our wall doesn't stop rising.
+		
+		System.out.println("Spawner Location = " + data.getSpawnerLocation());
+		System.out.println("HQ Location = " + droneData.getHqLocation());
+		System.out.println("Enemy HQ Location = " + droneData.getEnemyHqLocation());
+		
 		MapLocation rcLocation = rc.getLocation();
 		return rcLocation.distanceSquaredTo(data.getSpawnerLocation()) < rcLocation.distanceSquaredTo(droneData.getEnemyHqLocation())
 				&& rc.senseNearbyRobots(droneData.getHqLocation(), 3, rc.getTeam()) != null;
