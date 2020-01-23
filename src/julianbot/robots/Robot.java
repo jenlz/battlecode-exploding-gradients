@@ -466,13 +466,18 @@ public class Robot {
 		} */
 		
 		//TODO: MAXIMO'S DOMAIN DO NOT TOUCH (FUTURE SITE OF BUG NAV)
-		if (bugNav(destination)) {return true;}
-
+		if (rc.canSenseLocation(destination)) {
+			//If all of these measures have failed, we'll need to use pathfinding to get around.
+			//However, just in case, we will allow for the previous location to be used next turn.
+			data.setPreviousLocation(rcLocation);
+			return pathfind(destination);
+		} else {
+			if (bugNav(destination)) {
+				return true;
+			}
+		}
 		
-		//If all of these measures have failed, we'll need to use pathfinding to get around.
-		//However, just in case, we will allow for the previous location to be used next turn.
-		data.setPreviousLocation(rcLocation);
-		return pathfind(destination);
+		return false;
 	}
 
 	/**
@@ -568,6 +573,7 @@ public class Robot {
 		} */
 		rc.setIndicatorLine(rc.getLocation().subtract(data.getSearchDirection()), rc.getLocation(), 102, 255, 255); //Teal line
 		data.setSearchDirection(rc.getLocation().directionTo(data.getObstacleLoc()));
+		rc.setIndicatorDot(data.getObstacleLoc(), 0, 0, 0);
 	}
 
 	/**
