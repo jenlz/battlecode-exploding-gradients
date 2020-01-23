@@ -493,24 +493,16 @@ public class Robot {
 		}
 
 		Direction dirToDest = rc.getLocation().directionTo(destination);
+		Direction dirToDestLeft = dirToDest.rotateLeft();
+		Direction dirToDestRight = dirToDest.rotateRight();
 		rc.setIndicatorDot(rc.getLocation().add(dirToDest), 255, 182, 193); // Pink dot
 		if (rc.getLocation().add(dirToDest).distanceSquaredTo(destination) < data.getClosestDist()) {
 			// If the next move toward the destination is closer than the closest its been
-			if (move(dirToDest)) {
-				//If you can move in that direction
-				data.setClosestDist(rc.getLocation().distanceSquaredTo(destination));
-				System.out.println("Moved to new closest location. Dist: " + data.getClosestDist());
-
-			} else if (rc.getLocation().add(dirToDest).equals(destination)) {
-				//TODO Check if building is in the way
-				// Prevents case where robot attempts to move onto occupied space which is its destination
-				System.out.println("Adjacent to destination");
-				data.setClosestDist(-1); // Should stop nav. But honestly probably doesn't
-				return true;
-
-			} else {
-				followLeftWall(dirToDest);
-			}
+			bugNavMove(destination, dirToDest);
+		} else if (rc.getLocation().add(dirToDestLeft).distanceSquaredTo(destination) < data.getClosestDist()) {
+			bugNavMove(destination, dirToDestLeft);
+		} else if (rc.getLocation().add(dirToDestRight).distanceSquaredTo(destination) < data.getClosestDist()) {
+			bugNavMove(destination, dirToDestRight);
 		} else {
 			followLeftWall(dirToDest);
 		}
@@ -521,6 +513,31 @@ public class Robot {
 			data.setClosestDist(-1);
 		}
 		return true;
+	}
+
+	/**
+	 * Tries to move and checks if adjacent to destination but cant move to dest
+	 * @param destination
+	 * @param dir
+	 * @return
+	 * @throws GameActionException
+	 */
+	public boolean bugNavMove(MapLocation destination, Direction dir) throws GameActionException {
+		if (move(dir)) {
+			//If you can move in that direction
+			data.setClosestDist(rc.getLocation().distanceSquaredTo(destination));
+			System.out.println("Moved to new closest location. Dist: " + data.getClosestDist());
+
+		} else if (rc.getLocation().add(dir).equals(destination)) {
+			//TODO Check if building is in the way
+			// Prevents case where robot attempts to move onto occupied space which is its destination
+			System.out.println("Adjacent to destination");
+			data.setClosestDist(-1); // Should stop nav. But honestly probably doesn't
+			return true;
+
+		} else {
+			followLeftWall(dir);
+		}
 	}
 
 	/**
