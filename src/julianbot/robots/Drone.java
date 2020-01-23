@@ -1,5 +1,8 @@
 package julianbot.robots;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -84,12 +87,18 @@ public class Drone extends Scout {
     		if(!rc.isCurrentlyHoldingUnit()) {
     			System.out.println("No unit held");
     			int distanceSquaredFromEnemyHq = rc.getLocation().distanceSquaredTo(droneData.getEnemyHqLocation());
+    			RobotInfo[] drownableEnemies = getDrownableEnemies();
+    			boolean potentialThreat = false;
+        		
+        		for(RobotInfo enemy : drownableEnemies) {
+        			if(enemy.getLocation().isWithinDistanceSquared(droneData.getHqLocation(), 25)) potentialThreat = true;
+        		}
     			
-    			//Distance checks are to prevent routing into the enemy HQ net gun's range.
-        		if(distanceSquaredFromEnemyHq > 25 && liftNearbyEnemies()) {
-        			/*Do nothing else.*/
-        		} else if(distanceSquaredFromEnemyHq > 25 && approachNearbyCows()) {
-        			liftNearbyCows();
+    			if(!rc.isCurrentlyHoldingUnit() && drownableEnemies.length > 0 && potentialThreat) {
+    				defenseDroneProtocol(drownableEnemies);
+    			} else if(distanceSquaredFromEnemyHq > 25 && approachNearbyCows()) {
+    				//Distance check is to prevent routing into the enemy HQ net gun's range.
+        			liftAdjacentCow();
         		} else {
         			System.out.println("Cargo seeking");
         			cargoSeekerProtocol();
@@ -105,7 +114,24 @@ public class Drone extends Scout {
     			attackPreparationProtocol();
     		}
     	} else {
-    		reconDroneProtocol();
+    		System.out.println("Needs to scout for enemy HQ");
+    		RobotInfo[] drownableEnemies = getDrownableEnemies();
+    		boolean potentialThreat = false;
+    		
+    		for(RobotInfo enemy : drownableEnemies) {
+    			if(enemy.getLocation().isWithinDistanceSquared(droneData.getHqLocation(), 25)) potentialThreat = true;
+    		}
+    		
+    		if(!rc.isCurrentlyHoldingUnit() && drownableEnemies.length > 0 && potentialThreat) {
+    			System.out.println("Sensed drownable enemy");
+    			defenseDroneProtocol(drownableEnemies);
+    		} else if(droneData.getHoldingEnemy()) {
+    			System.out.println("Going to drown enemy");
+    			drownEnemyProtocol();
+    		} else {
+    			System.out.println("No business with enemies -- can perform recon");
+    			reconDroneProtocol();
+    		}
     	}
 	}
 	
@@ -276,25 +302,22 @@ public class Drone extends Scout {
 		}
 	}
 	
-	private boolean liftNearbyEnemies() throws GameActionException {
-		if(senseUnitType(RobotType.LANDSCAPER,data.getOpponent())!=null && (senseUnitType(RobotType.HQ,data.getTeam())!=null || senseUnitType(RobotType.HQ,data.getOpponent())!=null)) {
-			if(!pickUpUnit(RobotType.LANDSCAPER, data.getOpponent())) {
-				if(senseUnitType(RobotType.HQ, data.getTeam())!=null)
-					routeTo(droneData.getHqLocation());
-				else
-					routeTo(droneData.getEnemyHqLocation());
-				return false;
-			} else {
-				droneData.setHoldingEnemy(true);
-				if(senseUnitType(RobotType.HQ, data.getTeam())!=null)
-					droneData.setEnemyFrom(data.getTeam());
-				else
-					droneData.setEnemyFrom(data.getOpponent());
-				return true;
-			}
+	private boolean approachNearbyEnemies() throws GameActionException {
+		RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+		if(enemies.length == 0) return false;
+		
+		System.out.println("ENEMY SPOTTED! KILL IT!");
+		
+		int[] enemySquaredDistances = new int[enemies.length];
+		for(int i = 0; i < enemies.length; i++) {
+			enemySquaredDistances[i] = enemies[i].getType().canBePickedUp() ? rc.getLocation().distanceSquaredTo(enemies[i].getLocation()) : Integer.MAX_VALUE;
 		}
 		
-		return false;
+		RobotInfo targetEnemy = enemies[NumberMath.indexOfLeast(enemySquaredDistances)];
+		
+		if(!targetEnemy.getType().canBePickedUp()) return false;
+		if(targetEnemy.getLocation().isWithinDistanceSquared(rc.getLocation(), 3)) return true;
+		return routeTo(targetEnemy.getLocation());
 	}
 	
 	private boolean liftAdjacentEnemy() throws GameActionException {
@@ -326,7 +349,7 @@ public class Drone extends Scout {
 		return routeTo(targetCow.getLocation());
 	}
 	
-	private boolean liftNearbyCows() throws GameActionException {
+	private boolean liftAdjacentCow() throws GameActionException {
 		if(!rc.isCurrentlyHoldingUnit()) {
 			RobotInfo[] cows = this.senseAllUnitsOfType(RobotType.COW, Team.NEUTRAL);
 			for(RobotInfo cow : cows) {
@@ -513,6 +536,48 @@ public class Drone extends Scout {
 		}
 	}
 	
+	private void defenseDroneProtocol(RobotInfo[] targets) throws GameActionException {
+		if(approachNearbyEnemies()) {
+			liftAdjacentEnemy();
+		}
+	}
+	
+	private boolean liftNearbyEnemies() throws GameActionException {
+		boolean landscaperNearby = senseUnitType(RobotType.LANDSCAPER,data.getOpponent())!=null;
+		boolean hqNearby = senseUnitType(RobotType.HQ,data.getTeam())!=null;
+		boolean enemyHqNearby = senseUnitType(RobotType.HQ,data.getOpponent())!=null;
+		
+		if(landscaperNearby && (hqNearby || enemyHqNearby)) {
+			if(!pickUpUnit(RobotType.LANDSCAPER, data.getOpponent())) {
+				if(hqNearby)
+					routeTo(droneData.getHqLocation());
+				else
+					routeTo(droneData.getEnemyHqLocation());
+				return false;
+			} else {
+				droneData.setHoldingEnemy(true);
+				if(hqNearby)
+					droneData.setEnemyFrom(data.getTeam());
+				else
+					droneData.setEnemyFrom(data.getOpponent());
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	private RobotInfo[] getDrownableEnemies() {
+		RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+		List<RobotInfo> drownableEnemies = new ArrayList<>();
+		
+		for(RobotInfo enemy : enemies) {
+			if(!enemy.type.canBePickedUp()) drownableEnemies.add(enemy);
+		}
+		
+		return drownableEnemies.toArray(new RobotInfo[0]);
+	}
+	
 	private void reconDroneProtocol() throws GameActionException {
 		if(!droneData.searchDestinationsDetermined()) {
 			droneData.calculateSearchDestinations(rc);
@@ -523,11 +588,12 @@ public class Drone extends Scout {
 		if(droneData.getEnemyHqLocation() != null) {
 			sendTransaction(10, Robot.Type.TRANSACTION_ENEMY_HQ_AT_LOC, droneData.getEnemyHqLocation());
 			System.out.println("Detected the HQ and sent a transaction!");
+		} else {
+			cautiouslyApproachHqLocation();
 		}
-		else cautiouslyApproachNetGun();
 	}
 	
-	private void cautiouslyApproachNetGun() throws GameActionException {
+	private void cautiouslyApproachHqLocation() throws GameActionException {
 		MapLocation searchDestination = droneData.getActiveSearchDestination();
 		int distanceSquared = rc.getLocation().distanceSquaredTo(searchDestination);
 		

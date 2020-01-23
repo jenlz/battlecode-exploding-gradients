@@ -81,6 +81,14 @@ public class FulfillmentCenter extends Robot {
 	}
 	
 	private boolean oughtBuildDrone() {
+		int numFriendlyDrones = this.senseNumberOfUnits(RobotType.DELIVERY_DRONE, rc.getTeam());
+		RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+		for(RobotInfo enemy : enemies) {
+			if(enemy.type.canBePickedUp()) {
+				return rc.getTeamSoup() >= RobotType.DELIVERY_DRONE.cost && numFriendlyDrones < 3;
+			}
+		}
+		
 		if(fulfillmentCenterData.isStableSoupIncomeConfirmed()) {
 			MapLocation hqLocation = fulfillmentCenterData.getHqLocation();
 			
