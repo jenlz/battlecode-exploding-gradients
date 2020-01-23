@@ -31,9 +31,11 @@ public class FulfillmentCenter extends Robot {
 		}
 
     	readTransactions();
-		
+    	
 		if(!fulfillmentCenterData.isStableSoupIncomeConfirmed()) confirmStableSoupIncome();
-    	if(oughtBuildDrone()) tryBuild(RobotType.DELIVERY_DRONE);
+		
+		if(buildDefensiveDrones()) return;
+    	if(oughtBuildDrone()) tryBuild();
 	}
 	
 	private void learnHQLocation() throws GameActionException {
@@ -80,15 +82,22 @@ public class FulfillmentCenter extends Robot {
 		}
 	}
 	
-	private boolean oughtBuildDrone() {
+	private boolean buildDefensiveDrones() throws GameActionException {
 		int numFriendlyDrones = this.senseNumberOfUnits(RobotType.DELIVERY_DRONE, rc.getTeam());
-		RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-		for(RobotInfo enemy : enemies) {
-			if(enemy.type.canBePickedUp()) {
-				return rc.getTeamSoup() >= RobotType.DELIVERY_DRONE.cost && numFriendlyDrones < 3;
+		
+		if(numFriendlyDrones < 3 && rc.getTeamSoup() >= RobotType.DELIVERY_DRONE.cost) {
+			RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+			for(RobotInfo enemy : enemies) {
+				if(enemy.type.canBePickedUp()) {
+					return forceBuild();
+				}
 			}
 		}
 		
+		return false;
+	}
+	
+	private boolean oughtBuildDrone() {
 		if(fulfillmentCenterData.isStableSoupIncomeConfirmed()) {
 			MapLocation hqLocation = fulfillmentCenterData.getHqLocation();
 			
@@ -126,17 +135,31 @@ public class FulfillmentCenter extends Robot {
      * @return true if a move was performed
      * @throws GameActionException
      */
-    private boolean tryBuild(RobotType type) throws GameActionException {
+    private boolean tryBuild() throws GameActionException {
     	Direction buildDirection = fulfillmentCenterData.getBuildDirection();
     	
     	waitUntilReady();
-        if (rc.isReady() && rc.canBuildRobot(type, buildDirection)) {
-            rc.buildRobot(type, buildDirection);
-            if(type == RobotType.DELIVERY_DRONE) fulfillmentCenterData.incrementDronesBuilt();
+        if(rc.canBuildRobot(RobotType.DELIVERY_DRONE, buildDirection)) {
+            rc.buildRobot(RobotType.DELIVERY_DRONE, buildDirection);
+            fulfillmentCenterData.incrementDronesBuilt();
             return true;
-        } 
+        }
         
         return false;
+    }
+    
+    private boolean forceBuild() throws GameActionException {
+    	waitUntilReady();
+    	
+    	for(Direction direction : Direction.allDirections()) {
+    		if(rc.canBuildRobot(RobotType.DELIVERY_DRONE, direction)) {
+                rc.buildRobot(RobotType.DELIVERY_DRONE, direction);
+                fulfillmentCenterData.incrementDronesBuilt();
+                return true;
+            }
+    	}
+    	
+    	return false;
     }
     
     private void confirmStableSoupIncome() throws GameActionException {
