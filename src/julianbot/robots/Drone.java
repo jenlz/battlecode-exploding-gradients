@@ -73,13 +73,21 @@ public class Drone extends Scout {
 		System.out.println("Enemy HQ Null Check");
     	if(droneData.getEnemyHqLocation() == null) learnEnemyHqLocation();
     	
+    	RobotInfo[] drownableEnemies = getDrownableEnemies();
+    	System.out.println("There are " + drownableEnemies.length + " drownable enem(ies).");
     	
     	if(droneData.receivedKillOrder()) {
     		System.out.println("Received kill order");
     		killDroneProtocol();
-		} else if(droneData.isAwaitingKillOrder()) {
+		} else if(checkPotentialThreats(drownableEnemies)) {
+			System.out.println("Found potential threat.");
+    		defenseDroneProtocol(drownableEnemies);
+    		return;
+    	} else if(droneData.isAwaitingKillOrder()) {
 			System.out.println("Idle hit man");
-			idleHitManDroneProtocol();
+			if(rc.isCurrentlyHoldingUnit() && droneData.getHoldingEnemy()) drownEnemyProtocol();
+			else if(rc.isCurrentlyHoldingUnit() && droneData.getHoldingCow()) drownCowProtocol();
+			else idleHitManDroneProtocol();
     	} else if(droneData.getEnemyHqLocation() != null) {
     		System.out.println("Sensing flooding");
     		senseAdjacentFlooding();    
@@ -87,16 +95,8 @@ public class Drone extends Scout {
     		if(!rc.isCurrentlyHoldingUnit()) {
     			System.out.println("No unit held");
     			int distanceSquaredFromEnemyHq = rc.getLocation().distanceSquaredTo(droneData.getEnemyHqLocation());
-    			RobotInfo[] drownableEnemies = getDrownableEnemies();
-    			boolean potentialThreat = false;
         		
-        		for(RobotInfo enemy : drownableEnemies) {
-        			if(enemy.getLocation().isWithinDistanceSquared(droneData.getHqLocation(), 25)) potentialThreat = true;
-        		}
-    			
-    			if(!rc.isCurrentlyHoldingUnit() && drownableEnemies.length > 0 && potentialThreat) {
-    				defenseDroneProtocol(drownableEnemies);
-    			} else if(distanceSquaredFromEnemyHq > 25 && approachNearbyCows()) {
+    			if(distanceSquaredFromEnemyHq > 25 && approachNearbyCows()) {
     				//Distance check is to prevent routing into the enemy HQ net gun's range.
         			liftAdjacentCow();
         		} else {
@@ -115,17 +115,9 @@ public class Drone extends Scout {
     		}
     	} else {
     		System.out.println("Needs to scout for enemy HQ");
-    		RobotInfo[] drownableEnemies = getDrownableEnemies();
-    		boolean potentialThreat = false;
     		
-    		for(RobotInfo enemy : drownableEnemies) {
-    			if(enemy.getLocation().isWithinDistanceSquared(droneData.getHqLocation(), 25)) potentialThreat = true;
-    		}
     		
-    		if(!rc.isCurrentlyHoldingUnit() && drownableEnemies.length > 0 && potentialThreat) {
-    			System.out.println("Sensed drownable enemy");
-    			defenseDroneProtocol(drownableEnemies);
-    		} else if(droneData.getHoldingEnemy()) {
+    		if(droneData.getHoldingEnemy()) {
     			System.out.println("Going to drown enemy");
     			drownEnemyProtocol();
     		} else {
@@ -158,6 +150,14 @@ public class Drone extends Scout {
 		} else {
 			droneData.setGridOffset(0, 0);
 		}
+	}
+	
+	private boolean checkPotentialThreats(RobotInfo[] drownableEnemies) {
+		for(RobotInfo enemy : drownableEnemies) {
+			if(enemy.getLocation().isWithinDistanceSquared(droneData.getHqLocation(), 25)) return true;
+		}
+		
+		return false;
 	}
 	
 	/**
@@ -538,6 +538,7 @@ public class Drone extends Scout {
 	
 	private void defenseDroneProtocol(RobotInfo[] targets) throws GameActionException {
 		if(approachNearbyEnemies()) {
+			System.out.println("Successful enemy approach! Attempting lift...");
 			liftAdjacentEnemy();
 		}
 	}
@@ -572,7 +573,7 @@ public class Drone extends Scout {
 		List<RobotInfo> drownableEnemies = new ArrayList<>();
 		
 		for(RobotInfo enemy : enemies) {
-			if(!enemy.type.canBePickedUp()) drownableEnemies.add(enemy);
+			if(enemy.type.canBePickedUp()) drownableEnemies.add(enemy);
 		}
 		
 		return drownableEnemies.toArray(new RobotInfo[0]);

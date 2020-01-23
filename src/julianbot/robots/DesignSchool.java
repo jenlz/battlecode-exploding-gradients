@@ -141,7 +141,9 @@ public class DesignSchool extends Robot {
 			sendTransaction(15, Type.TRANSACTION_PAUSE_LANDSCAPER_BUILDING, rc.getLocation());
 		}
 		
-		if(this.senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam()) >= 5) return;
+		int allyLandscapers = this.senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam());
+		int opposingLandscapers = this.senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam().opponent());
+		if((allyLandscapers >= 3 && allyLandscapers > opposingLandscapers) || allyLandscapers >= 5) return;
 		
 		Direction directionToTarget = rc.getLocation().directionTo(target);
 		designSchoolData.setBuildDirection(directionToTarget);

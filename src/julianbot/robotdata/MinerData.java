@@ -15,7 +15,7 @@ public class MinerData extends ScoutData {
 	public static final int ROLE_REFINERY_BUILDER = 3;
 	public static final int ROLE_VAPORATOR_BUILDER = 4;
 		private boolean vaporatorBuilderClaimed;
-	public static final int ROLE_DEFENSE_BUILDER = 5;
+	public static final int ROLE_DEFENSE = 5;
 	public static final int ROLE_BLOCK = 6;
 		private boolean northGunBuilt;
 		private boolean designSchoolBuilt;
