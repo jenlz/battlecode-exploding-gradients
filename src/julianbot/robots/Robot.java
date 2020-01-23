@@ -498,11 +498,11 @@ public class Robot {
 		rc.setIndicatorDot(rc.getLocation().add(dirToDest), 255, 182, 193); // Pink dot
 		if (rc.getLocation().add(dirToDest).distanceSquaredTo(destination) < data.getClosestDist()) {
 			// If the next move toward the destination is closer than the closest its been
-			bugNavMove(destination, dirToDest);
+			if (bugNavMove(destination, dirToDest)) {return true;}
 		} else if (rc.getLocation().add(dirToDestLeft).distanceSquaredTo(destination) < data.getClosestDist()) {
-			bugNavMove(destination, dirToDestLeft);
+			if (bugNavMove(destination, dirToDestLeft)) {return true;}
 		} else if (rc.getLocation().add(dirToDestRight).distanceSquaredTo(destination) < data.getClosestDist()) {
-			bugNavMove(destination, dirToDestRight);
+			if (bugNavMove(destination, dirToDestRight)) {return true;}
 		} else {
 			followLeftWall(dirToDest);
 		}
@@ -511,8 +511,9 @@ public class Robot {
 			// After robot moves, checks if it is now at its destination
 			System.out.println("Reached destination");
 			data.setClosestDist(-1);
+			return true;
 		}
-		return true;
+		return false;
 	}
 
 	/**
@@ -538,6 +539,7 @@ public class Robot {
 		} else {
 			followLeftWall(dir);
 		}
+		return false;
 	}
 
 	/**
