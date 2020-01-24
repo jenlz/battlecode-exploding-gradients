@@ -9,13 +9,19 @@ import julianbot.utils.pathfinder.MapGraph;
 
 public class RobotData {
 
+	//GENERAL
 	protected final Team team;
 	protected final Team opponent;
+	protected MapLocation spawnLocation;
 	protected MapLocation spawnerLocation;
+	
+	//ROUTING
 	private MapLocation previousLocation;
 	protected MapGraph mapGraph;
 		protected Direction[] path;
 		protected int pathProgression;
+	
+	//TRANSACTIONS
 	private boolean hasPendingTransaction;
 		private Robot.Type pendingTransactionType;
 		private MapLocation pendingTransactionLocation;
@@ -26,15 +32,28 @@ public class RobotData {
 	private int bugNavClosestDist;
 	private MapLocation obstacleLoc;
 	private MapLocation currentDestination;
-
+	
+	//WALL DIMENSIONS
+	private int wallOffsetXMin, wallOffsetXMax, wallOffsetYMin, wallOffsetYMax;
+	private boolean baseOnEdge;
+	
+	//BUILDING
+	private MapLocation designSchoolBuildSite;
+	private MapLocation fulfillmentCenterBuildSite;
+	private MapLocation vaporatorBuildMinerLocation;
+		private MapLocation vaporatorBuildSite;
+	
 	public RobotData(RobotController rc, MapLocation spawnerLocation) {
 		team = rc.getTeam();
 		opponent = team.opponent();
+		spawnLocation = rc.getLocation();
+		setSpawnerLocation(spawnerLocation);
 		previousLocation = rc.getLocation();
 		currentDestination = rc.getLocation();
 		hasPendingTransaction = false;
 		bugNavClosestDist = -1;
 		setSpawnerLocation(spawnerLocation);
+
 		if (!rc.getType().isBuilding()) {
 			if(spawnerLocation == null || rc.getLocation() == null) {
 				System.out.println("RobotData constructor on round " + rc.getRoundNum() + ":");
@@ -46,12 +65,117 @@ public class RobotData {
 		}
 	}
 	
+	public void initializeWallData(MapLocation hqLocation, int mapWidth, int mapHeight) {		
+		boolean leftEdge = hqLocation.x <= 0;
+		boolean rightEdge = hqLocation.x >= mapWidth - 1;
+		boolean topEdge = hqLocation.y >= mapHeight - 1;
+		boolean bottomEdge = hqLocation.y <= 0;
+		setBaseOnEdge(leftEdge || rightEdge || topEdge || bottomEdge);
+		
+		if(leftEdge) {
+			//The HQ is next to the western wall.
+			if(bottomEdge) {
+				//Lucky us, the HQ is also next to the southern wall.
+				setDesignSchoolBuildSite(hqLocation.translate(0, 2));
+				setFulfillmentCenterBuildSite(hqLocation.translate(1, 0));
+				setVaporatorBuildMinerLocation(hqLocation.translate(1, 1));
+				setVaporatorBuildSite(hqLocation.translate(0, 1));
+				setWallOffsetBounds(0, 2, 0, 3);
+			} else if(topEdge) {
+				//Lucky us, the HQ is also next to the northern wall.
+				setDesignSchoolBuildSite(hqLocation.translate(0, -2));
+				setFulfillmentCenterBuildSite(hqLocation.translate(1, 0));
+				setVaporatorBuildMinerLocation(hqLocation.translate(1, -1));
+				setVaporatorBuildSite(hqLocation.translate(0, -1));
+				setWallOffsetBounds(0, 2, -3, 0);
+			} else {
+				//The HQ is next to the western wall, but not cornered.
+				setDesignSchoolBuildSite(hqLocation.translate(0, 2));
+				setFulfillmentCenterBuildSite(hqLocation.translate(1, 0));
+				setVaporatorBuildMinerLocation(hqLocation.translate(1, 1));
+				setVaporatorBuildSite(hqLocation.translate(0, 1));
+				setWallOffsetBounds(0, 2, -1, 3);
+			}
+		} else if(rightEdge) {
+			//The HQ is next to the eastern wall.
+			if(bottomEdge) {
+				//Lucky us, the HQ is also next to the southern wall.
+				setDesignSchoolBuildSite(hqLocation.translate(0, 2));
+				setFulfillmentCenterBuildSite(hqLocation.translate(-1, 0));
+				setVaporatorBuildMinerLocation(hqLocation.translate(-1, 1));
+				setVaporatorBuildSite(hqLocation.translate(0, 1));
+				setWallOffsetBounds(-2, 0, 0, 3);
+			} else if(topEdge) {
+				//Lucky us, the HQ is also next to the northern wall.
+				setDesignSchoolBuildSite(hqLocation.translate(0, -2));
+				setFulfillmentCenterBuildSite(hqLocation.translate(-1, 0));
+				setVaporatorBuildMinerLocation(hqLocation.translate(-1, -1));
+				setVaporatorBuildSite(hqLocation.translate(0, -1));
+				setWallOffsetBounds(-2, 0, -3, 0);
+			} else {
+				setDesignSchoolBuildSite(hqLocation.translate(0, -2));
+				setFulfillmentCenterBuildSite(hqLocation.translate(-1, 0));
+				setVaporatorBuildMinerLocation(hqLocation.translate(-1, -1));
+				setVaporatorBuildSite(hqLocation.translate(0, -1));
+				setWallOffsetBounds(-2, 0, -3, 1);
+			}
+		} else if(topEdge) {
+			//The HQ is next to the northern wall, but not cornered.
+			setDesignSchoolBuildSite(hqLocation.translate(2, 0));
+			setFulfillmentCenterBuildSite(hqLocation.translate(0, -1));
+			setVaporatorBuildMinerLocation(hqLocation.translate(1, -1));
+			setVaporatorBuildSite(hqLocation.translate(1, 0));
+			setWallOffsetBounds(-1, 3, 0, -2);
+		} else if(bottomEdge) {
+			//The HQ is next to the southern wall, but not cornered.
+			setDesignSchoolBuildSite(hqLocation.translate(-2, 0));
+			setFulfillmentCenterBuildSite(hqLocation.translate(0, 1));
+			setVaporatorBuildMinerLocation(hqLocation.translate(-1, 1));
+			setVaporatorBuildSite(hqLocation.translate(-1, 0));
+			setWallOffsetBounds(-3, 1, 0, 2);
+		} else {
+			setDesignSchoolBuildSite(hqLocation.translate(-1, 0));
+			setFulfillmentCenterBuildSite(hqLocation.translate(1, 0));
+			setVaporatorBuildMinerLocation(hqLocation.translate(0, -1));
+			setVaporatorBuildSite(hqLocation.translate(1, -1));
+			setWallOffsetBounds(-2, 2, -2, 2);
+		}
+		
+		if(leftEdge) {
+			//The HQ is next to the western wall.
+			if(bottomEdge) setWallOffsetBounds(0, 2, 0, 3);
+			else if(topEdge) setWallOffsetBounds(0, 2, -3, 0);
+			else setWallOffsetBounds(0, 2, -1, 3);
+		} else if(rightEdge) {
+			//The HQ is next to the eastern wall.
+			if(bottomEdge) setWallOffsetBounds(-2, 0, 0, 3);
+			else if(topEdge) setWallOffsetBounds(-2, 0, -3, 0);
+			else setWallOffsetBounds(-2, 0, -3, 1);
+		} else if(topEdge) {
+			//The HQ is next to the northern wall, but not cornered.
+			setWallOffsetBounds(-1, 3, 0, -2);
+		} else if(bottomEdge) {
+			//The HQ is next to the southern wall, but not cornered.
+			setWallOffsetBounds(-3, 1, 0, 2);
+		} else {
+			setWallOffsetBounds(-2, 2, -2, 2);
+		}
+	}
+	
 	public Team getTeam() {
 		return team;
 	}
 	
 	public Team getOpponent() {
 		return opponent;
+	}
+	
+	public MapLocation getSpawnLocation() {
+		return spawnLocation;
+	}
+
+	public void setSpawnLocation(MapLocation spawnLocation) {
+		this.spawnLocation = spawnLocation;
 	}
 
 	public int getClosestDist() {return bugNavClosestDist;}
@@ -172,4 +296,68 @@ public class RobotData {
 	public void setCurrentDestination(MapLocation currentDestination) {
 		this.currentDestination = currentDestination;
 	}
+	
+	public boolean isBaseOnEdge() {
+		return baseOnEdge;
+	}
+
+	public void setBaseOnEdge(boolean baseOnEdge) {
+		this.baseOnEdge = baseOnEdge;
+	}
+	
+	public int getWallOffsetXMin() {
+		return wallOffsetXMin;
+	}
+
+	public int getWallOffsetXMax() {
+		return wallOffsetXMax;
+	}
+
+	public int getWallOffsetYMin() {
+		return wallOffsetYMin;
+	}
+
+	public int getWallOffsetYMax() {
+		return wallOffsetYMax;
+	}
+	
+	public void setWallOffsetBounds(int wallOffsetXMin, int wallOffsetXMax, int wallOffsetYMin, int wallOffsetYMax) {
+		this.wallOffsetXMin = wallOffsetXMin;
+		this.wallOffsetXMax = wallOffsetXMax;
+		this.wallOffsetYMin = wallOffsetYMin;
+		this.wallOffsetYMax = wallOffsetYMax;
+	}
+
+	public MapLocation getDesignSchoolBuildSite() {
+		return designSchoolBuildSite;
+	}
+
+	public void setDesignSchoolBuildSite(MapLocation designSchoolBuildSite) {
+		this.designSchoolBuildSite = designSchoolBuildSite;
+	}
+
+	public MapLocation getFulfillmentCenterBuildSite() {
+		return fulfillmentCenterBuildSite;
+	}
+
+	public void setFulfillmentCenterBuildSite(MapLocation fulfillmentCenterBuildSite) {
+		this.fulfillmentCenterBuildSite = fulfillmentCenterBuildSite;
+	}
+
+	public MapLocation getVaporatorBuildMinerLocation() {
+		return vaporatorBuildMinerLocation;
+	}
+
+	public void setVaporatorBuildMinerLocation(MapLocation vaporatorBuildMinerLocation) {
+		this.vaporatorBuildMinerLocation = vaporatorBuildMinerLocation;
+	}
+
+	public MapLocation getVaporatorBuildSite() {
+		return vaporatorBuildSite;
+	}
+
+	public void setVaporatorBuildSite(MapLocation vaporatorBuildSite) {
+		this.vaporatorBuildSite = vaporatorBuildSite;
+	}
+	
 }

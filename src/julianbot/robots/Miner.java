@@ -26,103 +26,13 @@ public class Miner extends Scout {
 		this.minerData = (MinerData) this.data;
 	}
 	
-	private void initializeBuildSites() {
-		MapLocation hqLocation = data.getSpawnerLocation();
-		
-		boolean leftEdge = hqLocation.x <= 0;
-		boolean rightEdge = hqLocation.x >= rc.getMapWidth() - 1;
-		boolean topEdge = hqLocation.y >= rc.getMapHeight() - 1;
-		boolean bottomEdge = hqLocation.y <= 0;
-		minerData.setBaseOnEdge(leftEdge || rightEdge || topEdge || bottomEdge);
-		
-		if(leftEdge) {
-			//The HQ is next to the western wall.
-			if(bottomEdge) {
-				//Lucky us, the HQ is also next to the southern wall.
-				minerData.setDesignSchoolBuildSite(hqLocation.translate(0, 2));
-				minerData.setFulfillmentCenterBuildSite(hqLocation.translate(1, 0));
-				minerData.setVaporatorBuildMinerLocation(hqLocation.translate(1, 1));
-				minerData.setVaporatorBuildSite(hqLocation.translate(0, 1));
-			} else if(topEdge) {
-				//Lucky us, the HQ is also next to the northern wall.
-				minerData.setDesignSchoolBuildSite(hqLocation.translate(0, -2));
-				minerData.setFulfillmentCenterBuildSite(hqLocation.translate(1, 0));
-				minerData.setVaporatorBuildMinerLocation(hqLocation.translate(1, -1));
-				minerData.setVaporatorBuildSite(hqLocation.translate(0, -1));
-			} else {
-				//The HQ is next to the western wall, but not cornered.
-				minerData.setDesignSchoolBuildSite(hqLocation.translate(0, 2));
-				minerData.setFulfillmentCenterBuildSite(hqLocation.translate(1, 0));
-				minerData.setVaporatorBuildMinerLocation(hqLocation.translate(1, 1));
-				minerData.setVaporatorBuildSite(hqLocation.translate(0, 1));
-			}
-		} else if(rightEdge) {
-			//The HQ is next to the eastern wall.
-			if(bottomEdge) {
-				//Lucky us, the HQ is also next to the southern wall.
-				minerData.setDesignSchoolBuildSite(hqLocation.translate(0, 2));
-				minerData.setFulfillmentCenterBuildSite(hqLocation.translate(-1, 0));
-				minerData.setVaporatorBuildMinerLocation(hqLocation.translate(-1, 1));
-				minerData.setVaporatorBuildSite(hqLocation.translate(0, 1));
-			} else if(topEdge) {
-				//Lucky us, the HQ is also next to the northern wall.
-				minerData.setDesignSchoolBuildSite(hqLocation.translate(0, -2));
-				minerData.setFulfillmentCenterBuildSite(hqLocation.translate(-1, 0));
-				minerData.setVaporatorBuildMinerLocation(hqLocation.translate(-1, -1));
-				minerData.setVaporatorBuildSite(hqLocation.translate(0, -1));
-			} else {
-				minerData.setDesignSchoolBuildSite(hqLocation.translate(0, -2));
-				minerData.setFulfillmentCenterBuildSite(hqLocation.translate(-1, 0));
-				minerData.setVaporatorBuildMinerLocation(hqLocation.translate(-1, -1));
-				minerData.setVaporatorBuildSite(hqLocation.translate(0, -1));
-			}
-		} else if(topEdge) {
-			//The HQ is next to the northern wall, but not cornered.
-			minerData.setDesignSchoolBuildSite(hqLocation.translate(2, 0));
-			minerData.setFulfillmentCenterBuildSite(hqLocation.translate(0, -1));
-			minerData.setVaporatorBuildMinerLocation(hqLocation.translate(1, -1));
-			minerData.setVaporatorBuildSite(hqLocation.translate(1, 0));
-		} else if(bottomEdge) {
-			//The HQ is next to the southern wall, but not cornered.
-			minerData.setDesignSchoolBuildSite(hqLocation.translate(-2, 0));
-			minerData.setFulfillmentCenterBuildSite(hqLocation.translate(0, 1));
-			minerData.setVaporatorBuildMinerLocation(hqLocation.translate(-1, 1));
-			minerData.setVaporatorBuildSite(hqLocation.translate(-1, 0));
-		} else {
-			minerData.setDesignSchoolBuildSite(hqLocation.translate(-1, 0));
-			minerData.setFulfillmentCenterBuildSite(hqLocation.translate(1, 0));
-			minerData.setVaporatorBuildMinerLocation(hqLocation.translate(0, -1));
-			minerData.setVaporatorBuildSite(hqLocation.translate(1, -1));
-		}
-		
-		if(leftEdge) {
-			//The HQ is next to the western wall.
-			if(bottomEdge) minerData.setWallOffsetBounds(0, 2, 0, 3);
-			else if(topEdge) minerData.setWallOffsetBounds(0, 2, -3, 0);
-			else minerData.setWallOffsetBounds(0, 2, -1, 3);
-		} else if(rightEdge) {
-			//The HQ is next to the eastern wall.
-			if(bottomEdge) minerData.setWallOffsetBounds(-2, 0, 0, 3);
-			else if(topEdge) minerData.setWallOffsetBounds(-2, 0, -3, 0);
-			else minerData.setWallOffsetBounds(-2, 0, -3, 1);
-		} else if(topEdge) {
-			//The HQ is next to the northern wall, but not cornered.
-			minerData.setWallOffsetBounds(-1, 3, 0, -2);
-		} else if(bottomEdge) {
-			//The HQ is next to the southern wall, but not cornered.
-			minerData.setWallOffsetBounds(-3, 1, 0, 2);
-		} else {
-			minerData.setWallOffsetBounds(-2, 2, -2, 2);
-		}
-	}
-
 	@Override
 	public void run() throws GameActionException {
 		super.run();
 		
     	if(turnCount == 1) {
     		discernRole();
-    		initializeBuildSites();
+    		minerData.initializeWallData(data.getSpawnerLocation(), rc.getMapWidth(), rc.getMapHeight());
     	}
     	
     	if(oughtSelfDestruct()) {
@@ -179,7 +89,7 @@ public class Miner extends Scout {
 		}
 		
 		//TODO: On the wall detection for edge-case maps.
-		return (this.senseUnitType(RobotType.LANDSCAPER, rc.getTeam(), 3) != null && isOnWall());
+		return (this.senseUnitType(RobotType.LANDSCAPER, rc.getTeam(), 3) != null && isOnWall(rc.getLocation(), minerData.getSpawnerLocation()));
 	}
 	
 	/**
@@ -236,7 +146,7 @@ public class Miner extends Scout {
     
     private void refineryMinerProtocol() throws GameActionException {
 		System.out.println("refinery protocol");
-
+		
 		//If we have found another refinery via reading transactions, go back to soup mining.
 		//TODO: Should we only accept refineries within a certain distance? Is it worth paying 200 more soup?
 		for(MapLocation refineryLocation : minerData.getRefineryLocs()) {
@@ -253,7 +163,7 @@ public class Miner extends Scout {
 			return;
 		}
 		
-		if(isOnWall()) {
+		if(isOnWall(rc.getLocation(), minerData.getSpawnerLocation())) {
 			//Move away from range of the wall.
 			moveMinerFromHQ();
 			return;
@@ -313,7 +223,11 @@ public class Miner extends Scout {
 		if(!rc.getLocation().equals(vaporatorBuildMinerLocation)) {
 			routeTo(vaporatorBuildMinerLocation);
 			return;
-		} else if(oughtBuildVaporator()) {
+		} else if(!canSenseHubDesignSchool() && rc.getLocation().isWithinDistanceSquared(minerData.getDesignSchoolBuildSite(), 3)) {
+			attemptDesignSchoolConstruction(rc.getLocation().directionTo(minerData.getDesignSchoolBuildSite()));
+		} else if(!canSenseHubFulfillmentCenter() && rc.getLocation().isWithinDistanceSquared(minerData.getFulfillmentCenterBuildSite(), 3)) {
+			attemptFulfillmentCenterConstruction(rc.getLocation().directionTo(minerData.getFulfillmentCenterBuildSite()));
+		} if(oughtBuildVaporator()) {
 	    	attemptVaporatorConstruction();
 	    	return;
     	}
@@ -424,7 +338,7 @@ public class Miner extends Scout {
     		} else {
     			minerData.setVaporatorBuilderClaimed(true);
     			
-    			if(isOnWall()) {
+    			if(isOnWall(rc.getLocation(), minerData.getSpawnerLocation())) {
 		        	moveMinerFromHQ();
 		        	minerData.removeRefineryLoc(data.getSpawnerLocation());
 		        	if(minerData.getRefineryLocs().size() == 0) {
@@ -443,7 +357,7 @@ public class Miner extends Scout {
     		} else {
     			minerData.setVaporatorBuilderClaimed(true);
     			
-    			if(isOnWall()){
+    			if(isOnWall(rc.getLocation(), minerData.getSpawnerLocation())){
 	    			moveMinerFromHQ();
 	    			return;
 	    		}
@@ -472,7 +386,7 @@ public class Miner extends Scout {
 	
 	private boolean oughtBecomeVaporatorMiner() throws GameActionException {
 		MapLocation vaporatorBuildMinerLocation = minerData.getVaporatorBuildMinerLocation();
-		RobotInfo buildSiteOccupant = rc.canSenseLocation(vaporatorBuildMinerLocation) ? rc.senseRobotAtLocation(vaporatorBuildMinerLocation) : null;
+		RobotInfo buildSiteOccupant = (rc.canSenseLocation(vaporatorBuildMinerLocation) && !rc.getLocation().equals(vaporatorBuildMinerLocation)) ? rc.senseRobotAtLocation(vaporatorBuildMinerLocation) : null;
 				
 		return !minerData.isVaporatorBuilderClaimed() && (buildSiteOccupant == null || buildSiteOccupant.getType() != RobotType.MINER) && isClosestMinerTo(vaporatorBuildMinerLocation);
 	}
@@ -502,29 +416,6 @@ public class Miner extends Scout {
 		}
 		
 		return false;
-	}
-	
-	private boolean isOnWall() {
-		MapLocation hqLocation = minerData.getHqLocation();
-    	
-    	int minDx = minerData.getWallOffsetXMin();
-    	int maxDx = minerData.getWallOffsetXMax();
-    	int minDy = minerData.getWallOffsetYMin();
-    	int maxDy = minerData.getWallOffsetYMax();
-    	
-    	int dx = rc.getLocation().x - hqLocation.x;
-    	int dy = rc.getLocation().y - hqLocation.y;
-    	
-    	boolean dxOnBound = (dx == minDx || dx == maxDx);
-    	boolean dyInRange = minDy <= dy && dy <= maxDy;
-    	if(dxOnBound && dyInRange) return true;
-    	
-    	
-    	boolean dyOnBound = (dy == minDy || dy == maxDy);
-    	boolean dxInRange = minDx <= dx && dx <= maxDx;
-    	if(dyOnBound && dxInRange) return true;
-    	
-    	return false;
 	}
 	
 	private boolean isClosestMinerTo(MapLocation location) {
