@@ -33,7 +33,7 @@ public class RobotData {
 		previousLocation = rc.getLocation();
 		currentDestination = rc.getLocation();
 		hasPendingTransaction = false;
-		bugNavClosestDist = -1;
+		bugNavClosestDist = Integer.MAX_VALUE;
 		setSpawnerLocation(spawnerLocation);
 		if (!rc.getType().isBuilding()) {
 			if(spawnerLocation == null || rc.getLocation() == null) {

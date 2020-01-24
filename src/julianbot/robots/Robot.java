@@ -486,10 +486,10 @@ public class Robot {
 
 		if (data.getCurrentDestination() != destination) {
 			data.setCurrentDestination(destination);
-			data.setClosestDist(-1);
+			data.setClosestDist(Integer.MAX_VALUE);
 		}
 
-		if (data.getClosestDist() == -1) {
+		if (data.getClosestDist() == Integer.MAX_VALUE) {
 			System.out.println("Initializing closestDist");
 			data.setClosestDist(rc.getLocation().distanceSquaredTo(destination));
 		}
@@ -506,13 +506,19 @@ public class Robot {
 		} else if (rc.getLocation().add(dirToDestRight).distanceSquaredTo(destination) < data.getClosestDist()) {
 			if (bugNavMove(destination, dirToDestRight)) {return true;}
 		} else {
-			followLeftWall(dirToDest);
+			int leftWallDist = rc.getLocation().add(data.getSearchDirection().rotateRight()).distanceSquaredTo(destination);
+			int rightWallDist = rc.getLocation().add(data.getSearchDirection().rotateLeft()).distanceSquaredTo(destination);
+			if (leftWallDist < rightWallDist) {
+				followLeftWall(dirToDest);
+			} else {
+				followRightWall(dirToDest);
+			}
 		}
 
 		if (rc.getLocation().equals(destination)) {
 			// After robot moves, checks if it is now at its destination
 			System.out.println("Reached destination");
-			data.setClosestDist(-1);
+			data.setClosestDist(Integer.MAX_VALUE);
 			return true;
 		}
 		return false;
@@ -536,7 +542,7 @@ public class Robot {
 			//TODO Check if building is in the way
 			// Prevents case where robot attempts to move onto occupied space which is its destination
 			System.out.println("Adjacent to destination");
-			data.setClosestDist(-1); // Should stop nav. But honestly probably doesn't
+			data.setClosestDist(Integer.MAX_VALUE); // Should stop nav. But honestly probably doesn't
 			return true;
 
 		} else {
