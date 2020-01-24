@@ -4,15 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import battlecode.common.Clock;
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
-import battlecode.common.Team;
-import battlecode.common.Transaction;
+import battlecode.common.*;
 import julianbot.robotdata.RobotData;
 import julianbot.utils.pathfinder.Pathfinder;
 
@@ -619,6 +611,29 @@ public class Robot {
 		}
 		rc.setIndicatorLine(rc.getLocation().subtract(data.getSearchDirection()), rc.getLocation(), 102, 255, 255); //Teal line
 		data.setSearchDirection(rc.getLocation().directionTo(data.getObstacleLoc()));
+	}
+
+	/**
+	 * Used with bugNav to test whether the robot could move in direction if it was hypothetically in a certain location. Ignores isReady condition of normal canMove.
+	 * @return
+	 */
+	public boolean simulateCanMove(MapLocation currentLoc, Direction dirToMove) throws GameActionException {
+		MapLocation locToMove = currentLoc.add(dirToMove);
+		if (rc.getType().isBuilding() || !rc.onTheMap(locToMove)) {
+			// If unit is building or location moving to isn't on the map
+			return false;
+		} else if (rc.senseRobotAtLocation(locToMove) != null) {
+			// If the location is occupied by a robot
+			return false;
+		} else if (rc.canSenseLocation(locToMove) && rc.canSenseLocation(currentLoc)) {
+			// If locToMove is not flooded and the elevation difference is not too great
+			int elevationDiff = rc.senseElevation(locToMove) - rc.senseElevation(currentLoc);
+			if (rc.senseFlooding(locToMove) || Math.abs(elevationDiff) > GameConstants.MAX_DIRT_DIFFERENCE) {
+				return false;
+			}
+		} else {
+			return true;
+		}
 	}
 
 	/**
