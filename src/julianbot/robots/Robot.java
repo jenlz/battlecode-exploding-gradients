@@ -352,6 +352,10 @@ public class Robot {
 		//The move function is deliberately unused here.
 		waitUntilReady();
 
+		if (data.getSearchDirection() == null) {
+			data.setSearchDirection(data.getSpawnerLocation().directionTo(rc.getLocation()));
+		}
+
 		if(rc.canMove(data.getSearchDirection()) && !rc.senseFlooding(rc.getLocation().add(data.getSearchDirection()))) {
 			rc.move(data.getSearchDirection());
 			return;
@@ -361,7 +365,7 @@ public class Robot {
 	}
 
 	/**
-	 * Moves in search direction, returns false if unable to.
+	 * Moves in search direction, returns false if unable to. Used in bugNav
 	 * @return
 	 * @throws GameActionException
 	 */
