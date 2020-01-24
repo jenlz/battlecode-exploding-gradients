@@ -347,6 +347,21 @@ public class Drone extends Scout {
 			if(!droneData.getHoldingEnemy() && !droneData.getHoldingCow()) {
 				//Every drone should replace their landscaper onto the wall until it is time to attack.
 				dropUnit(rc.getLocation().directionTo(droneData.getHqLocation()));
+			} else if(droneData.getHoldingEnemy() || droneData.getHoldingCow()) {
+				Direction adjacentFloodingDirection = getAdjacentFloodingDirection();
+				if(adjacentFloodingDirection != null) {
+					dropUnit(adjacentFloodingDirection);
+				}
+			}
+		} else {
+			RobotInfo[] drownableEnemies = getDrownableEnemies();
+			for(RobotInfo enemy : drownableEnemies) {
+				if(rc.getLocation().isWithinDistanceSquared(enemy.getLocation(), 3)) {
+					if(pickUpUnit(enemy)) {
+						droneData.setHoldingEnemy(true);
+						break;
+					}
+				}
 			}
 		}
 		
