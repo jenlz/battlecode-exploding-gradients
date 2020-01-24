@@ -14,7 +14,6 @@ import julianbot.utils.NumberMath;
 public class Landscaper extends Robot {
 
 	private static final int DEFAULT_PATTERN_ARRAY_SHIFT = 2;
-	private static final int PATTERN_ARRAY_DIMENSION = 5;
 	private int gridXShift;
 	private int gridYShift;
 	
@@ -83,7 +82,9 @@ public class Landscaper extends Robot {
 		
     	if(turnCount == 1) {
     		learnHQLocation();
+    		landscaperData.initializeWallData(landscaperData.getHqLocation(), rc.getMapWidth(), rc.getMapHeight());
     		determineWallDirections();
+    		determineHqElevation();
     	}
     	
     	discernAttackRole();
@@ -146,26 +147,11 @@ public class Landscaper extends Robot {
 		} else {
 			gridXShift = gridYShift = DEFAULT_PATTERN_ARRAY_SHIFT;
 		}
-		
-		if(leftEdge) {
-			//The HQ is next to the western wall.
-			if(bottomEdge) landscaperData.setWallOffsetBounds(0, 2, 0, 3);
-			else if(topEdge) landscaperData.setWallOffsetBounds(0, 2, -3, 0);
-			else landscaperData.setWallOffsetBounds(0, 2, -1, 3);
-		} else if(rightEdge) {
-			//The HQ is next to the eastern wall.
-			if(bottomEdge) landscaperData.setWallOffsetBounds(-2, 0, 0, 3);
-			else if(topEdge) landscaperData.setWallOffsetBounds(-2, 0, -3, 0);
-			else landscaperData.setWallOffsetBounds(-2, 0, -3, 1);
-		} else if(topEdge) {
-			//The HQ is next to the northern wall, but not cornered.
-			landscaperData.setWallOffsetBounds(-1, 3, 0, -2);
-		} else if(bottomEdge) {
-			//The HQ is next to the southern wall, but not cornered.
-			landscaperData.setWallOffsetBounds(-3, 1, 0, 2);
-		} else {
-			landscaperData.setWallOffsetBounds(-2, 2, -2, 2);
-		}
+	}
+	
+	private void determineHqElevation() throws GameActionException {
+		if(!rc.canSenseLocation(landscaperData.getHqLocation())) return;
+		landscaperData.setHqElevation(rc.senseElevation(landscaperData.getHqLocation()));
 	}
 	
 	private void toggleDirection() {
@@ -190,62 +176,21 @@ public class Landscaper extends Robot {
 		int gridX = dx + gridXShift;
 		int gridY = -dy + gridYShift;
 		
-		if(gridX < 0 || gridX >= PATTERN_ARRAY_DIMENSION || gridY < 0 || gridY >= PATTERN_ARRAY_DIMENSION) {
+		if(!isOnWall(rcLocation, hqLocation) && !isWithinWall(rcLocation, hqLocation)) {
 			//TODO: There's probably a better way to handle this, especially after we start clearing out dirt around our HQ to make room for build sites.
 			//However, this will have to do for now.
 			landscaperData.setCurrentRole(LandscaperData.ATTACK);
 			return;
 		}
 		
-		boolean withinWall = isWithinWall();
-		
 		MapLocation nextLocation = rc.getLocation().add(movePattern[gridY][gridX]);
 		boolean elevationDifferenceHigh = rc.onTheMap(nextLocation) ? rc.senseElevation(nextLocation) - rc.senseElevation(rc.getLocation()) > GameConstants.MAX_DIRT_DIFFERENCE : true;
-		System.out.println("Within Wall? " + withinWall + " Elevation difference high? " + elevationDifferenceHigh);
-		if(withinWall && elevationDifferenceHigh) {
+
+		if(isWithinWall(rcLocation, hqLocation) && elevationDifferenceHigh) {
 			landscaperData.setCurrentRole(LandscaperData.ATTACK);
-		} else if(isOnWall()) {
+		} else if(isOnWall(rcLocation, hqLocation)) {
 			landscaperData.setCurrentRole(LandscaperData.DEFEND_HQ_FROM_FLOOD);
 		}
-	}
-	
-	private boolean isWithinWall() {
-		MapLocation hqLocation = landscaperData.getHqLocation();
-    	
-    	int minDx = landscaperData.getWallOffsetXMin();
-    	int maxDx = landscaperData.getWallOffsetXMax();
-    	int minDy = landscaperData.getWallOffsetYMin();
-    	int maxDy = landscaperData.getWallOffsetYMax();
-    	
-    	int dx = rc.getLocation().x - hqLocation.x;
-    	int dy = rc.getLocation().y - hqLocation.y;
-    	
-    	boolean dxInRange = minDx < dx && dx < maxDx;
-    	boolean dyInRange = minDy < dy && dy < maxDy;
-    	return dxInRange && dyInRange;
-	}
-	
-	private boolean isOnWall() {
-		MapLocation hqLocation = landscaperData.getHqLocation();
-    	
-    	int minDx = landscaperData.getWallOffsetXMin();
-    	int maxDx = landscaperData.getWallOffsetXMax();
-    	int minDy = landscaperData.getWallOffsetYMin();
-    	int maxDy = landscaperData.getWallOffsetYMax();
-    	
-    	int dx = rc.getLocation().x - hqLocation.x;
-    	int dy = rc.getLocation().y - hqLocation.y;
-    	
-    	boolean dxOnBound = (dx == minDx || dx == maxDx);
-    	boolean dyInRange = minDy <= dy && dy <= maxDy;
-    	if(dxOnBound && dyInRange) return true;
-    	
-    	
-    	boolean dyOnBound = (dy == minDy || dy == maxDy);
-    	boolean dxInRange = minDx <= dx && dx <= maxDx;
-    	if(dyOnBound && dxInRange) return true;
-    	
-    	return false;
 	}
 	
 	private boolean dig(Direction dir) throws GameActionException {
@@ -277,15 +222,22 @@ public class Landscaper extends Robot {
 	}
 	
 	private void buildHQWall() throws GameActionException {
-		if(rc.getDirtCarrying() > 0) constructWallUnits();
+		if((rc.getDirtCarrying() > 0 && !landscaperData.isClearingObstruction()) || rc.getDirtCarrying() == RobotType.LANDSCAPER.dirtLimit) constructWallUnits();
 		else digWallDirt();
 	}
 	
 	private void constructWallUnits() throws GameActionException {
-		Direction[] constructDirections = new Direction[0];
-		
 		MapLocation rcLocation = rc.getLocation();
 		MapLocation hqLocation = landscaperData.getHqLocation();
+		
+		if(landscaperData.isClearingObstruction()) {
+			if(depositDirt(hqLocation.directionTo(rcLocation))) return;
+			if(depositDirt(hqLocation.directionTo(rcLocation).rotateLeft())) return;
+			if(depositDirt(hqLocation.directionTo(rcLocation).rotateRight())) return;
+			return;
+		}
+		
+		Direction[] constructDirections = new Direction[0];
 		
 		int dx = rcLocation.x - hqLocation.x;
 		int dy = rcLocation.y - hqLocation.y;
@@ -295,21 +247,23 @@ public class Landscaper extends Robot {
 		
 		if(gridX < 0 || gridX >= movePattern[0].length || gridY < 0 || gridY >= movePattern.length) return;
 		
-		//In the event that our wall reaches the end of the map, we just want to go back and forth about .
-		if(!rc.onTheMap(rcLocation.add(movePattern[gridY][gridX])) || landscaperAtLocation(rcLocation.add(movePattern[gridY][gridX]))) {
+		//In the event that our wall reaches the end of the map, we just want to go back and forth along the wall.
+		boolean nextLocationIrrelevant = !rc.onTheMap(rcLocation.add(movePattern[gridY][gridX])) || (onMapEdge(rcLocation) && onMapEdge(rcLocation.add(movePattern[gridY][gridX])));
+		if(nextLocationIrrelevant || landscaperAtLocation(rcLocation.add(movePattern[gridY][gridX]))) {
 			System.out.println("Toggling");
 			toggleDirection();
-			return;
 		}
 		
 		//If where we're going is too low, deposit dirt there.
 		if(rc.canSenseLocation(rcLocation.add(movePattern[gridY][gridX])) && rc.senseElevation(rcLocation) - rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) > GameConstants.MAX_DIRT_DIFFERENCE) {
+			System.out.println(movePattern[gridY][gridX] + " is too low -- depositing dirt there.");
 			depositDirt(movePattern[gridY][gridX]);
 			return;
 		}
 		
 		constructDirections = buildPattern[gridY][gridX];
 		if(constructDirections.length == 0) {
+			System.out.println("Nowhere hard-coded to build. Moving on.");
 			move(movePattern[gridY][gridX]);
 			return;
 		}
@@ -323,10 +277,19 @@ public class Landscaper extends Robot {
 			}
 		}
 		
+		MapLocation innerWallLocation = rcLocation.add(rcLocation.directionTo(hqLocation));
 		MapLocation nextLocation = rcLocation.add(movePattern[gridY][gridX]);
 		
-		if(rc.senseFlooding(nextLocation)) depositDirt(rcLocation.directionTo(nextLocation));
-		else if(rc.senseElevation(rcLocation) - rc.senseElevation(nextLocation) < GameConstants.MAX_DIRT_DIFFERENCE) depositDirt(constructDirections[NumberMath.indexOfLeast(constructElevations)]);
+		Direction constructDirection = constructDirections[NumberMath.indexOfLeast(constructElevations)];
+		MapLocation constructLocation = rcLocation.add(constructDirection);
+		System.out.println("The place to build is to the " + constructDirection);
+		
+		if(rc.senseFlooding(innerWallLocation)) depositDirt(rcLocation.directionTo(hqLocation));
+		else if(rc.senseFlooding(nextLocation)) depositDirt(rcLocation.directionTo(nextLocation));
+		else if(rc.senseElevation(rcLocation) - rc.senseElevation(constructLocation) < GameConstants.MAX_DIRT_DIFFERENCE) {
+			System.out.println("Current elevation not too high! Depositing dirt to the " + constructDirection);
+			depositDirt(constructDirection);
+		}
 		else move(movePattern[gridY][gridX]);
 	}
 	
@@ -354,20 +317,54 @@ public class Landscaper extends Robot {
 		
 		//In the event that our wall reaches the end of the map, we just want to make as tall a pillar as possible.
 		if(!rc.onTheMap(rcLocation.add(movePattern[gridY][gridX]))) {
-			dig(digPattern[gridY][gridX]);
-			return;
+			digDirection = digPattern[gridY][gridX];
+			
+			if(!rc.onTheMap(rcLocation.add(digDirection))) {
+				System.out.println("Dig direction is off the map. Turning around...");
+				toggleDirection();
+			} else {
+				System.out.println("Digging to the " + digDirection);
+				dig(digDirection);
+				return;
+			}
 		}
 		
-		//If where we're going is too high, dig from there.
-		if(rc.canSenseLocation(rcLocation.add(movePattern[gridY][gridX])) && rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) - rc.senseElevation(rcLocation) > GameConstants.MAX_DIRT_DIFFERENCE) {
-			dig(movePattern[gridY][gridX]);
+		if(!rc.isLocationOccupied(rcLocation.add(rcLocation.directionTo(hqLocation))) && innerWallObstructed()) {
+			System.out.println("Inner wall obstructed");
+			//If we are next to an obstructed build site, dig from there.
+			dig(rcLocation.directionTo(hqLocation));
+			landscaperData.setClearingObstruction(true);
 			return;
+		} else {
+			System.out.println("Inner wall clear");
+			landscaperData.setClearingObstruction(false);
+			
+			MapLocation nextLocation = rcLocation.add(movePattern[gridY][gridX]);
+			
+			if(rc.canSenseLocation(nextLocation) && rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) - rc.senseElevation(rcLocation) > GameConstants.MAX_DIRT_DIFFERENCE) {
+				//If where we're going is too high, dig from there.
+				dig(movePattern[gridY][gridX]);
+				return;
+			}
 		}
 		
 		digDirection = digPattern[gridY][gridX];
+		if(digDirection != null && rc.onTheMap(rcLocation.add(digDirection))) {
+			System.out.println("As hard-coded, digging to the " + digDirection);
+			dig(digDirection);
+		}
 		
-		if(digDirection != null) dig(digDirection);
-		if(!rc.senseFlooding(rcLocation.add(movePattern[gridY][gridX]))) move(movePattern[gridY][gridX]);
+		if(!rc.senseFlooding(rcLocation.add(movePattern[gridY][gridX]))) {
+			System.out.println("No flooding! Moving on...");
+			move(movePattern[gridY][gridX]);
+		}
+	}
+	
+	private boolean innerWallObstructed() throws GameActionException {
+		MapLocation innerWallLocation = rc.getLocation().add(rc.getLocation().directionTo(landscaperData.getHqLocation()));
+		if(!rc.canSenseLocation(innerWallLocation)) return false;
+		
+		return rc.senseElevation(innerWallLocation) - landscaperData.getHqElevation() > GameConstants.MAX_DIRT_DIFFERENCE;
 	}
 	
 	private boolean buryEnemyHQ() throws GameActionException {

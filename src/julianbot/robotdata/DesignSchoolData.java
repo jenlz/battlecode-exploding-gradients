@@ -7,6 +7,8 @@ public class DesignSchoolData extends RobotData {
 	private Direction buildDirection;
 		private Direction defaultBuildDirection;
 		private Direction defaultAttackBuildDirection;
+	private boolean buildSitesBlocked;
+	
 	private int landscapersBuilt;
 	
 	private boolean stableSoupIncomeConfirmed;
@@ -75,6 +77,14 @@ public class DesignSchoolData extends RobotData {
 
 	public void setDefaultAttackBuildDirection(Direction defaultAttackBuildDirection) {
 		this.defaultAttackBuildDirection = defaultAttackBuildDirection;
+	}
+	
+	public boolean getBuildSitesBlocked() {
+		return buildSitesBlocked;
+	}
+
+	public void setBuildSitesBlocked(boolean buildSitesBlocked) {
+		this.buildSitesBlocked = buildSitesBlocked;
 	}
 
 	public boolean isStableSoupIncomeConfirmed() {

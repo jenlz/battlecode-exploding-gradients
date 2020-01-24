@@ -44,8 +44,6 @@ public class DroneData extends ScoutData {
 	private boolean wallBuildChecked;
 	private boolean wallBuildConfirmed;
 	private MapLocation nextWallSegment;
-	private int wallOffsetXMin, wallOffsetXMax, wallOffsetYMin, wallOffsetYMax;
-	private boolean baseOnEdge;
 	
 	public DroneData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
@@ -208,37 +206,6 @@ public class DroneData extends ScoutData {
 
 	public void setNextWallSegment(MapLocation nextWallSegment) {
 		this.nextWallSegment = nextWallSegment;
-	}
-
-	public int getWallOffsetXMin() {
-		return wallOffsetXMin;
-	}
-
-	public int getWallOffsetXMax() {
-		return wallOffsetXMax;
-	}
-
-	public int getWallOffsetYMin() {
-		return wallOffsetYMin;
-	}
-
-	public int getWallOffsetYMax() {
-		return wallOffsetYMax;
-	}
-	
-	public void setWallOffsetBounds(int wallOffsetXMin, int wallOffsetXMax, int wallOffsetYMin, int wallOffsetYMax) {
-		this.wallOffsetXMin = wallOffsetXMin;
-		this.wallOffsetXMax = wallOffsetXMax;
-		this.wallOffsetYMin = wallOffsetYMin;
-		this.wallOffsetYMax = wallOffsetYMax;
-	}
-	
-	public boolean isBaseOnEdge() {
-		return baseOnEdge;
-	}
-
-	public void setBaseOnEdge(boolean baseOnEdge) {
-		this.baseOnEdge = baseOnEdge;
 	}
 	
 }

@@ -49,46 +49,33 @@ public class FulfillmentCenter extends Robot {
 	private void determineEdgeState() {
 		MapLocation hqLocation = fulfillmentCenterData.getHqLocation();
 		
+		int mapWidth = rc.getMapWidth();
+		int mapHeight = rc.getMapHeight();
+
 		boolean leftEdge = hqLocation.x <= 0;
-		boolean rightEdge = hqLocation.x >= rc.getMapWidth() - 1;
-		boolean topEdge = hqLocation.y >= rc.getMapHeight() - 1;
+		boolean rightEdge = hqLocation.x >= mapWidth - 1;
+		boolean topEdge = hqLocation.y >= mapHeight - 1;
 		boolean bottomEdge = hqLocation.y <= 0;
-		fulfillmentCenterData.setBaseOnEdge(leftEdge || rightEdge || topEdge || bottomEdge);
+
+		fulfillmentCenterData.initializeWallData(hqLocation, mapWidth, mapHeight);
 		
 		if(leftEdge) {
 			//The HQ is next to the western wall.
-			if(bottomEdge) {
-				fulfillmentCenterData.setWallOffsetBounds(0, 2, 0, 3);
-				fulfillmentCenterData.setBuildDirection(Direction.NORTH);
-			} else if(topEdge) {
-				fulfillmentCenterData.setWallOffsetBounds(0, 2, -3, 0);
-				fulfillmentCenterData.setBuildDirection(Direction.SOUTH);
-			} else {
-				fulfillmentCenterData.setWallOffsetBounds(0, 2, -1, 3);
-				fulfillmentCenterData.setBuildDirection(Direction.NORTH);
-			}
+			if(bottomEdge) fulfillmentCenterData.setBuildDirection(Direction.NORTH);
+			else if(topEdge) fulfillmentCenterData.setBuildDirection(Direction.SOUTH);
+			else fulfillmentCenterData.setBuildDirection(Direction.NORTH);
 		} else if(rightEdge) {
 			//The HQ is next to the eastern wall.
-			if(bottomEdge) {
-				fulfillmentCenterData.setWallOffsetBounds(-2, 0, 0, 3);
-				fulfillmentCenterData.setBuildDirection(Direction.NORTH);
-			} else if(topEdge) {
-				fulfillmentCenterData.setWallOffsetBounds(-2, 0, -3, 0);
-				fulfillmentCenterData.setBuildDirection(Direction.SOUTH);
-			} else {
-				fulfillmentCenterData.setWallOffsetBounds(-2, 0, -3, 1);
-				fulfillmentCenterData.setBuildDirection(Direction.SOUTH);
-			}
+			if(bottomEdge) fulfillmentCenterData.setBuildDirection(Direction.NORTH);
+			else if(topEdge) fulfillmentCenterData.setBuildDirection(Direction.SOUTH);
+			else fulfillmentCenterData.setBuildDirection(Direction.SOUTH);
 		} else if(topEdge) {
 			//The HQ is next to the northern wall, but not cornered.
-			fulfillmentCenterData.setWallOffsetBounds(-1, 3, 0, -2);
 			fulfillmentCenterData.setBuildDirection(Direction.EAST);
 		} else if(bottomEdge) {
 			//The HQ is next to the southern wall, but not cornered.
-			fulfillmentCenterData.setWallOffsetBounds(-3, 1, 0, 2);
 			fulfillmentCenterData.setBuildDirection(Direction.WEST);
 		} else {
-			fulfillmentCenterData.setWallOffsetBounds(-2, 2, -2, 2);
 			fulfillmentCenterData.setBuildDirection(Direction.NORTH);
 		}
 	}

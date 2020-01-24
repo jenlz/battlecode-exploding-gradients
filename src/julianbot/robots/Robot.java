@@ -41,7 +41,8 @@ public class Robot {
 		TRANSACTION_ENEMY_FULFILLMENT_CENTER_AT_LOC(177),
 		TRANSACTION_ATTACK_AT_LOC(-171),
 		TRANSACTION_KILL_ORDER(88),
-		TRANSACTION_PAUSE_LANDSCAPER_BUILDING(8482);
+		TRANSACTION_PAUSE_LANDSCAPER_BUILDING(8482),
+		TRANSACTION_BUILD_SITE_BLOCKED(642);
 		
 		private int val;
 		
@@ -97,6 +98,47 @@ public class Robot {
 	//FLOODING
 	protected int getFloodingAtRound(double roundNumber) {
 		return (int) (Math.pow(Math.E, (0.0028 * roundNumber) - (1.38 * Math.sin(0.00157 * roundNumber - 1.73)) + (1.38 * Math.sin(-1.73))) - 1);
+	}
+	
+	//BOUNDS
+	public boolean onMapEdge(MapLocation location) {
+		return location.x == 0 || location.x == rc.getMapWidth() - 1 || location.y == 0 || location.y == rc.getMapHeight() - 1;
+	}
+	
+	//WALL
+	public boolean isOnWall(MapLocation location, MapLocation hqLocation) {    	
+    	int minDx = data.getWallOffsetXMin();
+    	int maxDx = data.getWallOffsetXMax();
+    	int minDy = data.getWallOffsetYMin();
+    	int maxDy = data.getWallOffsetYMax();
+    	
+    	int dx = location.x - hqLocation.x;
+    	int dy = location.y - hqLocation.y;
+    	
+    	boolean dxOnBound = (dx == minDx || dx == maxDx);
+    	boolean dyInRange = minDy <= dy && dy <= maxDy;
+    	if(dxOnBound && dyInRange) return true;
+    	
+    	
+    	boolean dyOnBound = (dy == minDy || dy == maxDy);
+    	boolean dxInRange = minDx <= dx && dx <= maxDx;
+    	if(dyOnBound && dxInRange) return true;
+    	
+    	return false;
+	}
+	
+	public boolean isWithinWall(MapLocation location, MapLocation hqLocation) {    	
+    	int minDx = data.getWallOffsetXMin();
+    	int maxDx = data.getWallOffsetXMax();
+    	int minDy = data.getWallOffsetYMin();
+    	int maxDy = data.getWallOffsetYMax();
+    	
+    	int dx = location.x - hqLocation.x;
+    	int dy = location.y - hqLocation.y;
+    	
+    	boolean dxInRange = minDx < dx && dx < maxDx;
+    	boolean dyInRange = minDy < dy && dy < maxDy;
+    	return dxInRange && dyInRange;
 	}
 	
 	//RECONNAISSANCE

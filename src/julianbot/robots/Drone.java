@@ -15,6 +15,8 @@ import julianbot.utils.NumberMath;
 
 public class Drone extends Scout {
 
+	private static final int CARGO_DRONE_ATTACK_DELAY = 7;
+	
 	private DroneData droneData;
 	
 	public Drone(RobotController rc) {
@@ -61,6 +63,7 @@ public class Drone extends Scout {
 		if(turnCount == 1) {
 			learnHQLocation();
 			droneData.calculateInitialAttackWaitLocation();
+			droneData.initializeWallData(droneData.getHqLocation(), rc.getMapWidth(), rc.getMapHeight());
 			determineEdgeState();
 		}
 		
@@ -119,32 +122,8 @@ public class Drone extends Scout {
 	private void determineEdgeState() {
 		MapLocation hqLocation = droneData.getHqLocation();
 		
-		boolean leftEdge = hqLocation.x <= 0;
-		boolean rightEdge = hqLocation.x >= rc.getMapWidth() - 1;
 		boolean topEdge = hqLocation.y >= rc.getMapHeight() - 1;
 		boolean bottomEdge = hqLocation.y <= 0;
-		droneData.setBaseOnEdge(leftEdge || rightEdge || topEdge || bottomEdge);
-		
-		if(leftEdge) {
-			//The HQ is next to the western wall.
-			if(bottomEdge) droneData.setWallOffsetBounds(0, 2, 0, 3);
-			else if(topEdge) droneData.setWallOffsetBounds(0, 2, -3, 0);
-			else droneData.setWallOffsetBounds(0, 2, -1, 3);
-		} else if(rightEdge) {
-			//The HQ is next to the eastern wall.
-			if(bottomEdge) droneData.setWallOffsetBounds(-2, 0, 0, 3);
-			else if(topEdge) droneData.setWallOffsetBounds(-2, 0, -3, 0);
-			else droneData.setWallOffsetBounds(-2, 0, -3, 1);
-		} else if(topEdge) {
-			//The HQ is next to the northern wall, but not cornered.
-			droneData.setWallOffsetBounds(-1, 3, 0, -2);
-		} else if(bottomEdge) {
-			//The HQ is next to the southern wall, but not cornered.
-			droneData.setWallOffsetBounds(-3, 1, 0, 2);
-		} else {
-			droneData.setWallOffsetBounds(-2, 2, -2, 2);
-		}
-		
 
 		if(topEdge) {
 			droneData.setGridOffset(0, -1);
@@ -184,7 +163,7 @@ public class Drone extends Scout {
 	}
 	
 	private void drownCowProtocol() throws GameActionException {
-		System.out.println("Entered Drown Dow Protocol");
+		System.out.println("Entered Drown Cow Protocol");
 		MapLocation rcLocation = rc.getLocation();
 		
 		for(Direction direction : Direction.allDirections()) {
@@ -204,7 +183,9 @@ public class Drone extends Scout {
 			} else if (dropUnit(rcLocation.directionTo(closestLoc))) {
 				droneData.setHoldingCow(false);
 			}
-
+		} else {
+			//TODO: Add a clause to keep them from net guns.
+			continueSearch();
 		}
 	}
 	
@@ -228,32 +209,54 @@ public class Drone extends Scout {
 	}
 	
 	private void killDroneProtocol() throws GameActionException {
-		if(rc.getRoundNum() - droneData.getKillOrderReceptionRound() >= 75) {
+		if(rc.getRoundNum() - droneData.getKillOrderReceptionRound() >= NumberMath.clamp(rc.getMapWidth() + rc.getMapHeight(), 75, Integer.MAX_VALUE) + CARGO_DRONE_ATTACK_DELAY) {
 			//ATTACK ENEMY HQ
-			routeTo(droneData.getEnemyHqLocation());
 			
-			if(rc.isCurrentlyHoldingUnit()) {
-				if(!droneData.getHoldingEnemy()) {
-					if(rc.getLocation().isWithinDistanceSquared(droneData.getEnemyHqLocation(), 8)) dropUnitNextToEnemyHq();
-				} else {
-					//Drop enemies and cows in the ocean.
-					Direction adjacentFloodingDirection = getAdjacentFloodingDirection();
-					if(adjacentFloodingDirection != null) {
-						rc.dropUnit(adjacentFloodingDirection);
+			if(!rc.getLocation().isWithinDistanceSquared(droneData.getEnemyHqLocation(), 8)) {
+				System.out.println("Not yet near HQ!");
+				if(rc.isCurrentlyHoldingUnit()) {
+					if(droneData.getHoldingEnemy() || droneData.getHoldingCow()) {
+						System.out.println("Holding hostile force!");
+						//Drop enemies and cows in the ocean.
+						Direction adjacentFloodingDirection = getAdjacentFloodingDirection();
+						if(adjacentFloodingDirection != null) {
+							System.out.println("Can drown it to the " + adjacentFloodingDirection);
+							dropUnit(adjacentFloodingDirection);
+							return;
+						}
 					}
+				} else if(liftAdjacentEnemy()) {
+					return;
 				}
-			} else {
-				RobotInfo[] enemies = rc.senseNearbyRobots(-1, droneData.getOpponent());
 				
-				for(RobotInfo enemy : enemies) {
-					if(pickUpUnit(enemy)) {
-						droneData.setHoldingEnemy(true);
-						break;
+				routeTo(droneData.getEnemyHqLocation());
+			} else {
+				System.out.println("Near HQ!");
+				if(rc.isCurrentlyHoldingUnit()) {
+					if(droneData.getHoldingEnemy() || droneData.getHoldingCow()) {
+						//Drop enemies and cows in the ocean.
+						Direction adjacentFloodingDirection = getAdjacentFloodingDirection();
+						if(adjacentFloodingDirection != null) {
+							System.out.println("Can drown it to the " + adjacentFloodingDirection);
+							dropUnit(adjacentFloodingDirection);
+							return;
+						}
+					} else {
+						dropUnitNextToEnemyHq();
+						return;
 					}
+				} else {
+					if(liftAdjacentEnemy()) return;
+					
+					//We failed to pick up an enemy if we got here, so we need to continue trying to get in close.
+					routeTo(droneData.getEnemyHqLocation());
 				}
 			}
 		} else {
     		//APPROACH ENEMY HQ
+			
+			//Let those not holding units go first to clear spaces.
+			if(rc.isCurrentlyHoldingUnit() && rc.getRoundNum() - droneData.getKillOrderReceptionRound() < CARGO_DRONE_ATTACK_DELAY) return;
 			if(rc.getLocation().distanceSquaredTo(droneData.getEnemyHqLocation()) > 25) routeTo(droneData.getEnemyHqLocation());
 		}
 	}
@@ -287,6 +290,19 @@ public class Drone extends Scout {
 					droneData.setEnemyFrom(data.getTeam());
 				else
 					droneData.setEnemyFrom(data.getOpponent());
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	private boolean liftAdjacentEnemy() throws GameActionException {
+		RobotInfo[] enemies = rc.senseNearbyRobots(-1, droneData.getOpponent());
+		
+		for(RobotInfo enemy : enemies) {
+			if(pickUpUnit(enemy)) {
+				droneData.setHoldingEnemy(true);
 				return true;
 			}
 		}
@@ -425,14 +441,14 @@ public class Drone extends Scout {
     			}
 			} else {
 				System.out.println("Routing to waiting point");
-				routeTo(droneData.getHqLocation().translate(0, 3));
+				routeToWaitingPoint();
 			}
-		} else if(!rc.getLocation().isWithinDistanceSquared(droneData.getHqLocation(), 3)) {
+		} else if(!rc.canSenseLocation(droneData.getFulfillmentCenterBuildSite())){
 			System.out.println("Ought not lift a landscaper, so routing to waiting point");
-			routeTo(droneData.getHqLocation().translate(0, 3));
-		} else {
-			System.out.println("On our way to the enemy HQ");
-			routeTo(droneData.getEnemyHqLocation());
+			routeToWaitingPoint();
+		} else if(isOnWall(rc.getLocation(), droneData.getHqLocation())) {
+			System.out.println("Drone on the wall needs to move");
+			routeTo(droneData.getFulfillmentCenterBuildSite().add(droneData.getFulfillmentCenterBuildSite().directionTo(rc.getLocation())));
 		}
 	}
 	
@@ -473,6 +489,28 @@ public class Drone extends Scout {
 		}
 
 		return null;
+	}
+	
+	private void routeToWaitingPoint() throws GameActionException {
+		MapLocation spawnPoint = droneData.getSpawnLocation();
+		
+		//If we're at our target point -- the spawn point -- stop.
+		if(rc.getLocation().equals(spawnPoint)) return;
+		
+		//If we can see the spawn point, we can ensure that it's not occupied.
+		if(rc.canSenseLocation(spawnPoint)) {
+			MapLocation hqLocation = droneData.getHqLocation();
+			//If the spawn point is occupied, stay outside of the wall.
+			if(rc.isLocationOccupied(spawnPoint)) {
+				if(isOnWall(rc.getLocation(), hqLocation) || isWithinWall(rc.getLocation(), hqLocation)) {
+					routeTo(rc.getLocation().add(hqLocation.directionTo(rc.getLocation())));
+				}
+			} else {
+				routeTo(spawnPoint);
+			}
+		} else {
+			routeTo(spawnPoint);
+		}
 	}
 	
 	private void reconDroneProtocol() throws GameActionException {
@@ -580,8 +618,9 @@ public class Drone extends Scout {
 	}
 	
 	private Direction getAdjacentFloodingDirection() throws GameActionException {
-		for(Direction direction : Direction.allDirections()) {
-			if(rc.canSenseLocation(rc.adjacentLocation(direction)) && rc.senseFlooding(rc.adjacentLocation(direction))) {
+		for(Direction direction : Robot.directions) {
+			MapLocation adjacentLocation = rc.adjacentLocation(direction);
+			if(rc.canSenseLocation(adjacentLocation) && rc.senseFlooding(adjacentLocation) && !rc.isLocationOccupied(adjacentLocation)) {
 				return direction;
 			}
 		}
@@ -639,9 +678,9 @@ public class Drone extends Scout {
     	
     	for(int dx = minDx; dx <= maxDx; dx++) {
     		for(int dy = minDy; dy <= maxDy; dy++) {
-    			if(((dx == minDx || dx == maxDx) && dx != 0) || ((dy == minDy || dy == maxDy) && dy != 0)) {
-    				MapLocation wallLocation = hqLocation.translate(dx, dy);
-    				if(rc.canSenseLocation(wallLocation) && rc.senseElevation(wallLocation) - hqElevation <= GameConstants.MAX_DIRT_DIFFERENCE) {
+    			MapLocation wallLocation = hqLocation.translate(dx, dy);
+    			if(isOnWall(wallLocation, hqLocation) && rc.canSenseLocation(wallLocation)) {
+    				if(rc.senseElevation(wallLocation) - hqElevation <= GameConstants.MAX_DIRT_DIFFERENCE) {
     					droneData.setWallBuildConfirmed(false);
     					if(!rc.isLocationOccupied(wallLocation)) {
     						MapLocation nextWallSegment = droneData.getNextWallSegment();
@@ -669,22 +708,16 @@ public class Drone extends Scout {
     	
     	for(int dx = minDx; dx <= maxDx; dx++) {
     		for(int dy = minDy; dy <= maxDy; dy++) {
-    			if((dx == minDx || dx == maxDx) || (dy == minDy || dy == maxDy)) {
-    				MapLocation wallLocation = hqLocation.translate(dx, dy);
-    				if(rc.canSenseLocation(wallLocation)) {
-    					if(!rc.isLocationOccupied(wallLocation)) {
-    						return true;
-    					}
+    			MapLocation wallLocation = hqLocation.translate(dx, dy);
+    			if(isOnWall(wallLocation, hqLocation) && rc.canSenseLocation(wallLocation)) {
+    				if(!rc.isLocationOccupied(wallLocation)) {
+    					return true;
     				}
     			}
     		}
     	}
     	
     	return false;
-	}
-	
-	private boolean onMapEdge(MapLocation location) {
-		return location.x <= 0 || location.y <= 0 || location.x >= rc.getMapWidth() - 1 || location.y >= rc.getMapHeight() - 1;
 	}
 	
 }

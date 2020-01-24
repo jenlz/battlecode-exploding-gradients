@@ -30,6 +30,8 @@ public class HQ extends Robot {
     	if(rc.getRoundNum() == 1) {
     		makeInitialReport();
     		setBuildDirectionTowardsSoup();
+    		hqData.initializeWallData(rc.getLocation(), rc.getMapWidth(), rc.getMapHeight());
+    		reportBlockedBuildSites();
     	}
     	    	
         if(oughtBuildMiner()) {        	
@@ -99,6 +101,22 @@ public class HQ extends Robot {
 		return rc.getTeamSoup() >= RobotType.MINER.cost + hqData.getMinersBuilt() * 30 || rc.getRoundNum() < 50;
 	}
 	
+	private void reportBlockedBuildSites() throws GameActionException {
+		MapLocation hqLocation = rc.getLocation();		
+		int hqElevation = rc.senseElevation(hqLocation);
+    	int designSchoolElevation = rc.senseElevation(hqData.getDesignSchoolBuildSite());
+    	int fulfillmentCenterElevation = rc.senseElevation(hqData.getFulfillmentCenterBuildSite());
+    	int vaporatorElevation = rc.senseElevation(hqData.getVaporatorBuildSite());
+    	int vaporatorMinerElevation = rc.senseElevation(hqData.getVaporatorBuildMinerLocation());
+		
+		if(designSchoolElevation - hqElevation > GameConstants.MAX_DIRT_DIFFERENCE) sendTransaction(1, Type.TRANSACTION_BUILD_SITE_BLOCKED, hqData.getDesignSchoolBuildSite());
+		else if(fulfillmentCenterElevation - hqElevation > GameConstants.MAX_DIRT_DIFFERENCE) sendTransaction(1, Type.TRANSACTION_BUILD_SITE_BLOCKED, hqData.getFulfillmentCenterBuildSite());
+		else if(vaporatorElevation - hqElevation > GameConstants.MAX_DIRT_DIFFERENCE) sendTransaction(1, Type.TRANSACTION_BUILD_SITE_BLOCKED, hqData.getVaporatorBuildSite());
+		else if(vaporatorMinerElevation - hqElevation > GameConstants.MAX_DIRT_DIFFERENCE) sendTransaction(1, Type.TRANSACTION_BUILD_SITE_BLOCKED, hqData.getVaporatorBuildMinerLocation());
+	}
+	
+	
+	
 	//DEFENSE
 	private void sendSOS() throws GameActionException {
 		//Since there can be seven transactions per round, we can be guaranteed to get one message through if that message is sent with a bid of one more than a seventh of the inital soup cost.
@@ -152,15 +170,24 @@ public class HQ extends Robot {
     	}
     }
     
-    //TODO: Fix these wall functions in the context of edge maps.
+    /*
+     * TODO: This function ignores tiles on the edge of the map, but there are map edges that should be part of the wall.
+     * This is likely not a problem, as an estimate is sufficient for desired behavior, but this needs to be officially decided.
+     */
     private boolean wallBuilt() throws GameActionException {
     	MapLocation rcLocation = rc.getLocation();
     	int hqElevation = rc.senseElevation(rcLocation);
     	
-    	for(int dx = -2; dx <= 2; dx++) {
-    		for(int dy = -2; dy <= 2; dy++) {
-    			if((Math.abs(dx) == 2 || Math.abs(dy) == 2) && rc.onTheMap(rcLocation.translate(dx, dy))) {
-    				if(rc.senseElevation(rcLocation.translate(dx, dy)) - hqElevation <= GameConstants.MAX_DIRT_DIFFERENCE) return false;
+    	int minDx = data.getWallOffsetXMin();
+    	int maxDx = data.getWallOffsetXMax();
+    	int minDy = data.getWallOffsetYMin();
+    	int maxDy = data.getWallOffsetYMax();
+    	
+    	for(int dx = minDx; dx <= maxDx; dx++) {
+    		for(int dy = minDy; dy <= maxDy; dy++) {
+    			MapLocation location = rcLocation.translate(dx, dy);
+    			if(rc.canSenseLocation(location) && !onMapEdge(location) && isOnWall(location, rcLocation)) {
+    				if(rc.senseElevation(location) - hqElevation <= GameConstants.MAX_DIRT_DIFFERENCE) return false;
     			}
     		}
     	}
@@ -171,12 +198,19 @@ public class HQ extends Robot {
     private int lowestWallHeight() throws GameActionException {
     	MapLocation rcLocation = rc.getLocation();
     	int lowestElevation = Integer.MAX_VALUE;
+    	int waterLevel = getFloodingAtRound(rc.getRoundNum());
     	
-    	for(int dx = -2; dx <= 2; dx++) {
-    		for(int dy = -2; dy <= 2; dy++) {
-    			if((Math.abs(dx) == 2 || Math.abs(dy) == 2) && rc.onTheMap(rcLocation.translate(dx, dy))) {
-    				int elevation = rc.senseElevation(rcLocation.translate(dx, dy));
-    				if(elevation < lowestElevation) lowestElevation = elevation;
+    	int minDx = data.getWallOffsetXMin();
+    	int maxDx = data.getWallOffsetXMax();
+    	int minDy = data.getWallOffsetYMin();
+    	int maxDy = data.getWallOffsetYMax();
+    	
+    	for(int dx = minDx; dx <= maxDx; dx++) {
+    		for(int dy = minDy; dy <= maxDy; dy++) {
+    			MapLocation location = rcLocation.translate(dx, dy);
+    			if(rc.canSenseLocation(location) && isOnWall(location, rcLocation)) {
+    				int elevation = rc.senseElevation(location);
+    				if(elevation < lowestElevation && elevation > waterLevel) lowestElevation = elevation;
     			}
     		}
     	}
