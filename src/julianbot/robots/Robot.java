@@ -532,6 +532,7 @@ public class Robot {
 		if (move(dir)) {
 			//If you can move in that direction
 			data.setClosestDist(rc.getLocation().distanceSquaredTo(destination));
+			data.setSearchDirection(null);
 			System.out.println("Moved to new closest location. Dist: " + data.getClosestDist());
 
 		} else if (rc.getLocation().add(dir).equals(destination)) {
@@ -553,7 +554,6 @@ public class Robot {
 	 */
 	public void followLeftWall(Direction dirToDest) throws GameActionException {
 		System.out.println("Can't move in closer direction. Resorting to wall hugging.");
-
 		if (data.getSearchDirection() == null) {
 			data.setSearchDirection(dirToDest);
 		}
@@ -561,19 +561,17 @@ public class Robot {
 		// Follows wall on left side
 		for (int i = 0; i < 8; i++) {
 			if (continueSearchNonRandom()) {
+				System.out.println("Searched in direction " + data.getSearchDirection());
 				break;
 			} else {
 				data.setObstacleLoc(rc.getLocation().add(data.getSearchDirection()));
 				data.setSearchDirection(data.getSearchDirection().rotateRight());
+				System.out.println("Can't move, setting obstacle at " + data.getObstacleLoc());
+				rc.setIndicatorDot(data.getObstacleLoc(), 0, 0, 0);
 			}
 		}
-		/*while (!continueSearchNonRandom()) {
-			data.setObstacleLoc(rc.getLocation().add(data.getSearchDirection()));
-			data.setSearchDirection(data.getSearchDirection().rotateRight());
-		} */
 		rc.setIndicatorLine(rc.getLocation().subtract(data.getSearchDirection()), rc.getLocation(), 102, 255, 255); //Teal line
 		data.setSearchDirection(rc.getLocation().directionTo(data.getObstacleLoc()));
-		rc.setIndicatorDot(data.getObstacleLoc(), 0, 0, 0);
 	}
 
 	/**
