@@ -31,8 +31,8 @@ public class DesignSchoolData extends RobotData {
 		return isAttackSchool;
 	}
 
-	public void setIsAttackSchool(boolean bool) {
-		isAttackSchool = bool;
+	public void setIsAttackSchool(boolean isAttackSchool) {
+		this.isAttackSchool = isAttackSchool;
 	}
 
 	public void setPauseBuildTimer(int turns) {

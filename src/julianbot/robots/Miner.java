@@ -47,6 +47,7 @@ public class Miner extends Scout {
     	}
 
 		readTransactions();
+		respondToThreats();
       
 		switch(minerData.getCurrentRole()) {
 			case MinerData.ROLE_DESIGN_BUILDER:
@@ -68,7 +69,7 @@ public class Miner extends Scout {
 					emptyMinerProtocol();
 				}
 				break;
-			case MinerData.ROLE_DEFENSE_BUILDER:
+			case MinerData.ROLE_DEFENSE:
 				defenseMinerProtocol();
 				break;
 			case MinerData.ROLE_SCOUT:
@@ -89,7 +90,19 @@ public class Miner extends Scout {
 		}
 		
 		//TODO: On the wall detection for edge-case maps.
-		return (this.senseUnitType(RobotType.LANDSCAPER, rc.getTeam(), 3) != null && isOnWall(rc.getLocation(), minerData.getSpawnerLocation()));
+		boolean interferingWithBase = isOnWall(rc.getLocation(), minerData.getSpawnerLocation()) || isWithinWall(rc.getLocation(), minerData.getSpawnerLocation());
+		return this.senseUnitType(RobotType.LANDSCAPER, rc.getTeam(), 3) != null && interferingWithBase;
+	}
+	
+	private void respondToThreats() {
+		if(minerData.getCurrentRole() == MinerData.ROLE_RUSH) return;
+		
+		RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+		for(RobotInfo enemy : enemies) {
+			if(enemy.getType().canBePickedUp() || enemy.getType() == RobotType.DESIGN_SCHOOL) {
+				if(enemy.getLocation().isWithinDistanceSquared(data.getSpawnerLocation(), 35) && !minerData.isFulfillmentCenterBuilt()) minerData.setCurrentRole(MinerData.ROLE_DEFENSE);
+			}
+		}
 	}
 	
 	/**
@@ -247,15 +260,77 @@ public class Miner extends Scout {
 	 * Builds fulfillment center near HQ
 	 * @throws GameActionException
 	 */
-	private void defenseMinerProtocol() throws GameActionException {    	
-    	if(!minerData.isFulfillmentCenterBuilt()) {
-    		if(routeToFulfillmentCenterSite()) {
-    			buildDefenseFulfillmentCenter();
-    			return;
-    		}
-    	}
+	private void defenseMinerProtocol() throws GameActionException {
+		System.out.println("defense protocol");
+		
+		if(senseUnitType(RobotType.NET_GUN, rc.getTeam().opponent()) != null) {
+			defensiveDesignSchoolBuild();
+			defensiveFulfillmentCenterBuild();
+		} else {
+			defensiveFulfillmentCenterBuild();
+			defensiveDesignSchoolBuild();
+		}
+		
+		defensiveHqBlock();
     }
+	
+	private void defensiveFulfillmentCenterBuild() throws GameActionException {
+		MapLocation fulfillmentCenterBuildSite = minerData.getFulfillmentCenterBuildSite();
+		if(rc.canSenseLocation(fulfillmentCenterBuildSite)) {
+			RobotInfo fulfillmentCenter = rc.senseRobotAtLocation(fulfillmentCenterBuildSite);
+			if(fulfillmentCenter != null && fulfillmentCenter.getType() == RobotType.FULFILLMENT_CENTER) {
+				System.out.println("Fulfillment center confirmed built!");
+				minerData.setFulfillmentCenterBuilt(true);
+				return;
+			}
+		}
+		
+		if(rc.getLocation().equals(fulfillmentCenterBuildSite) && rc.getTeamSoup() >= RobotType.FULFILLMENT_CENTER.cost) {
+			//TODO: This rudimentary move is a bit of a risk, but it's intended to allow for the building of a fulfillment center to carry the enemies away.
+			//We will likely need to add logic to make this work as desired, and may even need to draw upon other miners building other fulfillment centers.
+			moveMinerFromHQ();
+		} else if(rc.getLocation().isWithinDistanceSquared(fulfillmentCenterBuildSite, 3) && rc.getTeamSoup() >= RobotType.FULFILLMENT_CENTER.cost) {
+			System.out.println("Attempting to build fulfillment center...");
+			if(attemptFulfillmentCenterConstruction(rc.getLocation().directionTo(fulfillmentCenterBuildSite))) minerData.setFulfillmentCenterBuilt(true);
+		} else if(!rc.getLocation().isWithinDistanceSquared(minerData.getSpawnerLocation(), 3)) {
+			System.out.println("Routing to HQ...");
+			routeTo(data.getSpawnerLocation());
+			//TODO: Add logic to favor routing to locations that are closest to the most enemies.
+		}
+	}
+	
+	private void defensiveDesignSchoolBuild() throws GameActionException {
+		MapLocation designSchoolBuildSite = minerData.getDesignSchoolBuildSite();
+		if(rc.canSenseLocation(designSchoolBuildSite)) {
+			RobotInfo designSchool = rc.senseRobotAtLocation(designSchoolBuildSite);
+			if(designSchool != null && designSchool.getType() == RobotType.DESIGN_SCHOOL) {
+				System.out.println("Design school confirmed built!");
+				minerData.setDesignSchoolBuilt(true);
+				return;
+			}
+		}
+		
+		if(rc.getLocation().equals(designSchoolBuildSite) && rc.getTeamSoup() >= RobotType.DESIGN_SCHOOL.cost) {
+			//TODO: This rudimentary move is a bit of a risk, but it's intended to allow for the building of a fulfillment center to carry the enemies away.
+			//We will likely need to add logic to make this work as desired, and may even need to draw upon other miners building other fulfillment centers.
+			moveMinerFromHQ();
+		} else if(rc.getLocation().isWithinDistanceSquared(designSchoolBuildSite, 3) && rc.getTeamSoup() >= RobotType.DESIGN_SCHOOL.cost) {
+			System.out.println("Attempting to build fulfillment center...");
+			if(attemptDesignSchoolConstruction(rc.getLocation().directionTo(designSchoolBuildSite))) minerData.setDesignSchoolBuilt(true);
+		} else if(!rc.getLocation().isWithinDistanceSquared(minerData.getSpawnerLocation(), 3)) {
+			System.out.println("Routing to HQ...");
+			routeTo(data.getSpawnerLocation());
+			//TODO: Add logic to favor routing to locations that are closest to the most enemies.
+		}
+	}
 
+	private void defensiveHqBlock() throws GameActionException {
+		RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+		System.out.println("Scouting nearby region yielded " + enemies.length + " enemies.");
+		if(enemies.length < 2) minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+		else if(!rc.getLocation().isWithinDistanceSquared(minerData.getSpawnerLocation(), 3)) routeTo(minerData.getSpawnerLocation());
+	}
+	
 	/**
 	 * Miner whose soup carrying capacity is full
 	 * @throws GameActionException
@@ -761,35 +836,12 @@ public class Miner extends Scout {
 		}
 	}
 	
-	private boolean routeToFulfillmentCenterSite() throws GameActionException {		
-		if(!minerData.hasPath()) {
-			return pathfind(minerData.getSpawnerLocation().add(rc.getLocation().directionTo(minerData.getSpawnerLocation())));
-    	}
-    	
-		return pathfind(null);
-	}
-	
 	private boolean canSenseHubFulfillmentCenter() throws GameActionException {
 		if(!rc.canSenseLocation(minerData.getFulfillmentCenterBuildSite())) return false;
 		
 		RobotInfo fulfillmentCenterInfo = rc.senseRobotAtLocation(minerData.getFulfillmentCenterBuildSite());
 		if(fulfillmentCenterInfo == null) return false;
 		return fulfillmentCenterInfo.type == RobotType.FULFILLMENT_CENTER;
-	}
-	
-	private boolean buildDefenseFulfillmentCenter() throws GameActionException {
-		MapLocation hqLocation = data.getSpawnerLocation().add(Direction.EAST);
-		Direction buildDirection = rc.getLocation().directionTo(hqLocation);
-		
-		waitUntilReady();
-		if(rc.canBuildRobot(RobotType.FULFILLMENT_CENTER, buildDirection)) {
-			rc.buildRobot(RobotType.FULFILLMENT_CENTER, buildDirection);
-			return true;
-		}
-		
-		System.out.println("Failed to build fulfillment center.");
-		
-		return false;
 	}
 	
 	private void readTransactions() throws GameActionException {

@@ -88,16 +88,17 @@ public class Landscaper extends Robot {
     	}
     	
     	discernAttackRole();
-    	
-		RobotInfo enemyDesign = senseUnitType(RobotType.DESIGN_SCHOOL, landscaperData.getOpponent());
-    	
+    	    	
 		System.out.println("Landscaper Role = " + landscaperData.getCurrentRole());
 		
-		System.out.println("Attempting burial of enemy HQ");
-    	if(buryEnemyHQ()) {
-    		/*Do nothing else*/
-    	} else if(enemyDesign!=null){
-    		buryEnemyDesign(enemyDesign);
+		seekEnemyHq();
+		RobotInfo closestEnemyBuilding = null;
+		
+    	if(landscaperData.getEnemyHQLocation() != null) {
+    		System.out.println("Attempting burial of enemy HQ");
+    		buryEnemyHq();
+    	} else if((closestEnemyBuilding = seekClosestEnemyBuilding()) != null && oughtTargetBuilding(closestEnemyBuilding)) {
+    		buryEnemyBuilding(closestEnemyBuilding);
     	} else if(landscaperData.getCurrentRole() == LandscaperData.TRAVEL_TO_HQ) {
     		if(!approachComplete()) {
     			routeTo(landscaperData.getHqLocation());
@@ -152,6 +153,13 @@ public class Landscaper extends Robot {
 	private void determineHqElevation() throws GameActionException {
 		if(!rc.canSenseLocation(landscaperData.getHqLocation())) return;
 		landscaperData.setHqElevation(rc.senseElevation(landscaperData.getHqLocation()));
+	}
+	
+	private void seekEnemyHq() {
+		RobotInfo enemyHQ = senseUnitType(RobotType.HQ, rc.getTeam().opponent());
+		if(enemyHQ != null) {
+			landscaperData.setEnemyHQLocation(enemyHQ.getLocation());
+		}
 	}
 	
 	private void toggleDirection() {
@@ -367,58 +375,48 @@ public class Landscaper extends Robot {
 		return rc.senseElevation(innerWallLocation) - landscaperData.getHqElevation() > GameConstants.MAX_DIRT_DIFFERENCE;
 	}
 	
-	private boolean buryEnemyHQ() throws GameActionException {
-		if(landscaperData.getEnemyHQLocation() != null) {
-			Direction dirToHQ = rc.getLocation().directionTo(landscaperData.getEnemyHQLocation());
-			if(!rc.getLocation().isAdjacentTo(landscaperData.getEnemyHQLocation())) {
-				if (!routeTo(landscaperData.getEnemyHQLocation())) {
-					int dirtDifference = rc.senseElevation(rc.getLocation()) - rc.senseElevation(rc.adjacentLocation(dirToHQ));
-					RobotInfo[] robots = rc.senseNearbyRobots();
-					boolean robotInTheWay = false;
-					for (RobotInfo robot : robots) {
-						if ((!robot.getType().isBuilding() || robot.getTeam() == rc.getTeam()) && robot.getLocation() == rc.getLocation().add(dirToHQ)) {
-							robotInTheWay = true;
-						}
-					}
-					if (!robotInTheWay) {
-						if (dirtDifference > GameConstants.MAX_DIRT_DIFFERENCE) {
-							if (!dig(dirToHQ.rotateRight().rotateRight())) {
-								dig(dirToHQ.rotateLeft().rotateLeft());
-							}
-							depositDirt(dirToHQ);
-						} else if (dirtDifference < -GameConstants.MAX_DIRT_DIFFERENCE) {
-							dig(dirToHQ);
-							if (!depositDirt(dirToHQ.rotateRight().rotateRight())) {
-								depositDirt(dirToHQ.rotateLeft().rotateLeft());
-							}
-						} else {
-							// Destroys building in the way
-							if (!dig(dirToHQ.rotateRight().rotateRight())) {
-								dig(dirToHQ.rotateLeft().rotateLeft());
-							}
-							depositDirt(dirToHQ);
-						}
-					} else {
-						routeTo(landscaperData.getEnemyHQLocation());
+	private boolean buryEnemyHq() throws GameActionException {
+		Direction dirToHQ = rc.getLocation().directionTo(landscaperData.getEnemyHQLocation());
+		if(!rc.getLocation().isAdjacentTo(landscaperData.getEnemyHQLocation())) {
+			if (!routeTo(landscaperData.getEnemyHQLocation())) {
+				int dirtDifference = rc.senseElevation(rc.getLocation()) - rc.senseElevation(rc.adjacentLocation(dirToHQ));
+				RobotInfo[] robots = rc.senseNearbyRobots();
+				boolean robotInTheWay = false;
+				for (RobotInfo robot : robots) {
+					if ((!robot.getType().isBuilding() || robot.getTeam() == rc.getTeam()) && robot.getLocation() == rc.getLocation().add(dirToHQ)) {
+						robotInTheWay = true;
 					}
 				}
-			} else if(rc.getDirtCarrying() > 0) {
-				depositDirt(rc.getLocation().directionTo(landscaperData.getEnemyHQLocation()));
-			} else {
-				determineDigDirection();
-				dig(landscaperData.getEnemyHQBuryDigDirection());
+				if (!robotInTheWay) {
+					if (dirtDifference > GameConstants.MAX_DIRT_DIFFERENCE) {
+						if (!dig(dirToHQ.rotateRight().rotateRight())) {
+							dig(dirToHQ.rotateLeft().rotateLeft());
+						}
+						depositDirt(dirToHQ);
+					} else if (dirtDifference < -GameConstants.MAX_DIRT_DIFFERENCE) {
+						dig(dirToHQ);
+						if (!depositDirt(dirToHQ.rotateRight().rotateRight())) {
+							depositDirt(dirToHQ.rotateLeft().rotateLeft());
+						}
+					} else {
+						// Destroys building in the way
+						if (!dig(dirToHQ.rotateRight().rotateRight())) {
+							dig(dirToHQ.rotateLeft().rotateLeft());
+						}
+						depositDirt(dirToHQ);
+					}
+				} else {
+					routeTo(landscaperData.getEnemyHQLocation());
+				}
 			}
-			
-			return true;
+		} else if(rc.getDirtCarrying() > 0) {
+			depositDirt(rc.getLocation().directionTo(landscaperData.getEnemyHQLocation()));
+		} else {
+			determineDigDirection();
+			dig(landscaperData.getEnemyHQBuryDigDirection());
 		}
 		
-		RobotInfo enemyHQ = senseUnitType(RobotType.HQ, rc.getTeam().opponent());
-		if(enemyHQ != null) {
-			landscaperData.setEnemyHQLocation(enemyHQ.getLocation());
-			return true;
-		}
-		
-		return false;
+		return true;		
 	}
 	
 	private void determineDigDirection() {
@@ -437,9 +435,38 @@ public class Landscaper extends Robot {
 		return rc.getLocation().add(direction).equals(landscaperData.getEnemyHQLocation());
 	}
 
-	private void buryEnemyDesign(RobotInfo enemy) throws GameActionException {
-		if(rc.getDirtCarrying() > 0) depositDirt(rc.getLocation().directionTo(enemy.location));
-		else dig(rc.getLocation().directionTo(landscaperData.getHqLocation()));
+	private boolean oughtTargetBuilding(RobotInfo closestEnemyBuilding) throws GameActionException {
+		int wallElevation = rc.senseElevation(rc.getLocation());
+		
+		if(getFloodingAtRound(rc.getRoundNum() + NumberMath.clamp(RobotType.LANDSCAPER.cost - rc.getTeamSoup(), 0, Integer.MAX_VALUE) + 50) > wallElevation) return false;
+		
+		if(closestEnemyBuilding.getLocation().isWithinDistanceSquared(rc.getLocation(), 3)) return true;
+		
+		int buildingElevation = rc.senseElevation(closestEnemyBuilding.getLocation());
+		return wallElevation - buildingElevation <= GameConstants.MAX_DIRT_DIFFERENCE;
+	}
+	
+	private void buryEnemyBuilding(RobotInfo closestEnemyBuilding) throws GameActionException {
+		if(!rc.getLocation().isWithinDistanceSquared(closestEnemyBuilding.getLocation(), 3)) {
+			routeTo(closestEnemyBuilding.getLocation());
+		} else {
+			if(rc.getDirtCarrying() > 0) depositDirt(rc.getLocation().directionTo(closestEnemyBuilding.getLocation()));
+			else dig(rc.getLocation().directionTo(landscaperData.getHqLocation())); //TODO: Make sure we're not digging from our own wall.
+		}
+	}
+	
+	private RobotInfo seekClosestEnemyBuilding() {
+		RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+		if(enemies.length == 0) return null;
+		
+		int[] buildingDistances = new int[enemies.length];
+		
+		for(int i = 0; i < enemies.length; i++) {
+			buildingDistances[i] = enemies[i].getType().isBuilding() ? rc.getLocation().distanceSquaredTo(enemies[i].getLocation()) : Integer.MAX_VALUE;
+		}
+		
+		RobotInfo closestBuilding = enemies[NumberMath.indexOfLeast(buildingDistances)];
+		return closestBuilding.getType().isBuilding() ? closestBuilding : null;
 	}
 	
 }

@@ -38,35 +38,33 @@ public class HQ extends Robot {
         	tryBuild(RobotType.MINER);
         }
         
-        if(wallBuilt() && lacksVaporatorMiner()) {
-        	buildVaporatorMiner();
-        }
-        
         if(hqData.getEnemyHqLocation() == null) readForEnemyHq();
         
         storeForeignTransactions();
         if(rc.getRoundNum() % 100 == 0) repeatForeignTransaction();    
         
-        RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), hqData.getOpponent());
+        RobotInfo[] enemies = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), hqData.getOpponent());
                 
-        if(enemy.length > 0) {
-        	if(enemy.length > 10) {
+        if(enemies.length > 0) {
+        	if(enemies.length > 10) {
 	        	sendSOS();
 	        }
-	        for(RobotInfo bullseye : enemy) { 
-	        	if(bullseye.type.equals(RobotType.DESIGN_SCHOOL)) {
-	        		//HQCommands.sendSOS(rc);
-	        		//GeneralCommands.sendTransaction(rc, 10, Type.TRANSACTION_ENEMY_DESIGN_SCHOOL_AT_LOC, bullseye.location);
-	        		hqData.setBuildDirection(rc.getLocation().directionTo(bullseye.location).rotateLeft());
-	        		while(!tryBuild(RobotType.MINER)) {
-	        			
-	        		}
+        	
+	        for(RobotInfo enemy : enemies) {
+	        	if(enemy.type.equals(RobotType.LANDSCAPER) && senseUnitType(RobotType.FULFILLMENT_CENTER, rc.getTeam()) == null) {
+	        		hqData.setBuildDirection(rc.getLocation().directionTo(enemy.location).rotateLeft());
+	        		//TODO: We should likely try more build directions.
+	        		tryBuild(RobotType.MINER);
 	        	}
 	        	
-		    	if(rc.canShootUnit(bullseye.getID())) {
-		    		shootUnit(bullseye.getID());
+		    	if(rc.canShootUnit(enemy.getID())) {
+		    		shootUnit(enemy.getID());
 		    	}
 	        }
+        }
+        
+        if(wallBuilt() && lacksVaporatorMiner()) {
+        	buildVaporatorMiner();
         }
         
         if(killOrderCooldownCount <= 0) {

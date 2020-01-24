@@ -29,17 +29,16 @@ public class DesignSchool extends Robot {
 		readTransactions();
 
     	RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), designSchoolData.getOpponent());
-
+    	RobotInfo enemyHq = this.senseUnitType(RobotType.HQ, rc.getTeam().opponent());
+    	
         if(enemy.length > 0) {
-	        for(RobotInfo potentialThreat : enemy) {
-	        	if (potentialThreat.getType() == RobotType.HQ) {
-	        		attackDesignSchoolProtocol(potentialThreat.getLocation());
-	        		return;
-				}
-	        }
+        	if (enemyHq != null) {
+	        	attackDesignSchoolProtocol(enemyHq.getLocation());
+	        	return;
+			}
 	        
 	        for(RobotInfo potentialThreat : enemy) {
-	        	if(potentialThreat.type.equals(RobotType.DESIGN_SCHOOL)) {
+	        	if(potentialThreat.type.isBuilding()) {
 	        		attackDesignSchoolProtocol(potentialThreat.getLocation());
 	        		return;
 	        	} 
@@ -141,7 +140,9 @@ public class DesignSchool extends Robot {
 			sendTransaction(15, Type.TRANSACTION_PAUSE_LANDSCAPER_BUILDING, rc.getLocation());
 		}
 		
-		if(this.senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam()) >= 5) return;
+		int allyLandscapers = this.senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam());
+		int opposingLandscapers = this.senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam().opponent());
+		if((allyLandscapers >= 3 && allyLandscapers > opposingLandscapers) || allyLandscapers >= 5) return;
 		
 		Direction directionToTarget = rc.getLocation().directionTo(target);
 		designSchoolData.setBuildDirection(directionToTarget);
