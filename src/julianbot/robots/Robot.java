@@ -2,6 +2,7 @@ package julianbot.robots;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -14,6 +15,8 @@ import battlecode.common.Team;
 import battlecode.common.Transaction;
 import julianbot.robotdata.RobotData;
 import julianbot.utils.pathfinder.Pathfinder;
+
+import javax.print.attribute.standard.Destination;
 
 public class Robot {
 	
@@ -356,6 +359,22 @@ public class Robot {
 		data.setSearchDirection(directions[(int) (Math.random() * directions.length)]);
 	}
 
+	/**
+	 * Moves in search direction, returns false if unable to.
+	 * @return
+	 * @throws GameActionException
+	 */
+	public boolean continueSearchNonRandom() throws GameActionException {
+		//The move function is deliberately unused here.
+		waitUntilReady();
+
+		if(rc.canMove(data.getSearchDirection()) && !rc.senseFlooding(rc.getLocation().add(data.getSearchDirection()))) {
+			rc.move(data.getSearchDirection());
+			return true;
+		}
+		return false;
+	}
+
 	//TRANSACTIONS
 	protected boolean sendTransaction(int soupBid, Type type, MapLocation loc) throws GameActionException {		
 		int transactionTag = (int) (Math.random()*500); //This use of parentheses will prevent truncation of the random number.
@@ -457,9 +476,10 @@ public class Robot {
 			if(!pathfindingSuccessful) data.setPath(null);
 			return pathfindingSuccessful;
 		}
-		
+
 		//Otherwise, simply try to move directly towards the destination.
 		MapLocation rcLocation = rc.getLocation();
+		/*
 		Direction initialDirection = rc.getLocation().directionTo(destination);
 		if(move(initialDirection)) return true;
 		
@@ -485,16 +505,117 @@ public class Robot {
 		for(Direction direction : nextDirections) {
 			if(rcLocation.add(direction).equals(data.getPreviousLocation())) continue;
 			if(move(direction)) return true;
-		}
+		} */
 		
 		//TODO: MAXIMO'S DOMAIN DO NOT TOUCH (FUTURE SITE OF BUG NAV)
+		if (rc.canSenseLocation(destination)) {
+			//If all of these measures have failed, we'll need to use pathfinding to get around.
+			//However, just in case, we will allow for the previous location to be used next turn.
+			data.setPreviousLocation(rcLocation);
+			return pathfind(destination);
+		} else {
+			if (bugNav(destination)) {
+				return true;
+			}
+		}
 		
-		//If all of these measures have failed, we'll need to use pathfinding to get around.
-		//However, just in case, we will allow for the previous location to be used next turn.
-		data.setPreviousLocation(rcLocation);
-		return pathfind(destination);
+		return false;
 	}
-	
+
+	/**
+	 * Tries to move closer to destination. If it can't follows wall until it can move closer.
+	 * @param destination
+	 * @return
+	 */
+	public boolean bugNav(MapLocation destination) throws GameActionException {
+
+		if (data.getCurrentDestination() != destination) {
+			data.setCurrentDestination(destination);
+			data.setClosestDist(-1);
+		}
+
+		if (data.getClosestDist() == -1) {
+			System.out.println("Initializing closestDist");
+			data.setClosestDist(rc.getLocation().distanceSquaredTo(destination));
+		}
+
+		Direction dirToDest = rc.getLocation().directionTo(destination);
+		Direction dirToDestLeft = dirToDest.rotateLeft();
+		Direction dirToDestRight = dirToDest.rotateRight();
+		rc.setIndicatorDot(rc.getLocation().add(dirToDest), 255, 182, 193); // Pink dot
+		if (rc.getLocation().add(dirToDest).distanceSquaredTo(destination) < data.getClosestDist()) {
+			// If the next move toward the destination is closer than the closest its been
+			if (bugNavMove(destination, dirToDest)) {return true;}
+		} else if (rc.getLocation().add(dirToDestLeft).distanceSquaredTo(destination) < data.getClosestDist()) {
+			if (bugNavMove(destination, dirToDestLeft)) {return true;}
+		} else if (rc.getLocation().add(dirToDestRight).distanceSquaredTo(destination) < data.getClosestDist()) {
+			if (bugNavMove(destination, dirToDestRight)) {return true;}
+		} else {
+			followLeftWall(dirToDest);
+		}
+
+		if (rc.getLocation().equals(destination)) {
+			// After robot moves, checks if it is now at its destination
+			System.out.println("Reached destination");
+			data.setClosestDist(-1);
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Tries to move and checks if adjacent to destination but cant move to dest
+	 * @param destination
+	 * @param dir
+	 * @return
+	 * @throws GameActionException
+	 */
+	public boolean bugNavMove(MapLocation destination, Direction dir) throws GameActionException {
+		if (move(dir)) {
+			//If you can move in that direction
+			data.setClosestDist(rc.getLocation().distanceSquaredTo(destination));
+			data.setSearchDirection(null);
+			System.out.println("Moved to new closest location. Dist: " + data.getClosestDist());
+
+		} else if (rc.getLocation().add(dir).equals(destination)) {
+			//TODO Check if building is in the way
+			// Prevents case where robot attempts to move onto occupied space which is its destination
+			System.out.println("Adjacent to destination");
+			data.setClosestDist(-1); // Should stop nav. But honestly probably doesn't
+			return true;
+
+		} else {
+			followLeftWall(dir);
+		}
+		return false;
+	}
+
+	/**
+	 * Attempts to move in same direction as last turn, otherwise rotates right
+	 * @throws GameActionException
+	 */
+	public void followLeftWall(Direction dirToDest) throws GameActionException {
+		System.out.println("Can't move in closer direction. Resorting to wall hugging.");
+		if (data.getSearchDirection() == null) {
+			data.setSearchDirection(dirToDest);
+		}
+		rc.setIndicatorLine(rc.getLocation(), rc.adjacentLocation(data.getSearchDirection()), 0, 0, 255);
+		// Follows wall on left side
+		for (int i = 0; i < 8; i++) {
+			if (continueSearchNonRandom()) {
+				System.out.println("Searched in direction " + data.getSearchDirection());
+				break;
+			} else {
+				data.setObstacleLoc(rc.getLocation().add(data.getSearchDirection()));
+				data.setSearchDirection(data.getSearchDirection().rotateRight());
+				System.out.println("Can't move, setting obstacle at " + data.getObstacleLoc());
+				rc.setIndicatorDot(data.getObstacleLoc(), 0, 0, 0);
+			}
+		}
+		rc.setIndicatorLine(rc.getLocation().subtract(data.getSearchDirection()), rc.getLocation(), 102, 255, 255); //Teal line
+		data.setSearchDirection(rc.getLocation().directionTo(data.getObstacleLoc()));
+	}
+
 	/**
 	 *
 	 * @param destination

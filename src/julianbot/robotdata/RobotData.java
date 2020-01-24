@@ -27,6 +27,11 @@ public class RobotData {
 		private MapLocation pendingTransactionLocation;
 		private int pendingTransactionSoupBid;
 	private Direction searchDirection;
+
+	//BugNav Data
+	private int bugNavClosestDist;
+	private MapLocation obstacleLoc;
+	private MapLocation currentDestination;
 	
 	//WALL DIMENSIONS
 	private int wallOffsetXMin, wallOffsetXMax, wallOffsetYMin, wallOffsetYMax;
@@ -44,9 +49,11 @@ public class RobotData {
 		spawnLocation = rc.getLocation();
 		setSpawnerLocation(spawnerLocation);
 		previousLocation = rc.getLocation();
-		
+		currentDestination = rc.getLocation();
 		hasPendingTransaction = false;
-		
+		bugNavClosestDist = -1;
+		setSpawnerLocation(spawnerLocation);
+
 		if (!rc.getType().isBuilding()) {
 			if(spawnerLocation == null || rc.getLocation() == null) {
 				System.out.println("RobotData constructor on round " + rc.getRoundNum() + ":");
@@ -171,6 +178,14 @@ public class RobotData {
 		this.spawnLocation = spawnLocation;
 	}
 
+	public int getClosestDist() {return bugNavClosestDist;}
+
+	public void setClosestDist(int dist) {bugNavClosestDist = dist;}
+
+	public MapLocation getObstacleLoc() {return obstacleLoc;}
+
+	public void setObstacleLoc(MapLocation loc) {obstacleLoc = loc;}
+
 	public MapLocation getSpawnerLocation() {
 		return spawnerLocation;
 	}
@@ -272,6 +287,14 @@ public class RobotData {
 
 	public void setPendingTransactionSoupBid(int pendingTransactionSoupBid) {
 		this.pendingTransactionSoupBid = pendingTransactionSoupBid;
+	}
+
+	public MapLocation getCurrentDestination() {
+		return currentDestination;
+	}
+
+	public void setCurrentDestination(MapLocation currentDestination) {
+		this.currentDestination = currentDestination;
 	}
 	
 	public boolean isBaseOnEdge() {
