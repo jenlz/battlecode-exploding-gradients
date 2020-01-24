@@ -17,6 +17,7 @@ public class RobotData {
 	
 	//ROUTING
 	private MapLocation previousLocation;
+	protected boolean bugNaving;
 	protected MapGraph mapGraph;
 		protected Direction[] path;
 		protected int pathProgression;
@@ -178,9 +179,13 @@ public class RobotData {
 		this.spawnLocation = spawnLocation;
 	}
 
-	public int getClosestDist() {return bugNavClosestDist;}
+	public int getClosestDist() {
+		return bugNavClosestDist;
+	}
 
-	public void setClosestDist(int dist) {bugNavClosestDist = dist;}
+	public void setClosestDist(int bugNavClosestDist) {
+		this.bugNavClosestDist = bugNavClosestDist;
+	}
 
 	public MapLocation getObstacleLoc() {return obstacleLoc;}
 
@@ -208,6 +213,14 @@ public class RobotData {
 
 	public void setPreviousLocation(MapLocation previousLocation) {
 		this.previousLocation = previousLocation;
+	}
+	
+	public boolean isBugNaving() {
+		return bugNaving;
+	}
+	
+	public void setBugNaving(boolean bugNaving) {
+		this.bugNaving = bugNaving;
 	}
 
 	public MapGraph getMapGraph() {
