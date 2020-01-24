@@ -3,6 +3,7 @@ package julianbot.robotdata;
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
 
 public class LandscaperData extends RobotData {
 
@@ -17,11 +18,14 @@ public class LandscaperData extends RobotData {
 	private MapLocation enemyHQLocation;
 		private Direction enemyHQBuryDigDirection;
 	
-	//WALL DIMENSIONS
-	private int wallOffsetXMin, wallOffsetXMax, wallOffsetYMin, wallOffsetYMax;
+	//FLOODING RESPONSE
+	private MapLocation[] lastResortBuildLocations;
 	
 	//CLEARING OBSTRUCTIONS
 	private boolean clearingObstruction;
+	
+	//ATTACK
+	private RobotInfo closestEnemyBuilding;
 		
 	public LandscaperData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
@@ -68,27 +72,12 @@ public class LandscaperData extends RobotData {
 		this.enemyHQBuryDigDirection = enemyHQBuryDigDirection;
 	}
 
-	public int getWallOffsetXMin() {
-		return wallOffsetXMin;
+	public MapLocation[] getLastResortBuildLocations() {
+		return lastResortBuildLocations;
 	}
 
-	public int getWallOffsetXMax() {
-		return wallOffsetXMax;
-	}
-
-	public int getWallOffsetYMin() {
-		return wallOffsetYMin;
-	}
-
-	public int getWallOffsetYMax() {
-		return wallOffsetYMax;
-	}
-	
-	public void setWallOffsetBounds(int wallOffsetXMin, int wallOffsetXMax, int wallOffsetYMin, int wallOffsetYMax) {
-		this.wallOffsetXMin = wallOffsetXMin;
-		this.wallOffsetXMax = wallOffsetXMax;
-		this.wallOffsetYMin = wallOffsetYMin;
-		this.wallOffsetYMax = wallOffsetYMax;
+	public void setLastResortBuildLocations(MapLocation[] lastResortBuildLocations) {
+		this.lastResortBuildLocations = lastResortBuildLocations;
 	}
 
 	public boolean isClearingObstruction() {
@@ -97,6 +86,14 @@ public class LandscaperData extends RobotData {
 
 	public void setClearingObstruction(boolean clearingObstruction) {
 		this.clearingObstruction = clearingObstruction;
+	}
+
+	public RobotInfo getClosestEnemyBuilding() {
+		return closestEnemyBuilding;
+	}
+
+	public void setClosestEnemyBuilding(RobotInfo closestEnemyBuilding) {
+		this.closestEnemyBuilding = closestEnemyBuilding;
 	}
 	
 }

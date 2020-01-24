@@ -89,9 +89,12 @@ public class Miner extends Scout {
 			return(minerData.isBaseOnEdge()) ? numVaporators >= 1 : numVaporators >= 2;
 		}
 		
-		//TODO: On the wall detection for edge-case maps.
 		boolean interferingWithBase = isOnWall(rc.getLocation(), minerData.getSpawnerLocation()) || isWithinWall(rc.getLocation(), minerData.getSpawnerLocation());
-		return this.senseUnitType(RobotType.LANDSCAPER, rc.getTeam(), 3) != null && interferingWithBase;
+		boolean wallBuilt = wallBuilt(minerData.getSpawnerLocation());
+		
+		System.out.println("Self destruct? Base Interference = " + interferingWithBase + ", Role = " + minerData.getCurrentRole() + ", Wall Built = " + wallBuilt);
+		
+		return this.senseUnitType(RobotType.LANDSCAPER, rc.getTeam(), 3) != null && interferingWithBase && (minerData.getCurrentRole() != MinerData.ROLE_DEFENSE || wallBuilt);
 	}
 	
 	private void respondToThreats() {
@@ -272,6 +275,17 @@ public class Miner extends Scout {
 		}
 		
 		defensiveHqBlock();
+		
+		//A defensive miner can still mine.
+		Direction adjacentSoupDirection = getAdjacentSoupDirection();
+		
+		if(adjacentSoupDirection != Direction.CENTER && rc.getSoupCarrying() < RobotType.MINER.soupLimit) {
+			mineRawSoup(getAdjacentSoupDirection());
+			return;
+		} else if(rc.getSoupCarrying() > 0 && getAdjacentRefineryDirection() != Direction.CENTER) {
+    		depositRawSoup(rc.getLocation().directionTo(minerData.getHqLocation()));
+    		return;
+    	}
     }
 	
 	private void defensiveFulfillmentCenterBuild() throws GameActionException {
@@ -584,7 +598,8 @@ public class Miner extends Scout {
 	private void rushMinerProtocol() throws GameActionException {
 		System.out.println("Rush Miner Protocol");
 		findNearbySoup();
-		if (rc.getRoundNum() > 250) {minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);};
+		if (rc.getRoundNum() > 250) minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+		
 		if (minerData.getEnemyHqLocation() == null) {
 			if (!minerData.searchDestinationsDetermined()) {
 				minerData.calculateSearchDestinations(rc);

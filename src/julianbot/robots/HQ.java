@@ -63,12 +63,13 @@ public class HQ extends Robot {
 	        }
         }
         
-        if(wallBuilt() && lacksVaporatorMiner()) {
+        if(wallBuilt(rc.getLocation()) && lacksVaporatorMiner()) {
         	buildVaporatorMiner();
         }
         
         if(killOrderCooldownCount <= 0) {
-        	int projectedFlooding = getFloodingAtRound(rc.getRoundNum() + 150);
+        	int travelTimeTolerance = (int) ((rc.getMapWidth() + rc.getMapHeight()) * 1.2f);
+        	int projectedFlooding = getFloodingAtRound(rc.getRoundNum() + 75 + travelTimeTolerance);
         	
         	if(rc.getRoundNum() > 1000 && projectedFlooding > lowestWallHeight()) {
         		sendKillOrder();
@@ -166,31 +167,6 @@ public class HQ extends Robot {
     			}
     		}
     	}
-    }
-    
-    /*
-     * TODO: This function ignores tiles on the edge of the map, but there are map edges that should be part of the wall.
-     * This is likely not a problem, as an estimate is sufficient for desired behavior, but this needs to be officially decided.
-     */
-    private boolean wallBuilt() throws GameActionException {
-    	MapLocation rcLocation = rc.getLocation();
-    	int hqElevation = rc.senseElevation(rcLocation);
-    	
-    	int minDx = data.getWallOffsetXMin();
-    	int maxDx = data.getWallOffsetXMax();
-    	int minDy = data.getWallOffsetYMin();
-    	int maxDy = data.getWallOffsetYMax();
-    	
-    	for(int dx = minDx; dx <= maxDx; dx++) {
-    		for(int dy = minDy; dy <= maxDy; dy++) {
-    			MapLocation location = rcLocation.translate(dx, dy);
-    			if(rc.canSenseLocation(location) && !onMapEdge(location) && isOnWall(location, rcLocation)) {
-    				if(rc.senseElevation(location) - hqElevation <= GameConstants.MAX_DIRT_DIFFERENCE) return false;
-    			}
-    		}
-    	}
-    	
-    	return true;
     }
     
     private int lowestWallHeight() throws GameActionException {

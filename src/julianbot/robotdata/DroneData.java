@@ -21,10 +21,11 @@ public class DroneData extends ScoutData {
 	private boolean holdingCow;
 	
 	//ATTACKS
-	private MapLocation attackWaitLocation;
-	private MapLocation baseAttackWaitLocation;
-	private MapLocation defaultAttackWaitLocation;
-		private int attackLocationCycles;
+	private boolean preparingToAttack;
+		private MapLocation attackWaitLocation;
+		private MapLocation baseAttackWaitLocation;
+		private MapLocation defaultAttackWaitLocation;
+			private int attackLocationCycles;
 	private boolean awaitingKillOrder;
 	private boolean receivedKillOrder;
 		private int killOrderReceptionRound;
@@ -98,6 +99,14 @@ public class DroneData extends ScoutData {
 		return enemyFrom;
 	}
 	
+	public boolean isPreparingToAttack() {
+		return preparingToAttack;
+	}
+
+	public void setPreparingToAttack(boolean preparingToAttack) {
+		this.preparingToAttack = preparingToAttack;
+	}
+
 	public MapLocation getAttackWaitLocation() {
 		return attackWaitLocation;
 	}
