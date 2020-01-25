@@ -35,7 +35,7 @@ public class HQ extends Robot {
     	}
     	    	
         if(oughtBuildMiner()) {        	
-        	tryBuild(RobotType.MINER);
+        	tryBuild();
         }
         
         if(hqData.getEnemyHqLocation() == null) readForEnemyHq();
@@ -53,8 +53,7 @@ public class HQ extends Robot {
 	        for(RobotInfo enemy : enemies) {
 	        	if(enemy.type.equals(RobotType.LANDSCAPER) && senseUnitType(RobotType.FULFILLMENT_CENTER, rc.getTeam()) == null) {
 	        		hqData.setBuildDirection(rc.getLocation().directionTo(enemy.location).rotateLeft());
-	        		//TODO: We should likely try more build directions.
-	        		tryBuild(RobotType.MINER);
+	        		forceBuild();
 	        	}
 	        	
 		    	if(rc.canShootUnit(enemy.getID())) {
@@ -63,16 +62,17 @@ public class HQ extends Robot {
 	        }
         }
         
-        if(wallBuilt(rc.getLocation()) && lacksVaporatorMiner()) {
+        if(wallBuilt(rc.getLocation()) && lacksVaporatorMiner() && lacksVaporator()) {
+        	System.out.println("Building vaporator miner...");
         	buildVaporatorMiner();
         }
         
         if(killOrderCooldownCount <= 0) {
-        	int travelTimeTolerance = (int) ((rc.getMapWidth() + rc.getMapHeight()) * 1.2f);
-        	int projectedFlooding = getFloodingAtRound(rc.getRoundNum() + 75 + travelTimeTolerance);
+        	int estimatedAttackTime = getEstimatedDroneAttackTime();
+        	int projectedFlooding = getFloodingAtRound(rc.getRoundNum() + estimatedAttackTime);
         	
         	if(rc.getRoundNum() > 1000 && projectedFlooding > lowestWallHeight()) {
-        		sendKillOrder();
+        		sendKillOrder(estimatedAttackTime);
         		return;
         	}
         	
@@ -83,10 +83,19 @@ public class HQ extends Robot {
 	        	if(ally.type == RobotType.DELIVERY_DRONE && (Math.abs(ally.getLocation().x - rc.getLocation().x) == 3 || Math.abs(ally.getLocation().y - rc.getLocation().y) == 3)) attackDroneCount++;
 	        }
 	        
-	        if(attackDroneCount >= 15) sendKillOrder();
+	        if(attackDroneCount >= 15) sendKillOrder(estimatedAttackTime);
+	        else if(attackDroneCount >= 14 && lacksVaporatorMiner()) {
+	        	System.out.println("Forcing build for attack...");
+	        	forceBuild();
+	        }
         } else {
         	killOrderCooldownCount--;
         }
+	}
+	
+	private int getEstimatedDroneAttackTime() {
+		int travelTimeTolerance = (int) ((rc.getMapWidth() + rc.getMapHeight()) * 1.2f);
+		return travelTimeTolerance + 75;
 	}
 	
 	private void makeInitialReport() throws GameActionException {
@@ -114,8 +123,6 @@ public class HQ extends Robot {
 		else if(vaporatorMinerElevation - hqElevation > GameConstants.MAX_DIRT_DIFFERENCE) sendTransaction(1, Type.TRANSACTION_BUILD_SITE_BLOCKED, hqData.getVaporatorBuildMinerLocation());
 	}
 	
-	
-	
 	//DEFENSE
 	private void sendSOS() throws GameActionException {
 		//Since there can be seven transactions per round, we can be guaranteed to get one message through if that message is sent with a bid of one more than a seventh of the inital soup cost.
@@ -138,17 +145,32 @@ public class HQ extends Robot {
      * @return true if a move was performed
      * @throws GameActionException
      */
-    private boolean tryBuild(RobotType type) throws GameActionException {
+    private boolean tryBuild() throws GameActionException {
     	Direction buildDirection = hqData.getBuildDirection();
     	
-        if (rc.isReady() && rc.canBuildRobot(type, buildDirection)) {
-            rc.buildRobot(type, buildDirection);
+    	waitUntilReady();
+    	
+        if(rc.canBuildRobot(RobotType.MINER, buildDirection)) {
+            rc.buildRobot(RobotType.MINER, buildDirection);
             hqData.setBuildDirection(buildDirection.rotateRight());
-            if(type == RobotType.MINER) hqData.incrementMinersBuilt();
+            hqData.incrementMinersBuilt();
             return true;
         } 
         
         hqData.setBuildDirection(buildDirection.rotateRight());
+        return false;
+    }
+    
+    private boolean forceBuild() throws GameActionException {    	
+    	waitUntilReady();
+    	
+    	for(Direction direction : Robot.directions) {
+    		if(rc.canBuildRobot(RobotType.MINER, direction)) {
+    			rc.buildRobot(RobotType.MINER, direction);
+    			return true;
+    		}
+    	}
+    	
         return false;
     }
     
@@ -201,9 +223,15 @@ public class HQ extends Robot {
     	return true;
     }
     
+    private boolean lacksVaporator() {
+    	return senseUnitType(RobotType.VAPORATOR, rc.getTeam()) == null;
+    }
+    
     private boolean buildVaporatorMiner() throws GameActionException {
-    	if (rc.isReady() && rc.canBuildRobot(RobotType.MINER, Direction.SOUTH)) {
-            rc.buildRobot(RobotType.MINER, Direction.SOUTH);
+    	MapLocation vaporatorBuildMinerLocation = hqData.getVaporatorBuildMinerLocation();
+    	
+    	if (rc.isReady() && rc.canBuildRobot(RobotType.MINER, rc.getLocation().directionTo(vaporatorBuildMinerLocation))) {
+            rc.buildRobot(RobotType.MINER, rc.getLocation().directionTo(vaporatorBuildMinerLocation));
             return true;
         } 
         
@@ -224,8 +252,8 @@ public class HQ extends Robot {
 		}
     }
 	
-    private void sendKillOrder() throws GameActionException {
-        sendTransaction(10, Type.TRANSACTION_KILL_ORDER, hqData.getEnemyHqLocation());
+    private void sendKillOrder(int estimatedAttackTime) throws GameActionException {
+        sendTransaction(10, Type.TRANSACTION_KILL_ORDER, hqData.getEnemyHqLocation(), estimatedAttackTime);
         killOrderCooldownCount = KILL_ORDER_COOLDOWN_ROUNDS;
     }
     

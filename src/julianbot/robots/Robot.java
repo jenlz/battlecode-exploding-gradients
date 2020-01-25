@@ -405,8 +405,12 @@ public class Robot {
 
 	//TRANSACTIONS
 	protected boolean sendTransaction(int soupBid, Type type, MapLocation loc) throws GameActionException {		
+		return sendTransaction(soupBid, type, loc, 0);
+	}
+	
+	protected boolean sendTransaction(int soupBid, Type type, MapLocation loc, int bonusInt) throws GameActionException {		
 		int transactionTag = (int) (Math.random()*500); //This use of parentheses will prevent truncation of the random number.
-		int[] message = new int[]{transactionTag, type.getVal()+transactionTag, loc.x+transactionTag, loc.y+transactionTag, rc.getRoundNum()+transactionTag, 0, 0};
+		int[] message = new int[]{transactionTag, type.getVal()+transactionTag, loc.x+transactionTag, loc.y+transactionTag, rc.getRoundNum()+transactionTag, bonusInt+transactionTag, 0};
 		int odd = 0;
 		for (int i : message) {
 			if (i%2 == 1)

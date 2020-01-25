@@ -17,6 +17,8 @@ public class FulfillmentCenterData extends RobotData {
 	private int wallOffsetXMin, wallOffsetXMax, wallOffsetYMin, wallOffsetYMax;
 	private boolean baseOnEdge;
 	
+	private int pauseBuildTimer;
+	
 	public FulfillmentCenterData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
 		buildDirection = Direction.NORTH;
@@ -39,6 +41,14 @@ public class FulfillmentCenterData extends RobotData {
 		return buildDirection;
 	}
 
+	public void setPauseBuildTimer(int turns) {
+		pauseBuildTimer = turns;
+	}
+
+	public int getPauseBuildTimer() {
+		return pauseBuildTimer;
+	}
+	
 	public void setBuildDirection(Direction buildDirection) {
 		this.buildDirection = buildDirection;
 	}

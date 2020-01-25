@@ -55,7 +55,10 @@ public class DesignSchool extends Robot {
         boolean oughtBuildLandscaper = oughtBuildLandscaper();
         boolean adjacentFlooding = isFloodingAdjacent();
         System.out.println("Ought build for building's sake? " + oughtBuildLandscaper + " Flooding imminent? " + adjacentFlooding);
-    	if(oughtBuildLandscaper || adjacentFlooding) {
+        if(adjacentFlooding && !designSchoolData.getIsAttackSchool()) {
+			System.out.println("Flooding is imminent! We need to force a build.");
+			forceBuild();
+		} else if(oughtBuildLandscaper) {
     		System.out.println("Design school ought build a landscaper.");
     		if(designSchoolData.getLandscapersBuilt() > 0 && onMapEdge(rc.getLocation().add(designSchoolData.getDefaultBuildDirection()))) {
     			designSchoolData.setDefaultBuildDirection(designSchoolData.getDefaultAttackBuildDirection());
@@ -71,10 +74,6 @@ public class DesignSchool extends Robot {
     					System.out.println("Wall built! We can proceed to attack landscapers.");
     					//The wall already exists, so we can start building northwards to generate attack landscapers.  
     					designSchoolData.setDefaultBuildDirection(designSchoolData.getDefaultAttackBuildDirection());
-    				} else if(adjacentFlooding) {
-    					System.out.println("Flooding is still imminent! We need to force a build.");
-    					//A wall build failed, so we need to try building in all directions.
-    					forceBuild();
     				}
     			}
     		}
@@ -154,7 +153,7 @@ public class DesignSchool extends Robot {
 		
 		int allyLandscapers = this.senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam());
 		int opposingLandscapers = this.senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam().opponent());
-		if((allyLandscapers >= 3 && allyLandscapers > opposingLandscapers) || allyLandscapers >= 5) return;
+		if((allyLandscapers >= 3 && allyLandscapers > opposingLandscapers) || allyLandscapers >= 5 || isFloodingImminent() || isFloodingAdjacent()) return;
 		
 		Direction directionToTarget = rc.getLocation().directionTo(target);
 		designSchoolData.setBuildDirection(directionToTarget);
@@ -192,6 +191,11 @@ public class DesignSchool extends Robot {
 		if (designSchoolData.getLandscapersBuilt() == 0) return designSchoolData.getBuildSitesBlocked() || senseUnitType(RobotType.FULFILLMENT_CENTER, rc.getTeam()) != null;
 		
 		return (designSchoolData.isStableSoupIncomeConfirmed() || designSchoolData.getBuildSitesBlocked()) ? rc.getTeamSoup() >= RobotType.LANDSCAPER.cost : rc.getTeamSoup() >= RobotType.VAPORATOR.cost + 5;
+	}
+	
+	private boolean isFloodingImminent() throws GameActionException {
+		int elevation = rc.senseElevation(rc.getLocation());
+		return elevation <= this.getFloodingAtRound(rc.getRoundNum() + (RobotType.LANDSCAPER.cost * 1.5));
 	}
 	
 	private boolean isFloodingAdjacent() throws GameActionException {
@@ -283,6 +287,10 @@ public class DesignSchool extends Robot {
     					case TRANSACTION_PAUSE_LANDSCAPER_BUILDING:
     						System.out.println("Pausing building...");
     						designSchoolData.setPauseBuildTimer(150);
+    						break;
+    					case TRANSACTION_KILL_ORDER:
+    						System.out.println("Pausing building...");
+    						designSchoolData.setPauseBuildTimer(message[5]);
     						break;
     					case TRANSACTION_BUILD_SITE_BLOCKED:
     						designSchoolData.setBuildSitesBlocked(true);

@@ -2,6 +2,7 @@ package julianbot.robots;
 
 import java.util.ArrayList;
 
+import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
@@ -78,9 +79,38 @@ public class Miner extends Scout {
 			case MinerData.ROLE_RUSH:
 				rushMinerProtocol();
 				break;
+			case MinerData.ROLE_DRONE_RUSH_FINISHER:
+				droneRushFinisherProtocol();
+				break;
 			default:
 				break;
 		}
+	}
+	
+	private void discernRole() throws GameActionException {		
+		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam());
+		boolean fulfillmentCenterBuilt = false;
+		boolean designSchoolBuilt = false;
+		
+		RobotInfo[] enemy = rc.senseNearbyRobots(-1, data.getOpponent());
+		boolean enemyDesignSchoolAdjacent = false;
+		
+		for(RobotInfo robot : robots) {
+			if(robot.type == RobotType.FULFILLMENT_CENTER) fulfillmentCenterBuilt = true;
+			else if(robot.type == RobotType.DESIGN_SCHOOL) designSchoolBuilt = true;
+		}
+		
+		for(RobotInfo robot : enemy) {
+			if(robot.type == RobotType.DESIGN_SCHOOL) enemyDesignSchoolAdjacent = true;
+		}
+		
+		if(enemyDesignSchoolAdjacent) minerData.setCurrentRole(MinerData.ROLE_BLOCK);
+		else if(fulfillmentCenterBuilt) minerData.setCurrentRole(MinerData.ROLE_VAPORATOR_BUILDER);
+		else if(designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.FULFILLMENT_CENTER.cost * 0.8f)) minerData.setCurrentRole(MinerData.ROLE_FULFILLMENT_BUILDER);
+		else if(!designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.DESIGN_SCHOOL.cost * 0.8f)) minerData.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
+//		else if (rc.getRoundNum() % 3 == 0) data.setCurrentRole(MinerData.ROLE_SCOUT);
+		else if(rc.getRoundNum() <= 2) minerData.setCurrentRole(MinerData.ROLE_RUSH);
+		else minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
 	}
 	
 	private boolean oughtSelfDestruct() throws GameActionException {
@@ -219,6 +249,15 @@ public class Miner extends Scout {
     
     private void vaporatorMinerProtocol() throws GameActionException {
 		System.out.println("vaporator protocol");
+		
+		//TODO: In the case that the devs are absolutely evil and decide to place the HQs RIGHT NEXT TO EACH OTHER, this may or may not be a problem. We can decide if we want to do anything aobut this.
+		RobotInfo enemyHq = senseUnitType(RobotType.HQ, rc.getTeam().opponent(), 8);
+		boolean enemyHqAdjacent = enemyHq != null;
+		if(enemyHqAdjacent) {
+			minerData.setEnemyHqLocation(enemyHq.getLocation());
+			minerData.setCurrentRole(MinerData.ROLE_DRONE_RUSH_FINISHER);
+			return;
+		}
 		
 		MapLocation vaporatorBuildMinerLocation = minerData.getVaporatorBuildMinerLocation();
 		MapLocation vaporatorBuildSite = minerData.getVaporatorBuildSite();
@@ -627,31 +666,23 @@ public class Miner extends Scout {
 		}
 	}
 	
-	private void discernRole() throws GameActionException {		
-		RobotInfo[] robots = rc.senseNearbyRobots(-1, rc.getTeam());
-		boolean fulfillmentCenterBuilt = false;
-		boolean designSchoolBuilt = false;
+	private void droneRushFinisherProtocol() throws GameActionException {
+		waitUntilReady();
 		
-		RobotInfo[] enemy = rc.senseNearbyRobots(-1, data.getOpponent());
-		boolean enemyDesignSchoolAdjacent = false;
+		if(senseUnitType(RobotType.NET_GUN, rc.getTeam()) != null) return;
 		
-		for(RobotInfo robot : robots) {
-			if(robot.type == RobotType.FULFILLMENT_CENTER) fulfillmentCenterBuilt = true;
-			else if(robot.type == RobotType.DESIGN_SCHOOL) designSchoolBuilt = true;
+		for(Direction direction : Robot.directions) {
+			if(rc.canBuildRobot(RobotType.NET_GUN, direction)) {
+				rc.buildRobot(RobotType.NET_GUN, direction);
+				System.out.println("Built a net gun!");
+				return;
+			} else {
+				System.out.println("Cannot build a robot to the " + direction);
+			}
 		}
 		
-		for(RobotInfo robot : enemy) {
-			if(robot.type == RobotType.DESIGN_SCHOOL) enemyDesignSchoolAdjacent = true;
-		}
-		
-		
-		if(enemyDesignSchoolAdjacent) minerData.setCurrentRole(MinerData.ROLE_BLOCK);
-		else if(fulfillmentCenterBuilt) minerData.setCurrentRole(MinerData.ROLE_VAPORATOR_BUILDER);
-		else if(designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.FULFILLMENT_CENTER.cost * 0.8f)) minerData.setCurrentRole(MinerData.ROLE_FULFILLMENT_BUILDER);
-		else if(!designSchoolBuilt && rc.getTeamSoup() >= ((float) RobotType.DESIGN_SCHOOL.cost * 0.8f)) minerData.setCurrentRole(MinerData.ROLE_DESIGN_BUILDER);
-//		else if (rc.getRoundNum() % 3 == 0) data.setCurrentRole(MinerData.ROLE_SCOUT);
-		else if(rc.getRoundNum() <= 2) minerData.setCurrentRole(MinerData.ROLE_RUSH);
-		else minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+		System.out.println("Net gun build failed. (" + rc.getCooldownTurns() + ")");
+		if(minerData.getEnemyHqLocation() != null && !rc.getLocation().isWithinDistanceSquared(minerData.getEnemyHqLocation(), 3)) routeTo(minerData.getEnemyHqLocation());
 	}
 	
 	private RobotType getBuildPriority() {
@@ -882,6 +913,7 @@ public class Miner extends Scout {
 	private void readTransactions() throws GameActionException {
     	for(int i = minerData.getTransactionRound(); i < rc.getRoundNum(); i++) {
     		minerData.setTransactionRound(i);
+    		if(Clock.getBytecodesLeft() <= 500) break;
     		
     		for(Transaction transaction : rc.getBlock(i)) {
     			int[] message = decodeTransaction(transaction);

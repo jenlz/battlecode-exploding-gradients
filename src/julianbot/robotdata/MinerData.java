@@ -26,6 +26,7 @@ public class MinerData extends ScoutData {
 		private RobotInfo previousTarget;
 		private int turnsScouted;
 	public static final int ROLE_RUSH = 8;
+	public static final int ROLE_DRONE_RUSH_FINISHER = 9;
 
 	//LANDMARKS
 	private ArrayList<MapLocation> soupLocs;

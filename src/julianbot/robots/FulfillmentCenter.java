@@ -34,6 +34,8 @@ public class FulfillmentCenter extends Robot {
     	
 		if(!fulfillmentCenterData.isStableSoupIncomeConfirmed()) confirmStableSoupIncome();
 		
+		fulfillmentCenterData.setPauseBuildTimer(fulfillmentCenterData.getPauseBuildTimer() - 1);
+		
 		if(buildDefensiveDrones()) return;
     	if(oughtBuildDrone()) tryBuild();
 	}
@@ -98,6 +100,8 @@ public class FulfillmentCenter extends Robot {
 	}
 	
 	private boolean oughtBuildDrone() {
+		if (fulfillmentCenterData.getPauseBuildTimer() > 0) return false;
+		
 		if(fulfillmentCenterData.isStableSoupIncomeConfirmed()) {
 			MapLocation hqLocation = fulfillmentCenterData.getHqLocation();
 			
@@ -213,6 +217,10 @@ public class FulfillmentCenter extends Robot {
 						case TRANSACTION_ENEMY_HQ_AT_LOC:
 							fulfillmentCenterData.setEnemyHqLocated(true);
 							break;
+						case TRANSACTION_KILL_ORDER:
+    						System.out.println("Pausing building...");
+    						fulfillmentCenterData.setPauseBuildTimer(message[5]);
+    						break;
 						default:
 							break;
 					}

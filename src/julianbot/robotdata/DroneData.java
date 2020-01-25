@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import battlecode.common.RobotType;
 import battlecode.common.Team;
 
 public class DroneData extends ScoutData {
@@ -19,6 +20,7 @@ public class DroneData extends ScoutData {
 	private Team enemyFrom;
 	private boolean holdingEnemy;
 	private boolean holdingCow;
+	private RobotType cargoType;
 	
 	//ATTACKS
 	private boolean preparingToAttack;
@@ -89,6 +91,14 @@ public class DroneData extends ScoutData {
 	public void setHoldingCow(boolean holdingCow) {
 		this.holdingCow = holdingCow;
 		if(holdingCow) holdingEnemy = false;
+	}
+	
+	public RobotType getCargoType() {
+		return cargoType;
+	}
+
+	public void setCargoType(RobotType cargoType) {
+		this.cargoType = cargoType;
 	}
 
 	public void setEnemyFrom(Team team) {

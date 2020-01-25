@@ -201,6 +201,7 @@ public class Drone extends Scout {
 				routeTo(closestLoc);
 			} else if (dropUnit(rcLoation.directionTo(closestLoc))) {
 				droneData.setHoldingEnemy(false);
+				droneData.setCargoType(null);
 			}
 
 		} else {
@@ -218,6 +219,7 @@ public class Drone extends Scout {
 			if(rc.canSenseLocation(rcLocation.add(direction)) && rc.senseFlooding(rcLocation.add(direction))) {
 				if(dropUnit(direction)) {
 					droneData.setHoldingCow(false);
+					droneData.setCargoType(null);
 					return;
 				}
 			}
@@ -230,6 +232,7 @@ public class Drone extends Scout {
 				routeTo(closestLoc);
 			} else if (dropUnit(rcLocation.directionTo(closestLoc))) {
 				droneData.setHoldingCow(false);
+				droneData.setCargoType(null);
 			}
 		} else {
 			//TODO: Add a clause to protect them from net guns.
@@ -344,7 +347,7 @@ public class Drone extends Scout {
 	
 	private void idleHitManDroneProtocol() throws GameActionException {
 		if(rc.isCurrentlyHoldingUnit()) {
-			if(!droneData.getHoldingEnemy() && !droneData.getHoldingCow()) {
+			if(!droneData.getHoldingEnemy() && !droneData.getHoldingCow() && droneData.getCargoType() == RobotType.LANDSCAPER) {
 				//Every drone should replace their landscaper onto the wall until it is time to attack.
 				dropUnit(rc.getLocation().directionTo(droneData.getHqLocation()));
 			} else if(droneData.getHoldingEnemy() || droneData.getHoldingCow()) {
@@ -395,6 +398,7 @@ public class Drone extends Scout {
 		for(RobotInfo enemy : enemies) {
 			if(pickUpUnit(enemy)) {
 				droneData.setHoldingEnemy(true);
+				droneData.setCargoType(enemy.getType());
 				return true;
 			}
 		}
@@ -424,6 +428,7 @@ public class Drone extends Scout {
 			for(RobotInfo cow : cows) {
 				if(pickUpUnit(cow)) {
 					droneData.setHoldingCow(true);
+					droneData.setCargoType(cow.getType());
 					return true;
 				}
 			}
@@ -449,7 +454,10 @@ public class Drone extends Scout {
 				MapLocation hqLocation = droneData.getHqLocation();
 				Direction toHqDirection = rcLocation.directionTo(hqLocation);
 				MapLocation potentialWallLocation = rcLocation.add(toHqDirection);
-				if(rc.isCurrentlyHoldingUnit() && isOnWall(potentialWallLocation, hqLocation)) {
+				
+				//Place landscapers back onto the wall until it is time to attack.
+				System.out.println("Cargo type = " + droneData.getCargoType());
+				if(rc.isCurrentlyHoldingUnit() && isOnWall(potentialWallLocation, hqLocation) && droneData.getCargoType() == RobotType.LANDSCAPER) {
 					dropUnit(toHqDirection);
 				}
 			}
@@ -504,6 +512,7 @@ public class Drone extends Scout {
 	
 	private void cargoSeekerProtocol() throws GameActionException {
 		boolean oughtPickUpLandscaper = oughtPickUpLandscaper();
+		boolean oughtPickUpMiner = oughtPickUpMiner();
 		
 		System.out.println("No unit held! Lift Landscaper? " + oughtPickUpLandscaper);
 		
@@ -513,6 +522,20 @@ public class Drone extends Scout {
 				routeTo(droneData.getHqLocation());
 			} else {
 				droneData.setHoldingEnemy(true);
+			}
+		} else if(oughtPickUpMiner) {
+			RobotInfo idleAttackMiner = senseAttackMiner();
+			
+			if(!rc.canSenseLocation(droneData.getHqLocation())) {
+				routeTo(droneData.getHqLocation());
+			} else if(idleAttackMiner != null) {
+				System.out.println("\tFound an idle attack landscaper");
+				if(!pickUpUnit(idleAttackMiner)) {
+    				routeTo(idleAttackMiner.getLocation());
+    			}
+			} else {
+				System.out.println("Routing to waiting point");
+				routeToWaitingPoint();
 			}
 		} else if(oughtPickUpLandscaper) {
 			System.out.println("Ought lift a landscaper rather than a cow.");
@@ -554,13 +577,42 @@ public class Drone extends Scout {
 		//This check is just to prevent the drone from dropping of a landscaper, then immediately detecting it and picking it up again.
 		//Also, don't pick up landscapers until there is a surplus so our wall doesn't stop rising.
 		
-		System.out.println("Spawner Location = " + data.getSpawnerLocation());
-		System.out.println("HQ Location = " + droneData.getHqLocation());
-		System.out.println("Enemy HQ Location = " + droneData.getEnemyHqLocation());
-		
 		MapLocation rcLocation = rc.getLocation();
 		return rcLocation.distanceSquaredTo(data.getSpawnerLocation()) < rcLocation.distanceSquaredTo(droneData.getEnemyHqLocation())
 				&& rc.senseNearbyRobots(droneData.getHqLocation(), 3, rc.getTeam()) != null;
+	}
+	
+	private boolean oughtPickUpMiner() {		
+		//Pick up the unit if we are closer to our own base than our opponent's.
+		//This check is just to prevent the drone from dropping of a miner, then immediately detecting it and picking it up again.
+		//Also, only the first delivery drone
+		
+		MapLocation rcLocation = rc.getLocation();
+		return rcLocation.distanceSquaredTo(data.getSpawnerLocation()) < rcLocation.distanceSquaredTo(droneData.getEnemyHqLocation())
+				&& this.senseUnitType(RobotType.MINER, rc.getTeam()) != null && this.senseUnitType(RobotType.VAPORATOR, rc.getTeam()) != null;
+	}
+	
+	private RobotInfo senseAttackMiner() throws GameActionException {
+		MapLocation hqLocation = droneData.getHqLocation();
+		
+		RobotInfo[] miners = senseAllUnitsOfType(RobotType.MINER, rc.getTeam());
+		int xMin = droneData.getWallOffsetXMin();
+		int xMax = droneData.getWallOffsetYMax();
+		int yMin = droneData.getWallOffsetYMin();
+		int yMax = droneData.getWallOffsetYMax();
+		
+		for(RobotInfo miner : miners) {
+			MapLocation location = miner.getLocation();
+			int dx = location.x - hqLocation.x;
+			int dy = location.y - hqLocation.y;
+			
+			boolean xInWall = xMin < dx && dx < xMax;
+			boolean yInWall = yMin < dy && dy < yMax;
+			
+			if(xInWall && yInWall) return miner;
+		}
+
+		return null;
 	}
 	
 	private RobotInfo senseAttackLandscaper() throws GameActionException {
@@ -695,6 +747,7 @@ public class Drone extends Scout {
 			
 			if(rc.canPickUpUnit(info.ID)) {
 				rc.pickUpUnit(info.ID);
+				droneData.setCargoType(info.getType());
 				return true;
 			}
 		}
@@ -709,6 +762,7 @@ public class Drone extends Scout {
 			
 			if(rc.canPickUpUnit(info.ID)) {
 				rc.pickUpUnit(info.ID);
+				droneData.setCargoType(targetType);
 				return true;
 			}
 		}
@@ -724,6 +778,7 @@ public class Drone extends Scout {
 			
 			if(rc.canPickUpUnit(info.ID)) {
 				rc.pickUpUnit(info.ID);
+				droneData.setCargoType(targetType);
 				return true;
 			}
 		}
@@ -736,6 +791,9 @@ public class Drone extends Scout {
 		
 		if(rc.canDropUnit(dropDirection)) {
 			rc.dropUnit(dropDirection);
+			droneData.setHoldingEnemy(false);
+			droneData.setHoldingCow(false);
+			droneData.setCargoType(null);
 			return true;
 		}
 		
