@@ -43,6 +43,7 @@ public class RobotData {
 	private MapLocation fulfillmentCenterBuildSite;
 	private MapLocation vaporatorBuildMinerLocation;
 		private MapLocation vaporatorBuildSite;
+	private MapLocation netGunBuildSite;
 	
 	public RobotData(RobotController rc, MapLocation spawnerLocation) {
 		team = rc.getTeam();
@@ -139,6 +140,7 @@ public class RobotData {
 			setFulfillmentCenterBuildSite(hqLocation.translate(1, 0));
 			setVaporatorBuildMinerLocation(hqLocation.translate(0, -1));
 			setVaporatorBuildSite(hqLocation.translate(1, -1));
+			setNetGunBuildSite(hqLocation.translate(-1, -1));
 			setWallOffsetBounds(-2, 2, -2, 2);
 		}
 		
@@ -371,6 +373,14 @@ public class RobotData {
 
 	public void setVaporatorBuildSite(MapLocation vaporatorBuildSite) {
 		this.vaporatorBuildSite = vaporatorBuildSite;
+	}
+
+	public MapLocation getNetGunBuildSite() {
+		return netGunBuildSite;
+	}
+
+	public void setNetGunBuildSite(MapLocation netGunBuildSite) {
+		this.netGunBuildSite = netGunBuildSite;
 	}
 	
 }

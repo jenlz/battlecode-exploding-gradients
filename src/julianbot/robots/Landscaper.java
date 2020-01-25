@@ -404,7 +404,7 @@ public class Landscaper extends Robot {
 		
 		//In the event that our wall reaches the end of the map, we just want to go back and forth along the wall.
 		boolean nextLocationIrrelevant = !rc.onTheMap(rcLocation.add(movePattern[gridY][gridX])) || (onMapEdge(rcLocation) && onMapEdge(rcLocation.add(movePattern[gridY][gridX])));
-		if(nextLocationIrrelevant || landscaperAtLocation(rcLocation.add(movePattern[gridY][gridX]))) {
+		if(nextLocationIrrelevant || landscaperAtLocation(rcLocation.add(movePattern[gridY][gridX])) || enemyAtLocation(rcLocation.add(movePattern[gridY][gridX]))) {
 			System.out.println("Toggling");
 			toggleDirection();
 		}
@@ -466,6 +466,16 @@ public class Landscaper extends Robot {
 		return false;
 	}
 	
+	
+	private boolean enemyAtLocation(MapLocation location) throws GameActionException {
+		if(rc.canSenseLocation(location)) {
+			RobotInfo potentialEnemy = rc.senseRobotAtLocation(location);
+			if(potentialEnemy == null) return false;
+			return potentialEnemy.getTeam() != rc.getTeam();
+		}
+		
+		return false;
+	}
 	private void digWallDirt() throws GameActionException {
 		Direction digDirection = null;
 		

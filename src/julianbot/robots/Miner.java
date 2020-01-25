@@ -94,7 +94,7 @@ public class Miner extends Scout {
 		
 		System.out.println("Self destruct? Base Interference = " + interferingWithBase + ", Role = " + minerData.getCurrentRole() + ", Wall Built = " + wallBuilt);
 		
-		return this.senseUnitType(RobotType.LANDSCAPER, rc.getTeam(), 3) != null && interferingWithBase && (minerData.getCurrentRole() != MinerData.ROLE_DEFENSE || wallBuilt);
+		return this.senseUnitType(RobotType.LANDSCAPER, rc.getTeam(), 3) != null && interferingWithBase && (minerData.getCurrentRole() != MinerData.ROLE_DEFENSE || wallBuilt) && minerData.getCurrentRole() != MinerData.ROLE_VAPORATOR_BUILDER;
 	}
 	
 	private void respondToThreats() {
@@ -166,7 +166,7 @@ public class Miner extends Scout {
 		//If we have found another refinery via reading transactions, go back to soup mining.
 		//TODO: Should we only accept refineries within a certain distance? Is it worth paying 200 more soup?
 		for(MapLocation refineryLocation : minerData.getRefineryLocs()) {
-			if(!refineryLocation.equals(minerData.getHqLocation())) {
+			if(!refineryLocation.equals(minerData.getHqLocation()) && refineryLocation.isWithinDistanceSquared(rc.getLocation(), 256)) {
 				minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
 				return;
 			}
@@ -243,9 +243,11 @@ public class Miner extends Scout {
 			attemptDesignSchoolConstruction(rc.getLocation().directionTo(minerData.getDesignSchoolBuildSite()));
 		} else if(!canSenseHubFulfillmentCenter() && rc.getLocation().isWithinDistanceSquared(minerData.getFulfillmentCenterBuildSite(), 3)) {
 			attemptFulfillmentCenterConstruction(rc.getLocation().directionTo(minerData.getFulfillmentCenterBuildSite()));
-		} if(oughtBuildVaporator()) {
+		} else if(oughtBuildVaporator()) {
 	    	attemptVaporatorConstruction();
 	    	return;
+    	} else if(oughtBuildNetGun()) {
+    		attemptNetGunConstruction();
     	}
 		
 		Direction adjacentSoupDirection = getAdjacentSoupDirection();
@@ -653,9 +655,9 @@ public class Miner extends Scout {
 	}
 	
 	private RobotType getBuildPriority() {
-		if(minerData.getSoupLocs().size() > 3 && minerData.getRefineryLocs().size() == 1 && minerData.getRefineryLocs().contains(minerData.getSpawnerLocation())) return RobotType.REFINERY;
 		if(!minerData.isDesignSchoolBuilt()) return RobotType.DESIGN_SCHOOL;
 		if(!minerData.isFulfillmentCenterBuilt()) return RobotType.FULFILLMENT_CENTER;
+		if(minerData.getSoupLocs().size() > 3 && minerData.getRefineryLocs().size() == 1 && minerData.getRefineryLocs().contains(minerData.getSpawnerLocation())) return RobotType.REFINERY;
 		return null;
 	}
 	
@@ -740,6 +742,24 @@ public class Miner extends Scout {
 		}
 		
 		System.out.println("Failed to build vaporator...");
+		
+		return false;
+	}
+	
+	private boolean oughtBuildNetGun() {
+		return rc.getTeamSoup() >= RobotType.NET_GUN.cost && this.senseUnitType(RobotType.DELIVERY_DRONE, rc.getTeam().opponent()) != null;
+	}
+	
+	private boolean attemptNetGunConstruction() throws GameActionException {
+		if(minerData.getNetGunBuildSite() == null) return false;
+		Direction buildDirection = rc.getLocation().directionTo(minerData.getNetGunBuildSite());
+		
+		if(rc.canBuildRobot(RobotType.NET_GUN, buildDirection) && rc.getLocation().add(buildDirection).distanceSquaredTo(data.getSpawnerLocation()) <= 3) {
+			rc.buildRobot(RobotType.NET_GUN, buildDirection);
+			return true;
+		}
+		
+		System.out.println("Failed to build net gun...");
 		
 		return false;
 	}
