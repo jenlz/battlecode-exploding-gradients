@@ -1,14 +1,11 @@
 package julianbot.robots;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import battlecode.common.*;
 import julianbot.robotdata.RobotData;
 import julianbot.utils.pathfinder.Pathfinder;
 
-import javax.print.attribute.standard.Destination;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Robot {
 	
@@ -245,7 +242,6 @@ public class Robot {
 
 	/**
 	 * Senses unit type within inputted radius
-	 * @param rc
 	 * @param type
 	 * @param team
 	 * @param radiusSquared
@@ -263,7 +259,6 @@ public class Robot {
 	
 	/**
 	 * Senses number of units matching given criteria within inputted radius
-	 * @param rc
 	 * @param type
 	 * @param team
 	 * @param radiusSquared
