@@ -33,12 +33,14 @@ public class DesignSchool extends Robot {
     	
         if(enemy.length > 0) {
         	if (enemyHq != null) {
+        		System.out.println("ATTACK THE HQ!");
 	        	attackDesignSchoolProtocol(enemyHq.getLocation());
 	        	return;
 			}
 	        
 	        for(RobotInfo potentialThreat : enemy) {
 	        	if(potentialThreat.type.isBuilding()) {
+	        		System.out.println("ATTACK THE BUILDING!");
 	        		attackDesignSchoolProtocol(potentialThreat.getLocation());
 	        		return;
 	        	} 
@@ -49,20 +51,30 @@ public class DesignSchool extends Robot {
 
         designSchoolData.setPauseBuildTimer(designSchoolData.getPauseBuildTimer() - 1);
         if(!designSchoolData.isStableSoupIncomeConfirmed()) confirmStableSoupIncome();
-    	if(oughtBuildLandscaper()) {
+        
+        boolean oughtBuildLandscaper = oughtBuildLandscaper();
+        boolean adjacentFlooding = isFloodingAdjacent();
+        System.out.println("Ought build for building's sake? " + oughtBuildLandscaper + " Flooding imminent? " + adjacentFlooding);
+    	if(oughtBuildLandscaper || adjacentFlooding) {
+    		System.out.println("Design school ought build a landscaper.");
     		if(designSchoolData.getLandscapersBuilt() > 0 && onMapEdge(rc.getLocation().add(designSchoolData.getDefaultBuildDirection()))) {
     			designSchoolData.setDefaultBuildDirection(designSchoolData.getDefaultAttackBuildDirection());
     			designSchoolData.setBuildDirection(designSchoolData.getDefaultAttackBuildDirection());
     		}
     		
-    		if(!tryBuild(RobotType.LANDSCAPER) && designSchoolData.getBuildDirection().equals(designSchoolData.getDefaultBuildDirection())) {
+    		if(!tryBuild() && designSchoolData.getBuildDirection().equals(designSchoolData.getDefaultBuildDirection())) {
     			MapLocation attemptedBuildLocation = rc.getLocation().add(designSchoolData.getBuildDirection());
     			if(rc.canSenseLocation(attemptedBuildLocation)) {
     				boolean wallAtBuildLocation = rc.senseElevation(attemptedBuildLocation) - rc.senseElevation(rc.getLocation()) > GameConstants.MAX_DIRT_DIFFERENCE;
     				boolean mapEdgeAtBuildLocation = onMapEdge(attemptedBuildLocation);
     				if(wallAtBuildLocation || mapEdgeAtBuildLocation && rc.getTeamSoup() >= RobotType.LANDSCAPER.cost) {
+    					System.out.println("Wall built! We can proceed to attack landscapers.");
     					//The wall already exists, so we can start building northwards to generate attack landscapers.  
     					designSchoolData.setDefaultBuildDirection(designSchoolData.getDefaultAttackBuildDirection());
+    				} else if(adjacentFlooding) {
+    					System.out.println("Flooding is still imminent! We need to force a build.");
+    					//A wall build failed, so we need to try building in all directions.
+    					forceBuild();
     				}
     			}
     		}
@@ -146,31 +158,31 @@ public class DesignSchool extends Robot {
 		
 		Direction directionToTarget = rc.getLocation().directionTo(target);
 		designSchoolData.setBuildDirection(directionToTarget);
-		if(tryBuild(RobotType.LANDSCAPER)) return;
+		if(tryBuild()) return;
 		
 		designSchoolData.setBuildDirection(directionToTarget.rotateLeft());
-		if(tryBuild(RobotType.LANDSCAPER)) return;
+		if(tryBuild()) return;
 		
 		designSchoolData.setBuildDirection(directionToTarget.rotateRight());
-		if(tryBuild(RobotType.LANDSCAPER)) return;
+		if(tryBuild()) return;
 		
 		designSchoolData.setBuildDirection(directionToTarget.rotateLeft().rotateLeft());
-		if(tryBuild(RobotType.LANDSCAPER)) return;
+		if(tryBuild()) return;
 		
 		designSchoolData.setBuildDirection(directionToTarget.rotateRight().rotateRight());
-		if(tryBuild(RobotType.LANDSCAPER)) return;
+		if(tryBuild()) return;
 		
 		designSchoolData.setBuildDirection(directionToTarget.rotateLeft().rotateLeft().rotateLeft());
-		if(tryBuild(RobotType.LANDSCAPER)) return;
+		if(tryBuild()) return;
 		
 		designSchoolData.setBuildDirection(directionToTarget.rotateRight().rotateRight().rotateRight());
-		if(tryBuild(RobotType.LANDSCAPER)) return;
+		if(tryBuild()) return;
 		
 		designSchoolData.setBuildDirection(directionToTarget.rotateLeft().rotateLeft());
-		if(tryBuild(RobotType.LANDSCAPER)) return;
+		if(tryBuild()) return;
 		
 		designSchoolData.setBuildDirection(directionToTarget.opposite());
-		tryBuild(RobotType.LANDSCAPER);
+		tryBuild();
 	}
 
 	private boolean oughtBuildLandscaper() {
@@ -182,6 +194,17 @@ public class DesignSchool extends Robot {
 		return (designSchoolData.isStableSoupIncomeConfirmed() || designSchoolData.getBuildSitesBlocked()) ? rc.getTeamSoup() >= RobotType.LANDSCAPER.cost : rc.getTeamSoup() >= RobotType.VAPORATOR.cost + 5;
 	}
 	
+	private boolean isFloodingAdjacent() throws GameActionException {
+		MapLocation rcLocation = rc.getLocation();
+		
+		for(Direction direction : Robot.directions) {
+			MapLocation potentialFloodingLocation = rcLocation.add(direction);
+			if(rc.canSenseLocation(potentialFloodingLocation) && rc.senseFlooding(potentialFloodingLocation)) return true;
+		}
+		
+		return false;
+	}
+	
 	/**
      * Attempts to build a given robot in a given direction.
      *
@@ -189,17 +212,31 @@ public class DesignSchool extends Robot {
      * @return true if a move was performed
      * @throws GameActionException
      */
-    private boolean tryBuild(RobotType type) throws GameActionException {
+    private boolean tryBuild() throws GameActionException {
     	Direction buildDirection = designSchoolData.getBuildDirection();
     	
     	waitUntilReady();
-        if (rc.isReady() && rc.canBuildRobot(type, buildDirection)) {
-            rc.buildRobot(type, buildDirection);
-            if(type == RobotType.LANDSCAPER) designSchoolData.incrementLandscapersBuilt();
+        if (rc.canBuildRobot(RobotType.LANDSCAPER, buildDirection)) {
+            rc.buildRobot(RobotType.LANDSCAPER, buildDirection);
+            designSchoolData.incrementLandscapersBuilt();
             return true;
         }
         
         return false;
+    }
+    
+    private boolean forceBuild() throws GameActionException {
+    	waitUntilReady();
+    	
+    	for(Direction direction : Robot.directions) {
+    		if (rc.canBuildRobot(RobotType.LANDSCAPER, direction)) {
+    			rc.buildRobot(RobotType.LANDSCAPER, direction);
+    			designSchoolData.incrementLandscapersBuilt();
+    			return true;
+    		}
+    	}
+    
+    	return false;
     }
     
     private void confirmStableSoupIncome() throws GameActionException {
