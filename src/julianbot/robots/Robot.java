@@ -701,7 +701,6 @@ public class Robot {
 				rc.setIndicatorDot(data.getObstacleLoc(), 0, 0, 0);
 			}
 		}
-		
 		rc.setIndicatorLine(rc.getLocation().subtract(data.getSearchDirection()), rc.getLocation(), 102, 255, 255); //Teal line
 		return successfulWallFollow;
 	}
@@ -724,9 +723,8 @@ public class Robot {
 			if (rc.senseFlooding(locToMove) || Math.abs(elevationDiff) > GameConstants.MAX_DIRT_DIFFERENCE) {
 				return false;
 			}
-		} else {
-			return true;
 		}
+		return true;
 	}
 
 	/**
