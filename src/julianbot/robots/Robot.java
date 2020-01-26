@@ -644,7 +644,7 @@ public class Robot {
 			System.out.println("Raw bug nav move -- RIGHT");
 			return bugNavMove(destination, dirToDestRight);
 		} else {
-			return followLeftWall(dirToDest, destination);
+			return followWall(dirToDest, destination);
 		}
 	}
 
@@ -665,8 +665,72 @@ public class Robot {
 			System.out.println("Moved to new closest location. Dist: " + data.getClosestDist());
 			return true;
 		} else {
-			return followLeftWall(dir, destination);
+			return followWall(dir, destination);
 		}
+	}
+
+	/**
+	 * Decides whether to follow left or right wall
+	 * @param dirToDest
+	 * @param destination
+	 * @return
+	 */
+	public boolean followWall(Direction dirToDest, MapLocation destination) throws GameActionException {
+		System.out.println("Simulating following wall");
+		MapLocation simulatedLocLeft = rc.getLocation();
+		MapLocation simulatedLocRight = rc.getLocation();
+
+		Direction simulatedSearchDirection = data.getSearchDirection();
+		MapLocation simulatedObstacleLoc = data.getObstacleLoc();
+
+		// Simulates 5 steps ahead for left wall
+		for (int i = 0; i < 5; i++) {
+			if (simulatedObstacleLoc == null) {
+				simulatedSearchDirection = dirToDest;
+			} else {
+				simulatedSearchDirection = simulatedLocLeft.directionTo(simulatedObstacleLoc);
+			}
+			// Rotates search Direction 8 times at max
+			for (int j = 0; j < 8; j++) {
+				if (simulateCanMove(simulatedLocLeft, simulatedSearchDirection)) {
+					simulatedLocLeft = simulatedLocLeft.add(simulatedSearchDirection);
+				} else {
+					simulatedObstacleLoc = simulatedLocLeft.add(simulatedSearchDirection);
+					simulatedSearchDirection = simulatedSearchDirection.rotateRight();
+				}
+			}
+		}
+
+		// Resetting variables for right wall
+		simulatedSearchDirection = data.getSearchDirection();
+		simulatedObstacleLoc = data.getObstacleLoc();
+
+		// Simulates 5 steps ahead for right wall
+		for (int i = 0; i < 5; i++) {
+			if (simulatedObstacleLoc == null) {
+				simulatedSearchDirection = dirToDest;
+			} else {
+				simulatedSearchDirection = simulatedLocRight.directionTo(simulatedObstacleLoc);
+			}
+			// Rotates search Direction 8 times at max
+			for (int j = 0; j < 8; j++) {
+				if (simulateCanMove(simulatedLocRight, simulatedSearchDirection)) {
+					simulatedLocRight = simulatedLocRight.add(simulatedSearchDirection);
+				} else {
+					simulatedObstacleLoc = simulatedLocRight.add(simulatedSearchDirection);
+					simulatedSearchDirection = simulatedSearchDirection.rotateLeft();
+				}
+			}
+		}
+
+		rc.setIndicatorDot(simulatedLocLeft, 204, 204, 0); //Puke yellow
+		rc.setIndicatorDot(simulatedLocRight, 153, 0, 153); //Purple
+		if (simulatedLocLeft.distanceSquaredTo(destination) < simulatedLocRight.distanceSquaredTo(destination)) {
+			return followLeftWall(dirToDest, destination);
+		} else {
+			return followRightWall(dirToDest, destination);
+		}
+
 	}
 
 	/**
@@ -674,7 +738,7 @@ public class Robot {
 	 * @throws GameActionException
 	 */
 	public boolean followLeftWall(Direction dirToDest, MapLocation destination) throws GameActionException {
-		System.out.println("Can't move in closer direction. Resorting to wall hugging.");
+		System.out.println("Can't move in closer direction. Resorting to left wall hugging.");
 		if (data.getObstacleLoc() == null) {
 			data.setSearchDirection(dirToDest);
 		} else {
@@ -706,6 +770,42 @@ public class Robot {
 	}
 
 	/**
+	 * Attempts to move in same direction as last turn, otherwise rotates left
+	 * @throws GameActionException
+	 */
+	public boolean followRightWall(Direction dirToDest, MapLocation destination) throws GameActionException {
+		System.out.println("Can't move in closer direction. Resorting to right wall hugging.");
+		if (data.getObstacleLoc() == null) {
+			data.setSearchDirection(dirToDest);
+		} else {
+			data.setSearchDirection(rc.getLocation().directionTo(data.getObstacleLoc()));
+		}
+
+		rc.setIndicatorLine(rc.getLocation(), rc.adjacentLocation(data.getSearchDirection()), 0, 0, 255);
+
+		boolean successfulWallFollow = false;
+		// Follows wall on left side
+		for (int i = 0; i < 8; i++) {
+			if (continueSearchNonRandom()) {
+				System.out.println("Searched in direction " + data.getSearchDirection());
+				int distance = rc.getLocation().distanceSquaredTo(destination);
+				System.out.println("Distance = " + distance);
+				if(distance < data.getClosestDist()) data.setClosestDist(distance);
+				System.out.println("Closest Distance = " + data.getClosestDist());
+				successfulWallFollow = true;
+				break;
+			} else {
+				data.setObstacleLoc(rc.getLocation().add(data.getSearchDirection()));
+				data.setSearchDirection(data.getSearchDirection().rotateLeft());
+				System.out.println("Can't move, setting obstacle at " + data.getObstacleLoc());
+				rc.setIndicatorDot(data.getObstacleLoc(), 0, 0, 0);
+			}
+		}
+		rc.setIndicatorLine(rc.getLocation().subtract(data.getSearchDirection()), rc.getLocation(), 102, 255, 255); //Teal line
+		return successfulWallFollow;
+	}
+
+	/**
 	 * Used with bugNav to test whether the robot could move in direction if it was hypothetically in a certain location. Ignores isReady condition of normal canMove.
 	 * @return
 	 */
@@ -714,7 +814,7 @@ public class Robot {
 		if (rc.getType().isBuilding() || !rc.onTheMap(locToMove)) {
 			// If unit is building or location moving to isn't on the map
 			return false;
-		} else if (rc.senseRobotAtLocation(locToMove) != null) {
+		} else if (rc.canSenseLocation(locToMove) && rc.senseRobotAtLocation(locToMove) != null) {
 			// If the location is occupied by a robot
 			return false;
 		} else if (rc.canSenseLocation(locToMove) && rc.canSenseLocation(currentLoc)) {
