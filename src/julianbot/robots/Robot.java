@@ -694,6 +694,7 @@ public class Robot {
 			for (int j = 0; j < 8; j++) {
 				if (simulateCanMove(simulatedLocLeft, simulatedSearchDirection)) {
 					simulatedLocLeft = simulatedLocLeft.add(simulatedSearchDirection);
+					break;
 				} else {
 					simulatedObstacleLoc = simulatedLocLeft.add(simulatedSearchDirection);
 					simulatedSearchDirection = simulatedSearchDirection.rotateRight();
@@ -716,6 +717,7 @@ public class Robot {
 			for (int j = 0; j < 8; j++) {
 				if (simulateCanMove(simulatedLocRight, simulatedSearchDirection)) {
 					simulatedLocRight = simulatedLocRight.add(simulatedSearchDirection);
+					break;
 				} else {
 					simulatedObstacleLoc = simulatedLocRight.add(simulatedSearchDirection);
 					simulatedSearchDirection = simulatedSearchDirection.rotateLeft();
