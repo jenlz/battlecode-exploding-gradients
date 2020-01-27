@@ -93,8 +93,8 @@ public class Miner extends Scout {
 	//INTERFERENCE
 	private boolean oughtSelfDestruct() throws GameActionException {
 		if(minerData.getCurrentRole() == MinerData.ROLE_VAPORATOR_BUILDER) {
-			int numVaporators = this.senseNumberOfUnits(RobotType.VAPORATOR, rc.getTeam());
-			return(minerData.isBaseOnEdge()) ? numVaporators >= 1 : numVaporators >= 2;
+			if(!minerData.isBaseOnEdge()) return false;
+			return hubDesignSchoolExists() && hubFulfillmentCenterExists() && this.senseNumberOfUnits(RobotType.VAPORATOR, rc.getTeam()) > 0;
 		}
 		
 		boolean interferingWithBase = isOnWall(rc.getLocation(), minerData.getSpawnerLocation()) || isWithinWall(rc.getLocation(), minerData.getSpawnerLocation());
@@ -186,6 +186,8 @@ public class Miner extends Scout {
 		else if(vaporatorBuilt && !minerData.isFulfillmentCenterBuilt() && buildingIsAffordable(RobotType.FULFILLMENT_CENTER) && !vaporatorBuilderClaimed) minerData.setCurrentRole(MinerData.ROLE_FULFILLMENT_BUILDER);
 		else if(minerData.getRefineryLocs().size() == 0) minerData.setCurrentRole(MinerData.ROLE_REFINERY_BUILDER);
 		else minerData.setCurrentRole(MinerData.ROLE_SOUP_MINER);
+		
+		System.out.println("Set role to " + minerData.getCurrentRole());
 	}
 	
 	private void respondToThreats() {
@@ -318,17 +320,20 @@ public class Miner extends Scout {
 			return;
 		}
 		
-		checkVaporatorMinerClaimed();
-		if(minerData.isVaporatorBuilderClaimed()) {
-			updateRole();
+		MapLocation vaporatorBuildMinerLocation = minerData.getVaporatorBuildMinerLocation();
+		if(!rc.getLocation().equals(vaporatorBuildMinerLocation)) {
+			checkVaporatorMinerClaimed();
+			if(minerData.isVaporatorBuilderClaimed()) {
+				updateRole();
+				return;
+			}
+			
+			routeTo(vaporatorBuildMinerLocation);
 			return;
 		}
 		
-		MapLocation vaporatorBuildMinerLocation = minerData.getVaporatorBuildMinerLocation();
-		if(!rc.getLocation().equals(vaporatorBuildMinerLocation)) {
-			routeTo(vaporatorBuildMinerLocation);
-			return;
-		} else if(oughtBuildVaporator() && !minerData.isVaporatorBuilt()) {
+		
+		if(oughtBuildVaporator() && !minerData.isVaporatorBuilt()) {
 	    	attemptVaporatorConstruction();
 	    	return;
     	} else if(minerData.isVaporatorBuilt() && !hubDesignSchoolExists() && rc.getLocation().isWithinDistanceSquared(minerData.getDesignSchoolBuildSite(), 3)) {
@@ -369,6 +374,12 @@ public class Miner extends Scout {
 		}
 		
 		defensiveHqBlock();
+		
+		//Unfortunately, we simply must stop defending once our buildings are down, or we are essentially certain to lose to flooding.
+		if(hubDesignSchoolExists() && hubFulfillmentCenterExists()) {
+			updateRole();
+			return;
+		}
 		
 		//A defensive miner can still mine.
 		Direction adjacentSoupDirection = getAdjacentSoupDirection();

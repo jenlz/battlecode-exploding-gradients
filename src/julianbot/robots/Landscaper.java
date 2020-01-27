@@ -408,8 +408,10 @@ public class Landscaper extends Robot {
 		
 		//In the event that our wall reaches the end of the map, we just want to go back and forth along the wall.
 		boolean nextLocationIrrelevant = !rc.onTheMap(rcLocation.add(movePattern[gridY][gridX])) || (onMapEdge(rcLocation) && onMapEdge(rcLocation.add(movePattern[gridY][gridX])));
-		if(nextLocationIrrelevant || landscaperAtLocation(rcLocation.add(movePattern[gridY][gridX])) || enemyAtLocation(rcLocation.add(movePattern[gridY][gridX]))) {
-			System.out.println("Toggling");
+		
+		
+		if(nextLocationIrrelevant) {
+			System.out.println("Toggling from irrelevant location");
 			toggleDirection();
 		}
 		
@@ -458,6 +460,8 @@ public class Landscaper extends Robot {
 			depositDirt(constructDirection);
 		}
 		else move(movePattern[gridY][gridX]);
+		
+		if(landscaperAtLocation(rcLocation.add(movePattern[gridY][gridX])) || enemyAtLocation(rcLocation.add(movePattern[gridY][gridX]))) toggleDirection();
 	}
 	
 	private boolean landscaperAtLocation(MapLocation location) throws GameActionException {
@@ -470,7 +474,6 @@ public class Landscaper extends Robot {
 		return false;
 	}
 	
-	
 	private boolean enemyAtLocation(MapLocation location) throws GameActionException {
 		if(rc.canSenseLocation(location)) {
 			RobotInfo potentialEnemy = rc.senseRobotAtLocation(location);
@@ -480,6 +483,7 @@ public class Landscaper extends Robot {
 		
 		return false;
 	}
+	
 	private void digWallDirt() throws GameActionException {
 		Direction digDirection = null;
 		
@@ -510,7 +514,6 @@ public class Landscaper extends Robot {
 			return;
 		}
 		
-		//TODO: Shouldn't this only return false if the occupant is a building?
 		if(!rc.isLocationOccupied(rcLocation.add(rcLocation.directionTo(hqLocation))) && innerWallObstructed()) {
 			System.out.println("Inner wall obstructed");
 			//If we are next to an obstructed build site, dig from there.
