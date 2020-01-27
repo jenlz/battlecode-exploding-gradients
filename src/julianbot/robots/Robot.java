@@ -492,6 +492,7 @@ public class Robot {
 			System.out.println("Change in destination.");
 			data.setBugNaving(false);
 			data.setObstacleLoc(null);
+			data.setClosestDist(-1);
 			data.setPath(null);
 		}
 		
@@ -830,7 +831,7 @@ public class Robot {
 	}
 
 	/**
-	 * Used with bugNav to test whether the robot could move in direction if it was hypothetically in a certain location. Ignores isReady condition of normal canMove.
+	 * Used with bugNav to test whether the robot could move in direction if it was hypothetically in a certain location. Ignores isReady condition of normal canMove. Treats non-buildings as not obstacles
 	 * @return
 	 */
 	public boolean simulateCanMove(MapLocation currentLoc, Direction dirToMove) throws GameActionException {
@@ -838,14 +839,17 @@ public class Robot {
 		if (rc.getType().isBuilding() || !rc.onTheMap(locToMove)) {
 			// If unit is building or location moving to isn't on the map
 			return false;
-		} else if (rc.canSenseLocation(locToMove) && rc.senseRobotAtLocation(locToMove) != null) {
-			// If the location is occupied by a robot
-			return false;
-		} else if (rc.canSenseLocation(locToMove) && rc.canSenseLocation(currentLoc)) {
-			// If locToMove is not flooded and the elevation difference is not too great
-			int elevationDiff = rc.senseElevation(locToMove) - rc.senseElevation(currentLoc);
-			if (rc.senseFlooding(locToMove) || Math.abs(elevationDiff) > GameConstants.MAX_DIRT_DIFFERENCE) {
+		} else if (rc.canSenseLocation(locToMove)) {
+			RobotInfo robot = rc.senseRobotAtLocation(locToMove);
+			if (robot != null && robot.getType().isBuilding()) {
+				// If the location is occupied by a building
 				return false;
+			} else if (rc.canSenseLocation(currentLoc)) {
+				// If locToMove is not flooded and the elevation difference is not too great
+				int elevationDiff = rc.senseElevation(locToMove) - rc.senseElevation(currentLoc);
+				if (rc.senseFlooding(locToMove) || Math.abs(elevationDiff) > GameConstants.MAX_DIRT_DIFFERENCE) {
+					return false;
+				}
 			}
 		}
 		return true;
