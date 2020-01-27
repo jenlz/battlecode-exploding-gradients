@@ -677,8 +677,9 @@ public class Robot {
 	 */
 	public boolean followWall(Direction dirToDest, MapLocation destination) throws GameActionException {
 		System.out.println("Simulating following wall");
+		// Left Wall Initialization
 		MapLocation simulatedLocLeft = rc.getLocation();
-		MapLocation simulatedLocRight = rc.getLocation();
+		int closestDistLeft = simulatedLocLeft.distanceSquaredTo(destination);
 
 		Direction simulatedSearchDirection = data.getSearchDirection();
 		MapLocation simulatedObstacleLoc = data.getObstacleLoc();
@@ -694,6 +695,8 @@ public class Robot {
 			for (int j = 0; j < 8; j++) {
 				if (simulateCanMove(simulatedLocLeft, simulatedSearchDirection)) {
 					simulatedLocLeft = simulatedLocLeft.add(simulatedSearchDirection);
+					int dist = simulatedLocLeft.distanceSquaredTo(destination);
+					if (dist < closestDistLeft) {closestDistLeft = dist;}
 					break;
 				} else {
 					simulatedObstacleLoc = simulatedLocLeft.add(simulatedSearchDirection);
@@ -701,6 +704,10 @@ public class Robot {
 				}
 			}
 		}
+
+		// Right Wall Initialization
+		MapLocation simulatedLocRight = rc.getLocation();
+		int closestDistRight = data.getClosestDist();
 
 		// Resetting variables for right wall
 		simulatedSearchDirection = data.getSearchDirection();
@@ -717,6 +724,8 @@ public class Robot {
 			for (int j = 0; j < 8; j++) {
 				if (simulateCanMove(simulatedLocRight, simulatedSearchDirection)) {
 					simulatedLocRight = simulatedLocRight.add(simulatedSearchDirection);
+					int dist = simulatedLocRight.distanceSquaredTo(destination);
+					if (dist < closestDistRight) {closestDistRight = dist;}
 					break;
 				} else {
 					simulatedObstacleLoc = simulatedLocRight.add(simulatedSearchDirection);
@@ -725,9 +734,9 @@ public class Robot {
 			}
 		}
 
-		rc.setIndicatorDot(simulatedLocLeft, 204, 204, 0); //Puke yellow
-		rc.setIndicatorDot(simulatedLocRight, 153, 0, 153); //Purple
-		if (simulatedLocLeft.distanceSquaredTo(destination) < simulatedLocRight.distanceSquaredTo(destination)) {
+		rc.setIndicatorDot(simulatedLocLeft, 204, 204, 0); //Puke yellow - Left
+		rc.setIndicatorDot(simulatedLocRight, 153, 0, 153); //Purple - Right
+		if (closestDistLeft < closestDistRight) {
 			return followLeftWall(dirToDest, destination);
 		} else {
 			return followRightWall(dirToDest, destination);
