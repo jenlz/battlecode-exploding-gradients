@@ -743,7 +743,7 @@ public class Robot {
 		System.out.println("Closest dist left: " + closestDistLeft + " Closest dist right: " + closestDistRight + " closest dist: " + data.getClosestDist());
 		rc.setIndicatorDot(simulatedLocLeft, 204, 204, 0); //Puke yellow - Left
 		rc.setIndicatorDot(simulatedLocRight, 153, 0, 153); //Purple - Right
-		if (closestDistLeft < closestDistRight) {
+		if (closestDistLeft <= closestDistRight) {
 			return followLeftWall(dirToDest, destination);
 		} else {
 			return followRightWall(dirToDest, destination);
