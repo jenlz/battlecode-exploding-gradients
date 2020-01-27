@@ -679,7 +679,7 @@ public class Robot {
 		System.out.println("Simulating following wall");
 		// Left Wall Initialization
 		MapLocation simulatedLocLeft = rc.getLocation();
-		int closestDistLeft = simulatedLocLeft.distanceSquaredTo(destination);
+		int closestDistLeft = data.getClosestDist();
 
 		Direction simulatedSearchDirection = data.getSearchDirection();
 		MapLocation simulatedObstacleLoc = data.getObstacleLoc();
@@ -699,6 +699,9 @@ public class Robot {
 					if (dist < closestDistLeft) {closestDistLeft = dist;}
 					break;
 				} else {
+					if (simulatedSearchDirection == Direction.CENTER) {
+						simulatedSearchDirection = dirToDest;
+					}
 					simulatedObstacleLoc = simulatedLocLeft.add(simulatedSearchDirection);
 					simulatedSearchDirection = simulatedSearchDirection.rotateRight();
 				}
@@ -728,12 +731,16 @@ public class Robot {
 					if (dist < closestDistRight) {closestDistRight = dist;}
 					break;
 				} else {
+					if (simulatedSearchDirection == Direction.CENTER) {
+						simulatedSearchDirection = dirToDest;
+					}
 					simulatedObstacleLoc = simulatedLocRight.add(simulatedSearchDirection);
 					simulatedSearchDirection = simulatedSearchDirection.rotateLeft();
 				}
 			}
 		}
 
+		System.out.println("Closest dist left: " + closestDistLeft + " Closest dist right: " + closestDistRight + " closest dist: " + data.getClosestDist());
 		rc.setIndicatorDot(simulatedLocLeft, 204, 204, 0); //Puke yellow - Left
 		rc.setIndicatorDot(simulatedLocRight, 153, 0, 153); //Purple - Right
 		if (closestDistLeft < closestDistRight) {
@@ -770,9 +777,12 @@ public class Robot {
 				successfulWallFollow = true;
 				break;
 			} else {
+				if (data.getSearchDirection() == Direction.CENTER) {
+					data.setSearchDirection(dirToDest);
+				}
 				data.setObstacleLoc(rc.getLocation().add(data.getSearchDirection()));
 				data.setSearchDirection(data.getSearchDirection().rotateRight());
-				System.out.println("Can't move, setting obstacle at " + data.getObstacleLoc());
+				System.out.println("Can't move, setting obstacle at " + data.getObstacleLoc() + " Loc: " + rc.getLocation());
 				rc.setIndicatorDot(data.getObstacleLoc(), 0, 0, 0);
 			}
 		}
@@ -806,9 +816,12 @@ public class Robot {
 				successfulWallFollow = true;
 				break;
 			} else {
+				if (data.getSearchDirection() == Direction.CENTER) {
+					data.setSearchDirection(dirToDest);
+				}
 				data.setObstacleLoc(rc.getLocation().add(data.getSearchDirection()));
 				data.setSearchDirection(data.getSearchDirection().rotateLeft());
-				System.out.println("Can't move, setting obstacle at " + data.getObstacleLoc());
+				System.out.println("Can't move, setting obstacle at " + data.getObstacleLoc() + " Loc: " + rc.getLocation());
 				rc.setIndicatorDot(data.getObstacleLoc(), 0, 0, 0);
 			}
 		}
