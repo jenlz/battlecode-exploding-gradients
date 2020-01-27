@@ -7,6 +7,8 @@ import battlecode.common.Team;
 import julianbot.robots.Robot;
 import julianbot.utils.pathfinder.MapGraph;
 
+import java.util.Map;
+
 public class RobotData {
 
 	//GENERAL
@@ -33,7 +35,7 @@ public class RobotData {
 	private int bugNavClosestDist;
 	private MapLocation obstacleLoc;
 	private MapLocation currentDestination;
-	
+
 	//WALL DIMENSIONS
 	private int wallOffsetXMin, wallOffsetXMax, wallOffsetYMin, wallOffsetYMax;
 	private boolean baseOnEdge;
