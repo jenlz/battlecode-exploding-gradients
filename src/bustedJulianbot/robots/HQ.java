@@ -1,4 +1,4 @@
-package julianbot.robots;
+package bustedJulianbot.robots;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -8,7 +8,7 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Transaction;
-import julianbot.robotdata.HQData;
+import bustedJulianbot.robotdata.HQData;
 
 public class HQ extends Robot {
 
@@ -100,9 +100,8 @@ public class HQ extends Robot {
 	}
 	
 	private boolean oughtBuildMiner() {
-		if(senseUnitType(RobotType.VAPORATOR, rc.getTeam()) != null) return false;
-		
-		return rc.getRoundNum() <= 60;
+		if(rc.getRoundNum() <= 60) return true;
+		return rc.getTeamSoup() > RobotType.VAPORATOR.cost + 20;
 	}
 	
 	private void reportBlockedBuildSites() throws GameActionException {

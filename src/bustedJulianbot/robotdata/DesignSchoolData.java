@@ -1,4 +1,4 @@
-package julianbot.robotdata;
+package bustedJulianbot.robotdata;
 
 import battlecode.common.*;
 

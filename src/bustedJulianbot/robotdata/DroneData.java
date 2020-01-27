@@ -1,4 +1,4 @@
-package julianbot.robotdata;
+package bustedJulianbot.robotdata;
 
 import java.util.ArrayList;
 
@@ -48,6 +48,12 @@ public class DroneData extends ScoutData {
 	private boolean wallBuildConfirmed;
 	private MapLocation nextWallSegment;
 	
+	//LANDMARKS
+	private ArrayList<MapLocation> outpostLocs;
+		private ArrayList<MapLocation> removedOutpostLocs;
+		private MapLocation outpostLocToSearch;
+		private int outpostLocToSearchIndex;
+		
 	public DroneData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
 		holdingEnemy = false;
@@ -55,6 +61,9 @@ public class DroneData extends ScoutData {
 		floodedLocs = new ArrayList<MapLocation>();
 		
 		gridXShift = gridYShift = WAIT_LOCATION_GRID_DIMENSION / 2;
+		
+		outpostLocs = new ArrayList<MapLocation>();
+		removedOutpostLocs = new ArrayList<MapLocation>();
 	}
 
 	public ArrayList<MapLocation> getFloodedLocs() {
@@ -225,6 +234,48 @@ public class DroneData extends ScoutData {
 
 	public void setNextWallSegment(MapLocation nextWallSegment) {
 		this.nextWallSegment = nextWallSegment;
+	}
+	
+	public boolean addOutpostLoc(MapLocation loc) {
+		for (MapLocation outpostLoc : outpostLocs) {
+			//21 is default sensor radius besides miner and hq.
+
+			if (/*soupLoc.distanceSquaredTo(loc) < 21 || */outpostLoc.equals(loc)) {
+				return false;
+			}
+		}
+
+		for(MapLocation outpostLoc : removedOutpostLocs) {
+			if(outpostLoc.equals(loc)) return false;
+		}
+
+		outpostLocs.add(loc);
+		if(outpostLocs.size() == 1) {
+			outpostLocToSearch = loc;
+			outpostLocToSearchIndex = 0;
+		}
+		
+		return true;
+	}
+	
+	public boolean removeOutpostLoc(MapLocation loc) {
+		boolean removalSuccessful = outpostLocs.remove(loc);
+		if(removalSuccessful) removedOutpostLocs.add(loc);
+		return removalSuccessful;
+	}
+	
+	public ArrayList<MapLocation> getOutpostLocs() {
+		return outpostLocs;
+	}
+
+	public MapLocation getOutpostLocToSearch() {
+		return outpostLocToSearch;
+	}
+	
+	public void proceedToNextOutpostLoc() {
+		outpostLocToSearchIndex++;
+		if(outpostLocToSearchIndex >= outpostLocs.size()) outpostLocToSearch = null;
+		else outpostLocToSearch = outpostLocs.get(outpostLocToSearchIndex);
 	}
 	
 }

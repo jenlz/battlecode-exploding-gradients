@@ -1,5 +1,6 @@
-package julianbot.robots;
+package bustedJulianbot.robots;
 
+import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
@@ -8,8 +9,8 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Transaction;
-import julianbot.robotdata.LandscaperData;
-import julianbot.utils.NumberMath;
+import bustedJulianbot.robotdata.LandscaperData;
+import bustedJulianbot.utils.NumberMath;
 
 public class Landscaper extends Robot {
 
@@ -18,51 +19,75 @@ public class Landscaper extends Robot {
 	private int gridYShift;
 	
 	private static Direction[][] clockwiseMovePattern = new Direction[][]{
-		{Direction.EAST, Direction.EAST, Direction.EAST, Direction.EAST, Direction.SOUTH},
-		{Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.EAST, Direction.SOUTH},
-		{Direction.NORTH, Direction.WEST, Direction.NORTH, Direction.EAST, Direction.SOUTH},
-		{Direction.NORTH, Direction.WEST, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH},
-		{Direction.NORTH, Direction.WEST, Direction.WEST, Direction.WEST, Direction.WEST}
+		{Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.SOUTHWEST},
+		{Direction.EAST, Direction.CENTER, Direction.CENTER, Direction.CENTER, Direction.WEST},
+		{Direction.EAST, Direction.CENTER, Direction.CENTER, Direction.CENTER, Direction.WEST},
+		{Direction.EAST, Direction.CENTER, Direction.CENTER, Direction.CENTER, Direction.WEST},
+		{Direction.NORTHEAST, Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.NORTHWEST}
 	};
 	
 	private static Direction[][] clockwiseDigPattern = new Direction[][]{
-		{Direction.NORTH, Direction.NORTHWEST, Direction.NORTH, Direction.NORTHWEST, Direction.EAST},
-		{Direction.SOUTHWEST, null, null, null, Direction.NORTHEAST},
-		{Direction.WEST, null, null, null, Direction.EAST},
-		{Direction.SOUTHWEST, null, null, null, Direction.NORTHEAST},
-		{Direction.WEST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHEAST, Direction.SOUTH}
+		{null, null, null, null, null},
+		{null, Direction.NORTHWEST, Direction.NORTH, Direction.NORTHEAST, null},
+		{null, Direction.WEST, null, Direction.EAST, null},
+		{null, Direction.SOUTHWEST, Direction.SOUTH, Direction.SOUTHEAST, null},
+		{null, null, null, null, null}
 	};
 	
 	private static Direction[][][] clockwiseBuildPattern = new Direction[][][] {
-		{{Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}},
-		{{Direction.CENTER}, {}, {}, {}, {Direction.CENTER}},
-		{{Direction.CENTER}, {}, {}, {}, {Direction.CENTER}},
-		{{Direction.CENTER}, {}, {}, {}, {Direction.CENTER}},
-		{{Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}}
+		{{}, {}, {}, {}, {}},
+		{{}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {}},
+		{{}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {}},
+		{{}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {}},
+		{{}, {}, {}, {}, {}}
 	};
 	
 	private static Direction[][] counterClockwiseMovePattern = new Direction[][]{
-		{Direction.SOUTH, Direction.WEST, Direction.WEST, Direction.WEST, Direction.WEST},
-		{Direction.SOUTH, Direction.WEST, Direction.NORTH, Direction.NORTH, Direction.NORTH},
-		{Direction.SOUTH, Direction.WEST, Direction.SOUTH, Direction.EAST, Direction.NORTH},
-		{Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.EAST, Direction.NORTH},
-		{Direction.EAST, Direction.EAST, Direction.EAST, Direction.EAST, Direction.NORTH}
+		{Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.SOUTHWEST},
+		{Direction.EAST, Direction.CENTER, Direction.CENTER, Direction.CENTER, Direction.WEST},
+		{Direction.EAST, Direction.CENTER, Direction.CENTER, Direction.CENTER, Direction.WEST},
+		{Direction.EAST, Direction.CENTER, Direction.CENTER, Direction.CENTER, Direction.WEST},
+		{Direction.NORTHEAST, Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.NORTHWEST}
 	};
 	
 	private static Direction[][] counterClockwiseDigPattern = new Direction[][]{
-		{Direction.WEST, Direction.NORTHEAST, Direction.NORTH, Direction.NORTHEAST, Direction.NORTH},
-		{Direction.NORTHWEST, null, null, null, Direction.SOUTHEAST},
-		{Direction.WEST, null, null, null, Direction.EAST},
-		{Direction.NORTHWEST, null, null, null, Direction.SOUTHEAST},
-		{Direction.SOUTH, Direction.SOUTHWEST, Direction.SOUTH, Direction.SOUTHWEST, Direction.EAST}
+		{null, null, null, null, null},
+		{null, Direction.NORTHWEST, Direction.NORTH, Direction.NORTHEAST, null},
+		{null, Direction.WEST, null, Direction.EAST, null},
+		{null, Direction.SOUTHWEST, Direction.SOUTH, Direction.SOUTHEAST, null},
+		{null, null, null, null, null}
 	};
 	
 	private static Direction[][][] counterClockwiseBuildPattern = new Direction[][][] {
-		{{Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}},
-		{{Direction.CENTER}, {}, {}, {}, {Direction.CENTER}},
-		{{Direction.CENTER}, {}, {}, {}, {Direction.CENTER}},
-		{{Direction.CENTER}, {}, {}, {}, {Direction.CENTER}},
-		{{Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}}
+		{{}, {}, {}, {}, {}},
+		{{}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {}},
+		{{}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {}},
+		{{}, {Direction.CENTER}, {Direction.CENTER}, {Direction.CENTER}, {}},
+		{{}, {}, {}, {}, {}}
+	};
+	
+	private static Direction[][] outpostMovePattern = new Direction[][]{
+		{null, null, null, null, null},
+		{null, null, null, null, null},
+		{null, null, Direction.CENTER, null, null},
+		{null, null, null, null, null},
+		{null, null, null, null, null}
+	};
+	
+	private static Direction[][] outpostDigPattern = new Direction[][]{
+		{null, null, null, null, null},
+		{null, null, null, null, null},
+		{null, null, Direction.NORTHWEST, null, null},
+		{null, null, null, null, null},
+		{null, null, null, null, null}
+	};
+	
+	private static Direction[][][] outpostBuildPattern = new Direction[][][] {
+		{{}, {}, {}, {}, {}},
+		{{}, {}, {}, {}, {}},
+		{{}, {}, {Direction.CENTER, Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST}, {}, {}},
+		{{}, {}, {}, {}, {}},
+		{{}, {}, {}, {}, {}}
 	};
 	
 	private LandscaperData landscaperData;
@@ -85,16 +110,45 @@ public class Landscaper extends Robot {
     		landscaperData.initializeWallData(landscaperData.getHqLocation(), rc.getMapWidth(), rc.getMapHeight());
     		determineWallDirections();
     		determineHqElevation();
+    		updateRole();
     	}
     	
     	seekEnemyHq();
 		seekClosestEnemyBuilding();
-    	
-    	discernAttackRole();
-    	    	
+		
+		readTransactions();
+		
 		System.out.println("Landscaper Role = " + landscaperData.getCurrentRole());
 		
-		if(landscaperData.getCurrentRole() == LandscaperData.ATTACK) {
+		if(landscaperData.getCurrentRole() == LandscaperData.OUTPOST_KEEPER) {
+			movePattern = outpostMovePattern;
+			digPattern = outpostDigPattern;
+			buildPattern = outpostBuildPattern;
+			
+			if(landscaperData.isOutpostBuildStarted()) {
+				buildWall(rc.getLocation(), false);
+				return;
+			}
+			
+			if(rc.getLocation().isWithinDistanceSquared(landscaperData.getHqLocation(), 36) || onMapEdge(rc.getLocation())) {
+				continueSearch();
+				return;
+			}
+			
+			RobotInfo[] landscapers = senseAllUnitsOfType(RobotType.LANDSCAPER, rc.getTeam());
+			for(RobotInfo landscaper : landscapers) {
+				if(rc.getLocation().isWithinDistanceSquared(landscaper.getLocation(), 18)) {
+					continueSearch();
+					return;
+				}
+			}
+			
+			if(senseUnitType(RobotType.MINER, rc.getTeam(), 1) != null) {
+				landscaperData.setOutpostBuildStarted(true);
+				sendTransaction(1, Type.TRANSACTION_OUTPOST_AT_LOC, rc.getLocation());
+			}
+			
+		} else if(landscaperData.getCurrentRole() == LandscaperData.ATTACK) {
 	    	if(landscaperData.getEnemyHQLocation() != null) {
 	    		System.out.println("Attempting burial of enemy HQ");
 	    		buryEnemyHq();
@@ -105,26 +159,41 @@ public class Landscaper extends Robot {
 	    		//The landscaper is likely standing where drones are supposed to be spawning.
 	    		routeTo(landscaperData.getDesignSchoolBuildSite());
 	    	}
+	    	
+	    	updateRole();
 		} else if(landscaperData.getCurrentRole() == LandscaperData.TRAVEL_TO_HQ) {
-    		if(!approachComplete()) {
-    			routeTo(landscaperData.getHqLocation());
-    		} else {
-    			landscaperData.setCurrentRole(LandscaperData.DEFEND_HQ_FROM_FLOOD);
-    		}
+    		routeTo(landscaperData.getHqLocation());
+    		updateRole();
     	} else if(landscaperData.getCurrentRole() == LandscaperData.DEFEND_HQ_FROM_FLOOD) {
+    		boolean onWall = isOnWall(rc.getLocation(), landscaperData.getHqLocation());
+    		
     		if(seekAdjacentEnemyBuilding()) {
     			System.out.println("Burying enemy building");
     			buryEnemyBuilding();
-    		} else {
+    		} else if(onWall) {
     			System.out.println("Attempting to build HQ wall");
-    			buildHQWall();
+    			buildWall(landscaperData.getHqLocation(), true);
+    			
+    			if(!landscaperData.isWallBuildHandled()) {
+    				if(landscapersFillWall(landscaperData.getHqLocation()) && wallBuilt(landscaperData.getHqLocation())) {
+    					System.out.println("Landscapers fill the wall!");
+    					sendTransaction(1, Robot.Type.TRANSACTION_WALL_BEING_BUILT, landscaperData.getHqLocation());
+    				}
+    			}
     		}
-    	} else if(!isOnWall(rc.getLocation(), landscaperData.getHqLocation()) && !isWithinWall(rc.getLocation(), landscaperData.getHqLocation())) {
-    		System.out.println("Ought to return to HQ.");
-    		landscaperData.setCurrentRole(LandscaperData.TRAVEL_TO_HQ);
     	}
 	}
-	
+
+	private void updateRole() {
+		RobotInfo enemyBuilding = seekClosestEnemyBuilding();
+		boolean enemiesNearby = enemyBuilding != null && 
+				(enemyBuilding.getLocation().isWithinDistanceSquared(landscaperData.getHqLocation(), 18) || enemyBuilding.getType() == RobotType.HQ);
+				
+		if(enemiesNearby && !isOnWall(rc.getLocation(), landscaperData.getHqLocation())) landscaperData.setCurrentRole(LandscaperData.ATTACK);
+		else if(landscaperData.isWallBuildHandled() && !isOnWall(rc.getLocation(), landscaperData.getHqLocation())) landscaperData.setCurrentRole(LandscaperData.OUTPOST_KEEPER);
+		else if(approachComplete()) landscaperData.setCurrentRole(LandscaperData.DEFEND_HQ_FROM_FLOOD);
+	}
+		
 	private void learnHQLocation() throws GameActionException {
 		for(Transaction transaction : rc.getBlock(1)) {
 			int[] message = decodeTransaction(transaction);
@@ -320,38 +389,13 @@ public class Landscaper extends Robot {
 			digPattern = counterClockwiseDigPattern;
 			movePattern = counterClockwiseMovePattern;
 			buildPattern = counterClockwiseBuildPattern;
-		} else {
+		} else if(digPattern == counterClockwiseDigPattern) {
 			digPattern = clockwiseDigPattern;
 			movePattern = clockwiseMovePattern;
 			buildPattern = clockwiseBuildPattern;
 		}
 	}
 
-	private void discernAttackRole() throws GameActionException {
-		MapLocation rcLocation = rc.getLocation();
-		MapLocation hqLocation = landscaperData.getHqLocation();
-		
-		int dx = rcLocation.x - hqLocation.x;
-		int dy = rcLocation.y - hqLocation.y;
-				
-		int gridX = dx + gridXShift;
-		int gridY = -dy + gridYShift;
-		
-		if(!isOnWall(rcLocation, hqLocation) && !isWithinWall(rcLocation, hqLocation)) {
-			landscaperData.setCurrentRole(landscaperData.getClosestEnemyBuilding() != null ? LandscaperData.ATTACK : LandscaperData.TRAVEL_TO_HQ);
-			return;
-		}
-		
-		MapLocation nextLocation = rc.getLocation().add(movePattern[gridY][gridX]);
-		boolean elevationDifferenceHigh = rc.onTheMap(nextLocation) ? rc.senseElevation(nextLocation) - rc.senseElevation(rcLocation) > GameConstants.MAX_DIRT_DIFFERENCE : true;
-
-		if(isWithinWall(rcLocation, hqLocation) && elevationDifferenceHigh) {
-			landscaperData.setCurrentRole(LandscaperData.ATTACK);
-		} else if(isOnWall(rcLocation, hqLocation)) {
-			landscaperData.setCurrentRole(LandscaperData.DEFEND_HQ_FROM_FLOOD);
-		}
-	}
-	
 	private boolean dig(Direction dir) throws GameActionException {
 		waitUntilReady();
 		if(rc.isReady() && rc.canDigDirt(dir)) {
@@ -375,31 +419,28 @@ public class Landscaper extends Robot {
 	}
 	
 	private boolean approachComplete() {
-		MapLocation rcLocation = rc.getLocation();
-		MapLocation hqLocation = landscaperData.getHqLocation();
-		return isOnWall(rcLocation, hqLocation) || isWithinWall(rcLocation, hqLocation);
+		return rc.getLocation().isWithinDistanceSquared(landscaperData.getHqLocation(), 3);
 	}
 	
-	private void buildHQWall() throws GameActionException {
-		if((rc.getDirtCarrying() > 0 && !landscaperData.isClearingObstruction()) || rc.getDirtCarrying() == RobotType.LANDSCAPER.dirtLimit) constructWallUnits();
-		else digWallDirt();
+	private void buildWall(MapLocation center, boolean hqWall) throws GameActionException {
+		if((rc.getDirtCarrying() > 0 && !landscaperData.isClearingObstruction()) || rc.getDirtCarrying() == RobotType.LANDSCAPER.dirtLimit) constructWallUnits(center, hqWall);
+		else digWallDirt(center);
 	}
 	
-	private void constructWallUnits() throws GameActionException {
+	private void constructWallUnits(MapLocation center, boolean hqWall) throws GameActionException {
 		MapLocation rcLocation = rc.getLocation();
-		MapLocation hqLocation = landscaperData.getHqLocation();
 		
 		if(landscaperData.isClearingObstruction()) {
-			if(depositDirt(hqLocation.directionTo(rcLocation))) return;
-			if(depositDirt(hqLocation.directionTo(rcLocation).rotateLeft())) return;
-			if(depositDirt(hqLocation.directionTo(rcLocation).rotateRight())) return;
+			if(depositDirt(center.directionTo(rcLocation))) return;
+			if(depositDirt(center.directionTo(rcLocation).rotateLeft())) return;
+			if(depositDirt(center.directionTo(rcLocation).rotateRight())) return;
 			return;
 		}
 		
 		Direction[] constructDirections = new Direction[0];
 		
-		int dx = rcLocation.x - hqLocation.x;
-		int dy = rcLocation.y - hqLocation.y;
+		int dx = rcLocation.x - center.x;
+		int dy = rcLocation.y - center.y;
 				
 		int gridX = dx + gridXShift;
 		int gridY = -dy + gridYShift;
@@ -438,20 +479,30 @@ public class Landscaper extends Robot {
 		int[] constructElevations = new int[constructDirections.length];
 		int lowestElevation = Integer.MAX_VALUE;
 		for(int i = 0; i < constructElevations.length; i++) {
-			if (rc.canSenseLocation(rcLocation.add(constructDirections[i]))) {
-				constructElevations[i] = rc.senseElevation(rcLocation.add(constructDirections[i]));
+			MapLocation constructLocation = rcLocation.add(constructDirections[i]);
+			
+			if (rc.canSenseLocation(constructLocation)) {
+				boolean buildingPresent = false;
+				
+				//An outpost wall should not bury friendly buildings.
+				if(!hqWall) {
+					RobotInfo building = rc.senseRobotAtLocation(constructLocation);
+					buildingPresent = building != null && building.getType().isBuilding() && building.getTeam() == rc.getTeam();
+				}
+				
+				constructElevations[i] = buildingPresent ? Integer.MAX_VALUE : rc.senseElevation(rcLocation.add(constructDirections[i]));
 				lowestElevation = (constructElevations[i] < lowestElevation) ? constructElevations[i] : lowestElevation;
 			}
 		}
 		
-		MapLocation innerWallLocation = rcLocation.add(rcLocation.directionTo(hqLocation));
+		MapLocation innerWallLocation = rcLocation.add(rcLocation.directionTo(center));
 		MapLocation nextLocation = rcLocation.add(movePattern[gridY][gridX]);
 		
 		Direction constructDirection = constructDirections[NumberMath.indexOfLeast(constructElevations)];
 		MapLocation constructLocation = rcLocation.add(constructDirection);
 		System.out.println("The place to build is to the " + constructDirection);
 		
-		if(rc.senseFlooding(innerWallLocation)) depositDirt(rcLocation.directionTo(hqLocation));
+		if(rc.senseFlooding(innerWallLocation)) depositDirt(rcLocation.directionTo(center));
 		else if(rc.senseFlooding(nextLocation)) depositDirt(rcLocation.directionTo(nextLocation));
 		else if(rc.senseElevation(rcLocation) - rc.senseElevation(constructLocation) < GameConstants.MAX_DIRT_DIFFERENCE) {
 			System.out.println("Current elevation not too high! Depositing dirt to the " + constructDirection);
@@ -470,7 +521,6 @@ public class Landscaper extends Robot {
 		return false;
 	}
 	
-	
 	private boolean enemyAtLocation(MapLocation location) throws GameActionException {
 		if(rc.canSenseLocation(location)) {
 			RobotInfo potentialEnemy = rc.senseRobotAtLocation(location);
@@ -480,14 +530,14 @@ public class Landscaper extends Robot {
 		
 		return false;
 	}
-	private void digWallDirt() throws GameActionException {
+	
+	private void digWallDirt(MapLocation center) throws GameActionException {
 		Direction digDirection = null;
 		
 		MapLocation rcLocation = rc.getLocation();
-		MapLocation hqLocation = landscaperData.getHqLocation();
 		
-		int dx = rcLocation.x - hqLocation.x;
-		int dy = rcLocation.y - hqLocation.y;
+		int dx = rcLocation.x - center.x;
+		int dy = rcLocation.y - center.y;
 		
 		int gridX = dx + gridXShift;
 		int gridY = -dy + gridYShift;
@@ -511,10 +561,10 @@ public class Landscaper extends Robot {
 		}
 		
 		//TODO: Shouldn't this only return false if the occupant is a building?
-		if(!rc.isLocationOccupied(rcLocation.add(rcLocation.directionTo(hqLocation))) && innerWallObstructed()) {
+		if(!rc.isLocationOccupied(rcLocation.add(rcLocation.directionTo(center))) && innerWallObstructed()) {
 			System.out.println("Inner wall obstructed");
 			//If we are next to an obstructed build site, dig from there.
-			dig(rcLocation.directionTo(hqLocation));
+			dig(rcLocation.directionTo(center));
 			landscaperData.setClearingObstruction(true);
 			return;
 		} else {
@@ -524,7 +574,7 @@ public class Landscaper extends Robot {
 			MapLocation nextLocation = rcLocation.add(movePattern[gridY][gridX]);
 			
 			if(rc.canSenseLocation(nextLocation)) {
-				if(!isOnWall(rcLocation, hqLocation) && rc.senseFlooding(nextLocation)) {
+				if(!isOnWall(rcLocation, center) && rc.senseFlooding(nextLocation)) {
 					System.out.println("The wall is already flooded! Trying to save it...");
 					for(MapLocation location : landscaperData.getLastResortBuildLocations()) {
 						if(rcLocation.isWithinDistanceSquared(location, 3) && dig(rcLocation.directionTo(location))) break; 
@@ -544,7 +594,7 @@ public class Landscaper extends Robot {
 				
 				for(Direction direction : Robot.directions) {
 					MapLocation digLocation = rcLocation.add(direction);
-					if(rc.onTheMap(digLocation) && !isOnWall(digLocation, hqLocation) && !isWithinWall(digLocation, hqLocation)) {
+					if(rc.onTheMap(digLocation) && !isOnWall(digLocation, center) && !isWithinWall(digLocation, center)) {
 						dig(direction);
 					}
 				}
@@ -556,6 +606,31 @@ public class Landscaper extends Robot {
 			move(movePattern[gridY][gridX]);
 		}
 	}
+	
+	 protected boolean landscapersFillWall(MapLocation center) throws GameActionException {
+			MapLocation rcLocation = rc.getLocation();
+	    	
+	    	int minDx = data.getWallOffsetXMin();
+	    	int maxDx = data.getWallOffsetXMax();
+	    	int minDy = data.getWallOffsetYMin();
+	    	int maxDy = data.getWallOffsetYMax();
+	    	
+	    	for(int dx = minDx; dx <= maxDx; dx++) {
+	    		for(int dy = minDy; dy <= maxDy; dy++) {
+	    			MapLocation wallLocation = center.translate(dx, dy);
+	    			if(rc.canSenseLocation(wallLocation) && wallLocation.isWithinDistanceSquared(rcLocation, 3) && isOnWall(wallLocation, center)) {
+	    				if(!rc.isLocationOccupied(wallLocation)) return false;
+	    				
+	    				RobotInfo robot = rc.senseRobotAtLocation(wallLocation);
+	    				if(robot.getType() != RobotType.LANDSCAPER) return false;
+	    			} else if(!rc.canSenseLocation(wallLocation)) {
+	    				return false;
+	    			}
+	    		}
+	    	}
+	    	
+	    	return true;
+		}
 	
 	private boolean innerWallObstructed() throws GameActionException {
 		MapLocation innerWallLocation = rc.getLocation().add(rc.getLocation().directionTo(landscaperData.getHqLocation()));
@@ -585,4 +660,37 @@ public class Landscaper extends Robot {
 		int wallElevation = rc.senseElevation(rc.getLocation());
 		return getFloodingAtRound(rc.getRoundNum() + 100) >= wallElevation;
 	}
+
+	//TRANSACTIONS
+	private void readTransactions() throws GameActionException {
+    	for(int i = NumberMath.clamp(landscaperData.getTransactionRound(), 1, Integer.MAX_VALUE); i < rc.getRoundNum(); i++) {
+    		System.out.println("Reading transactions from round " + i);
+    		
+    		if(Clock.getBytecodesLeft() <= 500) break;
+    		
+    		for(Transaction transaction : rc.getBlock(i)) {
+    			int[] message = decodeTransaction(transaction);
+    			
+    			if (message.length == GameConstants.NUMBER_OF_TRANSACTIONS_PER_BLOCK) {
+    				Robot.Type category = Robot.Type.enumOfValue(message[1]);
+    				MapLocation loc = new MapLocation(message[2], message[3]);
+
+    				if (category == null) {
+    					System.out.println("Something is terribly wrong. enumOfValue returns null. Miner readTransaction line ~621");
+    				}
+    				
+    				switch(category) {
+    					case TRANSACTION_WALL_BEING_BUILT:
+    						System.out.println("Wall build confirmed handled!");
+    						landscaperData.setWallBuildHandled(true);
+    						break;
+    					default:
+    						break;
+    				}
+    			}
+    		}
+    		
+    		landscaperData.setTransactionRound(i + 1);
+    	}
+    }
 }

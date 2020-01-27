@@ -1,4 +1,4 @@
-package julianbot.robotdata;
+package bustedJulianbot.robotdata;
 
 import java.util.ArrayList;
 import battlecode.common.MapLocation;
@@ -15,7 +15,6 @@ public class MinerData extends ScoutData {
 	public static final int ROLE_SOUP_MINER = 2;
 	public static final int ROLE_REFINERY_BUILDER = 3;
 	public static final int ROLE_VAPORATOR_BUILDER = 4;
-		private boolean vaporatorBuilderClaimed;
 	public static final int ROLE_DEFENSE = 5;
 	public static final int ROLE_BLOCK = 6;
 		private boolean vaporatorBuilt;
@@ -28,14 +27,22 @@ public class MinerData extends ScoutData {
 		private int turnsScouted;
 	public static final int ROLE_RUSH = 8;
 	public static final int ROLE_DRONE_RUSH_FINISHER = 9;
+	public static final int ROLE_OUTPOST_KEEPER = 10;
 
 	//LANDMARKS
 	private ArrayList<MapLocation> soupLocs;
 		private ArrayList<MapLocation> removedSoupLocs;
 	private ArrayList<MapLocation> refineryLocs;
+	private ArrayList<MapLocation> outpostLocs;
+		private ArrayList<MapLocation> removedOutpostLocs;
+		private MapLocation outpostLocToSearch;
+		private int outpostLocToSearchIndex;
 	
 	//TRANSACTION READING
 	private int transactionRound;
+	
+	//WALL PROGRESSION
+	private boolean wallBuildHandled;
 	
 	/**
 	 * Constructs MinerData
@@ -50,6 +57,9 @@ public class MinerData extends ScoutData {
 			removedSoupLocs = new ArrayList<MapLocation>();
 		refineryLocs = new ArrayList<MapLocation>();
 		refineryLocs.add(spawnerLocation);
+		outpostLocs = new ArrayList<MapLocation>();
+			removedOutpostLocs = new ArrayList<MapLocation>();
+		
 		setHqLocation(spawnerLocation);
 		
 		transactionRound = 1;
@@ -69,14 +79,6 @@ public class MinerData extends ScoutData {
 
 	public void setBuildSitesBlocked(boolean buildSitesBlocked) {
 		this.buildSitesBlocked = buildSitesBlocked;
-	}
-
-	public boolean isVaporatorBuilderClaimed() {
-		return vaporatorBuilderClaimed;
-	}
-
-	public void setVaporatorBuilderClaimed(boolean vaporatorBuilderClaimed) {
-		this.vaporatorBuilderClaimed = vaporatorBuilderClaimed;
 	}
 
 	public boolean isVaporatorBuilt() {
@@ -249,6 +251,46 @@ public class MinerData extends ScoutData {
 	 */
 	public boolean removeRefineryLoc(MapLocation loc) {
 		return refineryLocs.remove(loc);
+	}
+	
+	public boolean addOutpostLoc(MapLocation loc) {
+		for (MapLocation outpostLoc : outpostLocs) {
+			//21 is default sensor radius besides miner and hq.
+
+			if (/*soupLoc.distanceSquaredTo(loc) < 21 || */outpostLoc.equals(loc)) {
+				return false;
+			}
+		}
+
+		for(MapLocation outpostLoc : removedOutpostLocs) {
+			if(outpostLoc.equals(loc)) return false;
+		}
+
+		outpostLocs.add(loc);
+		if(outpostLocs.size() == 1) {
+			outpostLocToSearch = loc;
+			outpostLocToSearchIndex = 0;
+		}
+		
+		return true;
+	}
+	
+	public boolean removeOutpostLoc(MapLocation loc) {
+		boolean removalSuccessful = outpostLocs.remove(loc);
+		if(removalSuccessful) removedOutpostLocs.add(loc);
+		return removalSuccessful;
+	}
+	
+	public ArrayList<MapLocation> getOutpostLocs() {
+		return outpostLocs;
+	}
+
+	public boolean isWallBuildHandled() {
+		return wallBuildHandled;
+	}
+
+	public void setWallBuildHandled(boolean wallBuildHandled) {
+		this.wallBuildHandled = wallBuildHandled;
 	}
 
 	public int getTransactionRound() {

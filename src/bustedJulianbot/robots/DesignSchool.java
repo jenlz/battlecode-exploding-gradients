@@ -1,4 +1,4 @@
-package julianbot.robots;
+package bustedJulianbot.robots;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -8,7 +8,7 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Transaction;
-import julianbot.robotdata.DesignSchoolData;
+import bustedJulianbot.robotdata.DesignSchoolData;
 
 public class DesignSchool extends Robot {
 	
@@ -27,7 +27,7 @@ public class DesignSchool extends Robot {
 		if(turnCount == 1) {
 			learnHqLocation();
 			designSchoolData.initializeWallData(designSchoolData.getHqLocation(), rc.getMapWidth(), rc.getMapHeight());
-			discernRole();
+			discernInitialRole();
 			determineBuildDirection();
 		}
 
@@ -59,18 +59,13 @@ public class DesignSchool extends Robot {
 		}
 	}
 	
-	private void discernRole() {
-		if(rc.getLocation().equals(designSchoolData.getDesignSchoolBuildSite())) {
-			designSchoolData.setCurrentRole(DesignSchoolData.ROLE_WALL_BUILDER);
-			return;
-		}
-		
+	private void discernInitialRole() {		
 		RobotInfo enemyHq = senseUnitType(RobotType.HQ, rc.getTeam().opponent());
-		if(enemyHq != null) {
+		if(enemyHq != null && rc.getLocation().distanceSquaredTo(enemyHq.getLocation()) < rc.getLocation().distanceSquaredTo(designSchoolData.getHqLocation())) {
 			designSchoolData.setCurrentRole(DesignSchoolData.ROLE_ATTACKER);
 			designSchoolData.setEnemyHqLocation(enemyHq.getLocation());
 		} else {
-			designSchoolData.setCurrentRole(DesignSchoolData.ROLE_OBSTRUCTION_CLEARER);
+			designSchoolData.setCurrentRole(DesignSchoolData.ROLE_WALL_BUILDER);
 		}
 	}
 
@@ -165,7 +160,7 @@ public class DesignSchool extends Robot {
 		
 		int allyLandscapers = this.senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam());
 		int opposingLandscapers = this.senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam().opponent());
-		if((allyLandscapers >= 3 && allyLandscapers > opposingLandscapers) || allyLandscapers >= 5 || isFloodingImminent() || isFloodingAdjacent()) return;
+		if((allyLandscapers >= 3 && allyLandscapers > opposingLandscapers) || allyLandscapers >= 5 || isFloodingImminent(designSchoolData.getHqLocation(), (int)(RobotType.LANDSCAPER.cost * 1.5)) || isFloodingAdjacent()) return;
 		
 		forceBuildTowardsTarget(target);
 	}
@@ -185,24 +180,8 @@ public class DesignSchool extends Robot {
 			System.out.println("Flooding is imminent! We need to force a build.");
 			forceBuild();
 		} else if(oughtBuildLandscaper) {
-    		System.out.println("Design school ought build a landscaper.");
-    		if(designSchoolData.getLandscapersBuilt() > 0 && onMapEdge(rc.getLocation().add(designSchoolData.getDefaultBuildDirection()))) {
-    			designSchoolData.setDefaultBuildDirection(designSchoolData.getDefaultAttackBuildDirection());
-    			designSchoolData.setBuildDirection(designSchoolData.getDefaultAttackBuildDirection());
-    		}
-    		
-    		if(!tryBuild() && designSchoolData.getBuildDirection().equals(designSchoolData.getDefaultBuildDirection())) {
-    			MapLocation attemptedBuildLocation = rc.getLocation().add(designSchoolData.getBuildDirection());
-    			if(rc.canSenseLocation(attemptedBuildLocation)) {
-    				boolean wallAtBuildLocation = rc.senseElevation(attemptedBuildLocation) - rc.senseElevation(rc.getLocation()) > GameConstants.MAX_DIRT_DIFFERENCE;
-    				boolean mapEdgeAtBuildLocation = onMapEdge(attemptedBuildLocation);
-    				if(wallAtBuildLocation || mapEdgeAtBuildLocation && rc.getTeamSoup() >= RobotType.LANDSCAPER.cost) {
-    					System.out.println("Wall built! We can proceed to attack landscapers.");
-    					//The wall already exists, so we can start building northwards to generate attack landscapers.  
-    					designSchoolData.setDefaultBuildDirection(designSchoolData.getDefaultAttackBuildDirection());
-    				}
-    			}
-    		}
+    		MapLocation buildLocation = getBuildSiteNearWall(designSchoolData.getHqLocation(), 3, Integer.MAX_VALUE);
+    		attemptConstruction(RobotType.LANDSCAPER, rc.getLocation().directionTo(buildLocation));
     	}
 	}
 
@@ -211,52 +190,12 @@ public class DesignSchool extends Robot {
 		System.out.println("Ought build landscaper?");
 		if(designSchoolData.getPauseBuildTimer() > 0 && !designSchoolData.getBuildSitesBlocked()) return false;
 		
-		boolean floodingImminent = isFloodingImminent();
+		boolean floodingImminent = isFloodingImminent(designSchoolData.getHqLocation(), (int)(RobotType.LANDSCAPER.cost * 1.5));
 		boolean floodingAdjacent = isFloodingAdjacent();
 		
-		System.out.println("Flooding imminent or adjacent? " + floodingImminent + " / " + floodingAdjacent);
-		System.out.println("Build sites blocked? " + designSchoolData.getBuildSitesBlocked());
-		
-		if (designSchoolData.getLandscapersBuilt() == 0) {
-			return designSchoolData.getBuildSitesBlocked() || senseUnitType(RobotType.FULFILLMENT_CENTER, rc.getTeam()) != null || floodingAdjacent || floodingImminent;
-		}
-		
-		if(designSchoolData.getPauseBuildTimer() > 0) return false;
-		
-		if(!designSchoolData.isRefineryBuilt() && !wallBarringFloodwaters(designSchoolData.getHqLocation())) {
-			System.out.println("No refinery is built, nor is the wall barring floodwaters.");
-			designSchoolData.setWaitingOnRefinery(!(floodingImminent || floodingAdjacent));
-		} else {
-			designSchoolData.setWaitingOnRefinery(false);
-		}
-		
-		System.out.println("Waiting on refinery? " + designSchoolData.isWaitingOnRefinery());
-		
-		if(designSchoolData.isWaitingOnRefinery()) return false;
-		
+		if(designSchoolData.getLandscapersBuilt() < 10) return true;
+				
 		return (designSchoolData.isStableSoupIncomeConfirmed() || designSchoolData.getBuildSitesBlocked()) ? rc.getTeamSoup() >= RobotType.LANDSCAPER.cost : rc.getTeamSoup() >= RobotType.VAPORATOR.cost + 5;
-	}
-	
-	private boolean isFloodingImminent() throws GameActionException {		
-		if(isWithinWall(rc.getLocation(), designSchoolData.getHqLocation())) {
-			int lowestWallElevation = getLowestWallElevation(designSchoolData.getHqLocation());
-			int projectedFlooding = this.getFloodingAtRound(rc.getRoundNum() + (RobotType.LANDSCAPER.cost * 1.5));
-			System.out.println(lowestWallElevation + " <= " + projectedFlooding);
-			return lowestWallElevation <= projectedFlooding;
-		} else {
-			return rc.senseElevation(rc.getLocation()) <= this.getFloodingAtRound(rc.getRoundNum() + (RobotType.LANDSCAPER.cost * 1.5));
-		}
-	}
-	
-	private boolean isFloodingAdjacent() throws GameActionException {
-		MapLocation rcLocation = rc.getLocation();
-		
-		for(Direction direction : Robot.directions) {
-			MapLocation potentialFloodingLocation = rcLocation.add(direction);
-			if(rc.canSenseLocation(potentialFloodingLocation) && rc.senseFlooding(potentialFloodingLocation)) return true;
-		}
-		
-		return false;
 	}
 	
 	/**

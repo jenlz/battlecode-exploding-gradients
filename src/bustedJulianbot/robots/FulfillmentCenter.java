@@ -1,4 +1,4 @@
-package julianbot.robots;
+package bustedJulianbot.robots;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -9,7 +9,7 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Transaction;
-import julianbot.robotdata.FulfillmentCenterData;
+import bustedJulianbot.robotdata.FulfillmentCenterData;
 
 public class FulfillmentCenter extends Robot {
 
@@ -37,7 +37,14 @@ public class FulfillmentCenter extends Robot {
 		fulfillmentCenterData.setPauseBuildTimer(fulfillmentCenterData.getPauseBuildTimer() - 1);
 		
 		if(buildDefensiveDrones()) return;
-    	if(oughtBuildDrone()) tryBuild();
+		
+    	if(oughtBuildDrone()) {
+    		System.out.println("Ought build a drone!");
+    		if(tryBuild()) {
+    			System.out.println("Build successful! Pausing build...");
+    			fulfillmentCenterData.setPauseBuildTimer((int) ((float) RobotType.DELIVERY_DRONE.cost / 1.6f));
+    		}
+    	}
 	}
 	
 	private void learnHQLocation() throws GameActionException {
@@ -99,30 +106,15 @@ public class FulfillmentCenter extends Robot {
 		return false;
 	}
 	
-	private boolean oughtBuildDrone() {
-		if (fulfillmentCenterData.getPauseBuildTimer() > 0) return false;
-		
-
-		if(fulfillmentCenterData.isWaitingOnRefinery()) {
-			if(rc.getTeamSoup() >= RobotType.REFINERY.cost + 5) {
-				fulfillmentCenterData.setWaitingOnRefinery(false);
-			}
-			
-			return false;
+	private boolean oughtBuildDrone() throws GameActionException {
+		if(isFloodingImminent(fulfillmentCenterData.getHqLocation(), 150)) {
+			System.out.println("FLOODING IS NIGH!");
+			return true;
 		}
+		else if (fulfillmentCenterData.getPauseBuildTimer() > 0) return false;
 		
 		if(fulfillmentCenterData.isStableSoupIncomeConfirmed()) {
-			MapLocation hqLocation = fulfillmentCenterData.getHqLocation();
-			
-			RobotInfo[] landscapers = senseAllUnitsOfType(RobotType.LANDSCAPER, rc.getTeam());
-			
-			for(RobotInfo landscaper : landscapers) {
-				//A landscaper inside the wall is an attack landscaper. We ought to build a drone to pair with it.
-				if(isWithinWall(landscaper.getLocation(), hqLocation)) return true;
-			}
-			
-			//Otherwise, we can still produce scouting drones if we need to.
-			return (!fulfillmentCenterData.isEnemyHqLocated()) ? rc.getTeamSoup() >= RobotType.DELIVERY_DRONE.cost + 1 : false;
+			return rc.getTeamSoup() >= RobotType.DELIVERY_DRONE.cost + 1;
 		} else {
 			//If a stable soup income is not confirmed, give the miners time to build a refinery before allocating soup to drones.
 			return rc.getTeamSoup() >= RobotType.VAPORATOR.cost + 5;
@@ -137,15 +129,16 @@ public class FulfillmentCenter extends Robot {
      * @return true if a move was performed
      * @throws GameActionException
      */
-    private boolean tryBuild() throws GameActionException {
-    	Direction buildDirection = fulfillmentCenterData.getBuildDirection();
-    	
+    private boolean tryBuild() throws GameActionException {    	
     	waitUntilReady();
-        if(rc.canBuildRobot(RobotType.DELIVERY_DRONE, buildDirection)) {
-            rc.buildRobot(RobotType.DELIVERY_DRONE, buildDirection);
-            fulfillmentCenterData.incrementDronesBuilt();
-            return true;
-        }
+    	
+    	for(Direction direction : Robot.directions) {
+	        if(rc.canBuildRobot(RobotType.DELIVERY_DRONE, direction)) {
+	            rc.buildRobot(RobotType.DELIVERY_DRONE, direction);
+	            fulfillmentCenterData.incrementDronesBuilt();
+	            return true;
+	        }
+    	}
         
         return false;
     }
