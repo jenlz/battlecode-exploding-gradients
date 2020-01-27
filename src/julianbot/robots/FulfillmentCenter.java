@@ -102,25 +102,23 @@ public class FulfillmentCenter extends Robot {
 	private boolean oughtBuildDrone() {
 		if (fulfillmentCenterData.getPauseBuildTimer() > 0) return false;
 		
+
+		if(fulfillmentCenterData.isWaitingOnRefinery()) {
+			if(rc.getTeamSoup() >= RobotType.REFINERY.cost + 5) {
+				fulfillmentCenterData.setWaitingOnRefinery(false);
+			}
+			
+			return false;
+		}
+		
 		if(fulfillmentCenterData.isStableSoupIncomeConfirmed()) {
 			MapLocation hqLocation = fulfillmentCenterData.getHqLocation();
 			
 			RobotInfo[] landscapers = senseAllUnitsOfType(RobotType.LANDSCAPER, rc.getTeam());
-			int xMin = fulfillmentCenterData.getWallOffsetXMin();
-			int xMax = fulfillmentCenterData.getWallOffsetYMax();
-			int yMin = fulfillmentCenterData.getWallOffsetYMin();
-			int yMax = fulfillmentCenterData.getWallOffsetYMax();
 			
 			for(RobotInfo landscaper : landscapers) {
-				MapLocation location = landscaper.getLocation();
-				int dx = location.x - hqLocation.x;
-				int dy = location.y - hqLocation.y;
-				
-				boolean xInWall = xMin < dx && dx < xMax;
-				boolean yInWall = yMin < dy && dy < yMax;
-				
 				//A landscaper inside the wall is an attack landscaper. We ought to build a drone to pair with it.
-				if(xInWall && yInWall) return true;
+				if(isWithinWall(landscaper.getLocation(), hqLocation)) return true;
 			}
 			
 			//Otherwise, we can still produce scouting drones if we need to.
@@ -220,6 +218,9 @@ public class FulfillmentCenter extends Robot {
 						case TRANSACTION_KILL_ORDER:
     						System.out.println("Pausing building...");
     						fulfillmentCenterData.setPauseBuildTimer(message[5]);
+    						break;
+						case TRANSACTION_FRIENDLY_REFINERY_AT_LOC:
+							fulfillmentCenterData.setWaitingOnRefinery(false);
     						break;
 						default:
 							break;

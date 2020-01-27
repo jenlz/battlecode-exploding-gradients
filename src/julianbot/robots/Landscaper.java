@@ -100,7 +100,11 @@ public class Landscaper extends Robot {
 	    		buryEnemyHq();
 	    	} else if(oughtTargetEnemyBuilding()) {
 	    		buryEnemyBuilding();
-	    	} 
+	    	} else if(isWithinWall(rc.getLocation(), landscaperData.getHqLocation()) &&
+	    			rc.getLocation().distanceSquaredTo(landscaperData.getFulfillmentCenterBuildSite()) < rc.getLocation().distanceSquaredTo(landscaperData.getDesignSchoolBuildSite())) {
+	    		//The landscaper is likely standing where drones are supposed to be spawning.
+	    		routeTo(landscaperData.getDesignSchoolBuildSite());
+	    	}
 		} else if(landscaperData.getCurrentRole() == LandscaperData.TRAVEL_TO_HQ) {
     		if(!approachComplete()) {
     			routeTo(landscaperData.getHqLocation());
@@ -500,6 +504,10 @@ public class Landscaper extends Robot {
 				dig(digDirection);
 				return;
 			}
+		} else if(rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) - rc.senseElevation(rcLocation) > GameConstants.MAX_DIRT_DIFFERENCE) {
+			//If where we're going is too high, dig from there.
+			toggleDirection();
+			return;
 		}
 		
 		//TODO: Shouldn't this only return false if the occupant is a building?
@@ -521,10 +529,6 @@ public class Landscaper extends Robot {
 					for(MapLocation location : landscaperData.getLastResortBuildLocations()) {
 						if(rcLocation.isWithinDistanceSquared(location, 3) && dig(rcLocation.directionTo(location))) break; 
 					}
-				} else if(rc.senseElevation(rcLocation.add(movePattern[gridY][gridX])) - rc.senseElevation(rcLocation) > GameConstants.MAX_DIRT_DIFFERENCE) {
-					//If where we're going is too high, dig from there.
-					dig(movePattern[gridY][gridX]);
-					return;
 				}
 			}
 		}

@@ -4,6 +4,9 @@ import battlecode.common.*;
 
 public class DesignSchoolData extends RobotData {
 	
+	private MapLocation hqLocation;
+	private MapLocation enemyHqLocation;
+	
 	private Direction buildDirection;
 		private Direction defaultBuildDirection;
 		private Direction defaultAttackBuildDirection;
@@ -14,17 +17,54 @@ public class DesignSchoolData extends RobotData {
 	private boolean stableSoupIncomeConfirmed;
 		private int transactionRound;
 		private boolean searchedForVaporator;
+	
+	private boolean waitingOnRefinery;
+	private boolean refineryBuilt;
+	
 	private int pauseBuildTimer;
 	private boolean isAttackSchool;
+	
+	private int currentRole;
+	public static final int ROLE_WALL_BUILDER = 0;
+	public static final int ROLE_OBSTRUCTION_CLEARER = 1;
+	public static final int ROLE_ATTACKER = 2;
 	
 	public DesignSchoolData(RobotController rc, MapLocation spawnerLocation) {
 		super(rc, spawnerLocation);
 		buildDirection = Direction.WEST;
 			defaultBuildDirection = Direction.WEST;
 			defaultAttackBuildDirection = Direction.NORTH;
+		
+		waitingOnRefinery = true;
+		
 		transactionRound = 1;
+		
 		pauseBuildTimer = 0;
 		isAttackSchool = false;
+	}
+	
+	public MapLocation getHqLocation() {
+		return hqLocation;
+	}
+
+	public void setHqLocation(MapLocation hqLocation) {
+		this.hqLocation = hqLocation;
+	}
+
+	public MapLocation getEnemyHqLocation() {
+		return enemyHqLocation;
+	}
+
+	public void setEnemyHqLocation(MapLocation enemyHqLocation) {
+		this.enemyHqLocation = enemyHqLocation;
+	}
+
+	public int getCurrentRole() {
+		return currentRole;
+	}
+
+	public void setCurrentRole(int currentRole) {
+		this.currentRole = currentRole;
 	}
 
 	public boolean getIsAttackSchool() {
@@ -109,5 +149,21 @@ public class DesignSchoolData extends RobotData {
 
 	public void setSearchedForVaporator(boolean searchedForVaporator) {
 		this.searchedForVaporator = searchedForVaporator;
+	}
+	
+	public boolean isWaitingOnRefinery() {
+		return waitingOnRefinery;
+	}
+
+	public void setWaitingOnRefinery(boolean waitingOnRefinery) {
+		this.waitingOnRefinery = waitingOnRefinery;
+	}
+
+	public boolean isRefineryBuilt() {
+		return refineryBuilt;
+	}
+
+	public void setRefineryBuilt(boolean refineryBuilt) {
+		this.refineryBuilt = refineryBuilt;
 	}
 }

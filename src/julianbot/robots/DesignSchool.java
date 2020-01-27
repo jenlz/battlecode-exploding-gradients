@@ -24,32 +24,158 @@ public class DesignSchool extends Robot {
 	public void run() throws GameActionException {
 		super.run();
 		
-		if(turnCount == 1) determineBuildDirection();
+		if(turnCount == 1) {
+			learnHqLocation();
+			designSchoolData.initializeWallData(designSchoolData.getHqLocation(), rc.getMapWidth(), rc.getMapHeight());
+			discernRole();
+			determineBuildDirection();
+		}
 
 		readTransactions();
+		
+		designSchoolData.setPauseBuildTimer(designSchoolData.getPauseBuildTimer() - 1);
 
-    	RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), designSchoolData.getOpponent());
-    	RobotInfo enemyHq = this.senseUnitType(RobotType.HQ, rc.getTeam().opponent());
     	
-        if(enemy.length > 0) {
-        	if (enemyHq != null) {
+		switch(designSchoolData.getCurrentRole()) {
+			case DesignSchoolData.ROLE_ATTACKER:
+				attackDesignSchoolProtocol();
+				break;
+			case DesignSchoolData.ROLE_OBSTRUCTION_CLEARER:
+				obstructionClearerDesignSchoolProtocol();
+				break;
+			case DesignSchoolData.ROLE_WALL_BUILDER:
+				wallBuilderDesignSchoolProtocol();
+				break;
+		}
+	}
+	
+	private void learnHqLocation() throws GameActionException {
+		for(Transaction transaction : rc.getBlock(1)) {
+			int[] message = decodeTransaction(transaction);
+			if(message.length > 1 && message[1] == Type.TRANSACTION_FRIENDLY_HQ_AT_LOC.getVal()) {
+				designSchoolData.setHqLocation(new MapLocation(message[2], message[3]));
+				return;
+			}
+		}
+	}
+	
+	private void discernRole() {
+		if(rc.getLocation().equals(designSchoolData.getDesignSchoolBuildSite())) {
+			designSchoolData.setCurrentRole(DesignSchoolData.ROLE_WALL_BUILDER);
+			return;
+		}
+		
+		RobotInfo enemyHq = senseUnitType(RobotType.HQ, rc.getTeam().opponent());
+		if(enemyHq != null) {
+			designSchoolData.setCurrentRole(DesignSchoolData.ROLE_ATTACKER);
+			designSchoolData.setEnemyHqLocation(enemyHq.getLocation());
+		} else {
+			designSchoolData.setCurrentRole(DesignSchoolData.ROLE_OBSTRUCTION_CLEARER);
+		}
+	}
+
+	private void determineBuildDirection() {
+		if(!rc.getLocation().equals(designSchoolData.getDesignSchoolBuildSite())) return;
+
+		MapLocation hqLocation = designSchoolData.getHqLocation();
+
+		int mapWidth = rc.getMapWidth();
+		int mapHeight = rc.getMapHeight();
+
+		boolean leftEdge = hqLocation.x <= 0;
+		boolean rightEdge = hqLocation.x >= mapWidth - 1;
+		boolean topEdge = hqLocation.y >= mapHeight - 1;
+		boolean bottomEdge = hqLocation.y <= 0;
+		
+		designSchoolData.initializeWallData(hqLocation, mapWidth, mapHeight);
+
+		if (leftEdge) {
+			if (bottomEdge) {
+				designSchoolData.setBuildDirection(Direction.NORTH);
+				designSchoolData.setDefaultBuildDirection(Direction.NORTH);
+				designSchoolData.setDefaultAttackBuildDirection(Direction.EAST);
+			} else if (topEdge) {
+				designSchoolData.setBuildDirection(Direction.SOUTH);
+				designSchoolData.setDefaultBuildDirection(Direction.SOUTH);
+				designSchoolData.setDefaultAttackBuildDirection(Direction.EAST);
+			} else {
+				designSchoolData.setBuildDirection(Direction.NORTH);
+				designSchoolData.setDefaultBuildDirection(Direction.NORTH);
+				designSchoolData.setDefaultAttackBuildDirection(Direction.EAST);
+			}
+		} else if (rightEdge) {
+			if (bottomEdge) {
+				designSchoolData.setBuildDirection(Direction.NORTH);
+				designSchoolData.setDefaultBuildDirection(Direction.NORTH);
+				designSchoolData.setDefaultAttackBuildDirection(Direction.WEST);
+			} else if (topEdge) {
+				designSchoolData.setBuildDirection(Direction.SOUTH);
+				designSchoolData.setDefaultBuildDirection(Direction.SOUTH);
+				designSchoolData.setDefaultAttackBuildDirection(Direction.WEST);
+			} else {
+				designSchoolData.setBuildDirection(Direction.SOUTH);
+				designSchoolData.setDefaultBuildDirection(Direction.SOUTH);
+				designSchoolData.setDefaultAttackBuildDirection(Direction.WEST);
+			}
+		} else if (topEdge) {
+			designSchoolData.setBuildDirection(Direction.EAST);
+			designSchoolData.setDefaultBuildDirection(Direction.EAST);
+			designSchoolData.setDefaultAttackBuildDirection(Direction.SOUTH);
+		} else if (bottomEdge) {
+			designSchoolData.setBuildDirection(Direction.WEST);
+			designSchoolData.setDefaultBuildDirection(Direction.WEST);
+			designSchoolData.setDefaultAttackBuildDirection(Direction.NORTH);
+		} else {
+			designSchoolData.setBuildDirection(Direction.WEST);
+			designSchoolData.setDefaultBuildDirection(Direction.WEST);
+			designSchoolData.setDefaultAttackBuildDirection(Direction.NORTH);
+		}
+	}
+	
+	/**
+	 * If design school senses enemy HQ, continually builds landscapers and sends out pause build transaction.
+	 * @throws GameActionException
+	 */
+	
+	private void attackDesignSchoolProtocol() throws GameActionException {
+		if(designSchoolData.getCurrentRole() == DesignSchoolData.ROLE_ATTACKER) {
+    		if (designSchoolData.getEnemyHqLocation() != null) {
         		System.out.println("ATTACK THE HQ!");
-	        	attackDesignSchoolProtocol(enemyHq.getLocation());
+	        	attackTarget(designSchoolData.getEnemyHqLocation());
 	        	return;
 			}
 	        
+    		RobotInfo[] enemy = rc.senseNearbyRobots(rc.getCurrentSensorRadiusSquared(), designSchoolData.getOpponent());
 	        for(RobotInfo potentialThreat : enemy) {
 	        	if(potentialThreat.type.isBuilding()) {
 	        		System.out.println("ATTACK THE BUILDING!");
-	        		attackDesignSchoolProtocol(potentialThreat.getLocation());
+	        		attackTarget(potentialThreat.getLocation());
 	        		return;
 	        	} 
 	        }
-        } else {
-        	designSchoolData.setBuildDirection(designSchoolData.getDefaultBuildDirection());
-        }
-
-        designSchoolData.setPauseBuildTimer(designSchoolData.getPauseBuildTimer() - 1);
+    	}
+	}
+	
+	private void attackTarget(MapLocation target) throws GameActionException {
+		System.out.println("Attack Design School Protocol");
+		if (!designSchoolData.getIsAttackSchool()) {
+			designSchoolData.setIsAttackSchool(true);
+			sendTransaction(15, Type.TRANSACTION_PAUSE_LANDSCAPER_BUILDING, rc.getLocation());
+		}
+		
+		int allyLandscapers = this.senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam());
+		int opposingLandscapers = this.senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam().opponent());
+		if((allyLandscapers >= 3 && allyLandscapers > opposingLandscapers) || allyLandscapers >= 5 || isFloodingImminent() || isFloodingAdjacent()) return;
+		
+		forceBuildTowardsTarget(target);
+	}
+	
+	private void obstructionClearerDesignSchoolProtocol() throws GameActionException {
+		if(designSchoolData.getLandscapersBuilt() == 0) forceBuildTowardsTarget(designSchoolData.getHqLocation());
+	}
+	
+	private void wallBuilderDesignSchoolProtocol() throws GameActionException {
+		designSchoolData.setBuildDirection(designSchoolData.getDefaultBuildDirection());
         if(!designSchoolData.isStableSoupIncomeConfirmed()) confirmStableSoupIncome();
         
         boolean oughtBuildLandscaper = oughtBuildLandscaper();
@@ -80,122 +206,46 @@ public class DesignSchool extends Robot {
     	}
 	}
 
-	private void determineBuildDirection() {
-		RobotInfo hq = senseUnitType(RobotType.HQ, rc.getTeam());
-
-		if (hq != null) {
-			MapLocation hqLocation = hq.getLocation();
-
-			int mapWidth = rc.getMapWidth();
-			int mapHeight = rc.getMapHeight();
-
-			boolean leftEdge = hqLocation.x <= 0;
-			boolean rightEdge = hqLocation.x >= mapWidth - 1;
-			boolean topEdge = hqLocation.y >= mapHeight - 1;
-			boolean bottomEdge = hqLocation.y <= 0;
-			
-			designSchoolData.initializeWallData(hqLocation, mapWidth, mapHeight);
-
-			if (leftEdge) {
-				if (bottomEdge) {
-					designSchoolData.setBuildDirection(Direction.NORTH);
-					designSchoolData.setDefaultBuildDirection(Direction.NORTH);
-					designSchoolData.setDefaultAttackBuildDirection(Direction.EAST);
-				} else if (topEdge) {
-					designSchoolData.setBuildDirection(Direction.SOUTH);
-					designSchoolData.setDefaultBuildDirection(Direction.SOUTH);
-					designSchoolData.setDefaultAttackBuildDirection(Direction.EAST);
-				} else {
-					designSchoolData.setBuildDirection(Direction.NORTH);
-					designSchoolData.setDefaultBuildDirection(Direction.NORTH);
-					designSchoolData.setDefaultAttackBuildDirection(Direction.EAST);
-				}
-			} else if (rightEdge) {
-				if (bottomEdge) {
-					designSchoolData.setBuildDirection(Direction.NORTH);
-					designSchoolData.setDefaultBuildDirection(Direction.NORTH);
-					designSchoolData.setDefaultAttackBuildDirection(Direction.WEST);
-				} else if (topEdge) {
-					designSchoolData.setBuildDirection(Direction.SOUTH);
-					designSchoolData.setDefaultBuildDirection(Direction.SOUTH);
-					designSchoolData.setDefaultAttackBuildDirection(Direction.WEST);
-				} else {
-					designSchoolData.setBuildDirection(Direction.SOUTH);
-					designSchoolData.setDefaultBuildDirection(Direction.SOUTH);
-					designSchoolData.setDefaultAttackBuildDirection(Direction.WEST);
-				}
-			} else if (topEdge) {
-				designSchoolData.setBuildDirection(Direction.EAST);
-				designSchoolData.setDefaultBuildDirection(Direction.EAST);
-				designSchoolData.setDefaultAttackBuildDirection(Direction.SOUTH);
-			} else if (bottomEdge) {
-				designSchoolData.setBuildDirection(Direction.WEST);
-				designSchoolData.setDefaultBuildDirection(Direction.WEST);
-				designSchoolData.setDefaultAttackBuildDirection(Direction.NORTH);
-			} else {
-				designSchoolData.setBuildDirection(Direction.WEST);
-				designSchoolData.setDefaultBuildDirection(Direction.WEST);
-				designSchoolData.setDefaultAttackBuildDirection(Direction.NORTH);
-			}
-		}
-	}
-	
-	/**
-	 * If design school senses enemy HQ, continually builds landscapers and sends out pause build transaction.
-	 * @throws GameActionException
-	 */
-	private void attackDesignSchoolProtocol(MapLocation target) throws GameActionException {
-		System.out.println("Attack Design School Protocol");
-		if (!designSchoolData.getIsAttackSchool()) {
-			designSchoolData.setIsAttackSchool(true);
-			sendTransaction(15, Type.TRANSACTION_PAUSE_LANDSCAPER_BUILDING, rc.getLocation());
-		}
-		
-		int allyLandscapers = this.senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam());
-		int opposingLandscapers = this.senseNumberOfUnits(RobotType.LANDSCAPER, rc.getTeam().opponent());
-		if((allyLandscapers >= 3 && allyLandscapers > opposingLandscapers) || allyLandscapers >= 5 || isFloodingImminent() || isFloodingAdjacent()) return;
-		
-		Direction directionToTarget = rc.getLocation().directionTo(target);
-		designSchoolData.setBuildDirection(directionToTarget);
-		if(tryBuild()) return;
-		
-		designSchoolData.setBuildDirection(directionToTarget.rotateLeft());
-		if(tryBuild()) return;
-		
-		designSchoolData.setBuildDirection(directionToTarget.rotateRight());
-		if(tryBuild()) return;
-		
-		designSchoolData.setBuildDirection(directionToTarget.rotateLeft().rotateLeft());
-		if(tryBuild()) return;
-		
-		designSchoolData.setBuildDirection(directionToTarget.rotateRight().rotateRight());
-		if(tryBuild()) return;
-		
-		designSchoolData.setBuildDirection(directionToTarget.rotateLeft().rotateLeft().rotateLeft());
-		if(tryBuild()) return;
-		
-		designSchoolData.setBuildDirection(directionToTarget.rotateRight().rotateRight().rotateRight());
-		if(tryBuild()) return;
-		
-		designSchoolData.setBuildDirection(directionToTarget.rotateLeft().rotateLeft());
-		if(tryBuild()) return;
-		
-		designSchoolData.setBuildDirection(directionToTarget.opposite());
-		tryBuild();
-	}
-
-	private boolean oughtBuildLandscaper() {
+	private boolean oughtBuildLandscaper() throws GameActionException {
 		//Build a landscaper if the fulfillment center has been built but no landscapers are present.
-//		int landscapersPresent = GeneralCommands.senseNumberOfUnits(rc, RobotType.LANDSCAPER, rc.getTeam());
-		if (designSchoolData.getPauseBuildTimer() > 0) return false;
-		if (designSchoolData.getLandscapersBuilt() == 0) return designSchoolData.getBuildSitesBlocked() || senseUnitType(RobotType.FULFILLMENT_CENTER, rc.getTeam()) != null;
+		System.out.println("Ought build landscaper?");
+		if(designSchoolData.getPauseBuildTimer() > 0 && !designSchoolData.getBuildSitesBlocked()) return false;
+		
+		boolean floodingImminent = isFloodingImminent();
+		boolean floodingAdjacent = isFloodingAdjacent();
+		
+		System.out.println("Flooding imminent or adjacent? " + floodingImminent + " / " + floodingAdjacent);
+		System.out.println("Build sites blocked? " + designSchoolData.getBuildSitesBlocked());
+		
+		if (designSchoolData.getLandscapersBuilt() == 0) {
+			return designSchoolData.getBuildSitesBlocked() || senseUnitType(RobotType.FULFILLMENT_CENTER, rc.getTeam()) != null || floodingAdjacent || floodingImminent;
+		}
+		
+		if(designSchoolData.getPauseBuildTimer() > 0) return false;
+		
+		if(!designSchoolData.isRefineryBuilt() && !wallBarringFloodwaters(designSchoolData.getHqLocation())) {
+			System.out.println("No refinery is built, nor is the wall barring floodwaters.");
+			designSchoolData.setWaitingOnRefinery(!(floodingImminent || floodingAdjacent));
+		} else {
+			designSchoolData.setWaitingOnRefinery(false);
+		}
+		
+		System.out.println("Waiting on refinery? " + designSchoolData.isWaitingOnRefinery());
+		
+		if(designSchoolData.isWaitingOnRefinery()) return false;
 		
 		return (designSchoolData.isStableSoupIncomeConfirmed() || designSchoolData.getBuildSitesBlocked()) ? rc.getTeamSoup() >= RobotType.LANDSCAPER.cost : rc.getTeamSoup() >= RobotType.VAPORATOR.cost + 5;
 	}
 	
-	private boolean isFloodingImminent() throws GameActionException {
-		int elevation = rc.senseElevation(rc.getLocation());
-		return elevation <= this.getFloodingAtRound(rc.getRoundNum() + (RobotType.LANDSCAPER.cost * 1.5));
+	private boolean isFloodingImminent() throws GameActionException {		
+		if(isWithinWall(rc.getLocation(), designSchoolData.getHqLocation())) {
+			int lowestWallElevation = getLowestWallElevation(designSchoolData.getHqLocation());
+			int projectedFlooding = this.getFloodingAtRound(rc.getRoundNum() + (RobotType.LANDSCAPER.cost * 1.5));
+			System.out.println(lowestWallElevation + " <= " + projectedFlooding);
+			return lowestWallElevation <= projectedFlooding;
+		} else {
+			return rc.senseElevation(rc.getLocation()) <= this.getFloodingAtRound(rc.getRoundNum() + (RobotType.LANDSCAPER.cost * 1.5));
+		}
 	}
 	
 	private boolean isFloodingAdjacent() throws GameActionException {
@@ -239,6 +289,40 @@ public class DesignSchool extends Robot {
     			return true;
     		}
     	}
+    
+    	return false;
+    }
+    
+    private boolean forceBuildTowardsTarget(MapLocation target) throws GameActionException {
+    	waitUntilReady();
+    	
+    	Direction directionToTarget = rc.getLocation().directionTo(target);
+		designSchoolData.setBuildDirection(directionToTarget);
+		if(tryBuild()) return true;
+		
+		designSchoolData.setBuildDirection(directionToTarget.rotateLeft());
+		if(tryBuild()) return true;
+		
+		designSchoolData.setBuildDirection(directionToTarget.rotateRight());
+		if(tryBuild()) return true;
+		
+		designSchoolData.setBuildDirection(directionToTarget.rotateLeft().rotateLeft());
+		if(tryBuild()) return true;
+		
+		designSchoolData.setBuildDirection(directionToTarget.rotateRight().rotateRight());
+		if(tryBuild()) return true;
+		
+		designSchoolData.setBuildDirection(directionToTarget.rotateLeft().rotateLeft().rotateLeft());
+		if(tryBuild()) return true;
+		
+		designSchoolData.setBuildDirection(directionToTarget.rotateRight().rotateRight().rotateRight());
+		if(tryBuild()) return true;
+		
+		designSchoolData.setBuildDirection(directionToTarget.rotateLeft().rotateLeft());
+		if(tryBuild()) return true;
+		
+		designSchoolData.setBuildDirection(directionToTarget.opposite());
+		if(tryBuild()) tryBuild();
     
     	return false;
     }
@@ -294,6 +378,10 @@ public class DesignSchool extends Robot {
     						break;
     					case TRANSACTION_BUILD_SITE_BLOCKED:
     						designSchoolData.setBuildSitesBlocked(true);
+    						break;
+    					case TRANSACTION_FRIENDLY_REFINERY_AT_LOC:
+    						designSchoolData.setRefineryBuilt(true);
+    						designSchoolData.setWaitingOnRefinery(false);
     						break;
     					default:
     						break;

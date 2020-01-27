@@ -84,17 +84,13 @@ public class HQ extends Robot {
 	        }
 	        
 	        if(attackDroneCount >= 15) sendKillOrder(estimatedAttackTime);
-	        else if(attackDroneCount >= 14 && lacksVaporatorMiner()) {
-	        	System.out.println("Forcing build for attack...");
-	        	forceBuild();
-	        }
         } else {
         	killOrderCooldownCount--;
         }
 	}
 	
 	private int getEstimatedDroneAttackTime() {
-		int travelTimeTolerance = (int) ((rc.getMapWidth() + rc.getMapHeight()) * 1.2f);
+		int travelTimeTolerance = (int) (1.1f * (rc.getMapWidth() + rc.getMapHeight()) / 2);
 		return travelTimeTolerance + 75;
 	}
 	
@@ -104,9 +100,9 @@ public class HQ extends Robot {
 	}
 	
 	private boolean oughtBuildMiner() {
-		if(senseUnitType(RobotType.DESIGN_SCHOOL, rc.getTeam()) != null) return false;
+		if(senseUnitType(RobotType.VAPORATOR, rc.getTeam()) != null) return false;
 		
-		return rc.getTeamSoup() >= RobotType.MINER.cost + hqData.getMinersBuilt() * 30 || rc.getRoundNum() < 50;
+		return rc.getRoundNum() <= 60;
 	}
 	
 	private void reportBlockedBuildSites() throws GameActionException {

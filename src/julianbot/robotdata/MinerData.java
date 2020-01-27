@@ -10,6 +10,7 @@ public class MinerData extends ScoutData {
 	//ROLES
 	private int currentRole;
 	public static final int ROLE_DESIGN_BUILDER = 0;
+		private boolean buildSitesBlocked;
 	public static final int ROLE_FULFILLMENT_BUILDER = 1;
 	public static final int ROLE_SOUP_MINER = 2;
 	public static final int ROLE_REFINERY_BUILDER = 3;
@@ -17,10 +18,10 @@ public class MinerData extends ScoutData {
 		private boolean vaporatorBuilderClaimed;
 	public static final int ROLE_DEFENSE = 5;
 	public static final int ROLE_BLOCK = 6;
-		private boolean northGunBuilt;
+		private boolean vaporatorBuilt;
 		private boolean designSchoolBuilt;
 		private boolean fulfillmentCenterBuilt;
-		private boolean southGunBuilt;
+		private boolean netGunBuilt;
 	public static final int ROLE_SCOUT = 7;
 		private RobotInfo targetRobot;
 		private RobotInfo previousTarget;
@@ -62,6 +63,14 @@ public class MinerData extends ScoutData {
 		this.currentRole = currentRole;
 	}
 	
+	public boolean getBuildSitesBlocked() {
+		return buildSitesBlocked;
+	}
+
+	public void setBuildSitesBlocked(boolean buildSitesBlocked) {
+		this.buildSitesBlocked = buildSitesBlocked;
+	}
+
 	public boolean isVaporatorBuilderClaimed() {
 		return vaporatorBuilderClaimed;
 	}
@@ -70,12 +79,12 @@ public class MinerData extends ScoutData {
 		this.vaporatorBuilderClaimed = vaporatorBuilderClaimed;
 	}
 
-	public boolean isNorthGunBuilt() {
-		return northGunBuilt;
+	public boolean isVaporatorBuilt() {
+		return vaporatorBuilt;
 	}
 
-	public void setNorthGunBuilt(boolean northGunBuilt) {
-		this.northGunBuilt = northGunBuilt;
+	public void setVaporatorBuilt(boolean vaporatorBuilt) {
+		this.vaporatorBuilt = vaporatorBuilt;
 	}
 
 	public boolean isDesignSchoolBuilt() {
@@ -94,12 +103,12 @@ public class MinerData extends ScoutData {
 		this.fulfillmentCenterBuilt = fulfillmentCenterBuilt;
 	}
 
-	public boolean isSouthGunBuilt() {
-		return southGunBuilt;
+	public boolean isNetGunBuilt() {
+		return netGunBuilt;
 	}
 
-	public void setSouthGunBuilt(boolean southGunBuilt) {
-		this.southGunBuilt = southGunBuilt;
+	public void setNetGunBuilt(boolean netGunBuilt) {
+		this.netGunBuilt = netGunBuilt;
 	}
 
 	// Scout
@@ -209,8 +218,17 @@ public class MinerData extends ScoutData {
 				return false;
 			}
 		}
+		
 		refineryLocs.add(loc);
 		return true;
+	}
+	
+	public boolean hqRefineryStored() {
+		for (MapLocation refineryLoc : refineryLocs) {
+			if (refineryLoc.equals(hqLocation)) return true;
+		}
+		
+		return false;
 	}
 
 	/**

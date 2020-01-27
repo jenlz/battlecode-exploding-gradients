@@ -78,7 +78,7 @@ public class Drone extends Scout {
 		
 		System.out.println("Turn Count 1 Check");
 		if(turnCount == 1) {
-			learnHQLocation();
+			learnHqLocation();
 			droneData.calculateInitialAttackWaitLocation();
 			droneData.initializeWallData(droneData.getHqLocation(), rc.getMapWidth(), rc.getMapHeight());
 			determineEdgeState();
@@ -144,7 +144,7 @@ public class Drone extends Scout {
     	}
 	}
 	
-	private void learnHQLocation() throws GameActionException {
+	private void learnHqLocation() throws GameActionException {
 		for(Transaction transaction : rc.getBlock(1)) {
 			int[] message = decodeTransaction(transaction);
 			if(message.length > 1 && message[1] == Type.TRANSACTION_FRIENDLY_HQ_AT_LOC.getVal()) {
@@ -455,9 +455,12 @@ public class Drone extends Scout {
 				Direction toHqDirection = rcLocation.directionTo(hqLocation);
 				MapLocation potentialWallLocation = rcLocation.add(toHqDirection);
 				
-				//Place landscapers back onto the wall until it is time to attack.
 				System.out.println("Cargo type = " + droneData.getCargoType());
-				if(rc.isCurrentlyHoldingUnit() && isOnWall(potentialWallLocation, hqLocation) && droneData.getCargoType() == RobotType.LANDSCAPER) {
+				if(!findVacanciesOnWall() && isWithinWall(rcLocation, hqLocation)) {
+					if(rc.isCurrentlyHoldingUnit() && !droneData.getHoldingEnemy() && !droneData.getHoldingCow()) dropUnitAnywhereSafe();
+					else pickUpWallUnit();
+				} else if(rc.isCurrentlyHoldingUnit() && isOnWall(potentialWallLocation, hqLocation) && droneData.getCargoType() == RobotType.LANDSCAPER) {
+					//Place landscapers back onto the wall until it is time to attack.
 					dropUnit(toHqDirection);
 				}
 			}
@@ -529,7 +532,7 @@ public class Drone extends Scout {
 			if(!rc.canSenseLocation(droneData.getHqLocation())) {
 				routeTo(droneData.getHqLocation());
 			} else if(idleAttackMiner != null) {
-				System.out.println("\tFound an idle attack landscaper");
+				System.out.println("\tFound an idle attack miner");
 				if(!pickUpUnit(idleAttackMiner)) {
     				routeTo(idleAttackMiner.getLocation());
     			}
@@ -582,34 +585,22 @@ public class Drone extends Scout {
 				&& rc.senseNearbyRobots(droneData.getHqLocation(), 3, rc.getTeam()) != null;
 	}
 	
-	private boolean oughtPickUpMiner() {		
+	private boolean oughtPickUpMiner() throws GameActionException {		
 		//Pick up the unit if we are closer to our own base than our opponent's.
 		//This check is just to prevent the drone from dropping of a miner, then immediately detecting it and picking it up again.
 		//Also, only the first delivery drone
 		
 		MapLocation rcLocation = rc.getLocation();
 		return rcLocation.distanceSquaredTo(data.getSpawnerLocation()) < rcLocation.distanceSquaredTo(droneData.getEnemyHqLocation())
-				&& this.senseUnitType(RobotType.MINER, rc.getTeam()) != null && this.senseUnitType(RobotType.VAPORATOR, rc.getTeam()) != null;
+				&& senseAttackMiner() != null && this.senseUnitType(RobotType.VAPORATOR, rc.getTeam()) != null;
 	}
 	
 	private RobotInfo senseAttackMiner() throws GameActionException {
 		MapLocation hqLocation = droneData.getHqLocation();
 		
 		RobotInfo[] miners = senseAllUnitsOfType(RobotType.MINER, rc.getTeam());
-		int xMin = droneData.getWallOffsetXMin();
-		int xMax = droneData.getWallOffsetYMax();
-		int yMin = droneData.getWallOffsetYMin();
-		int yMax = droneData.getWallOffsetYMax();
-		
 		for(RobotInfo miner : miners) {
-			MapLocation location = miner.getLocation();
-			int dx = location.x - hqLocation.x;
-			int dy = location.y - hqLocation.y;
-			
-			boolean xInWall = xMin < dx && dx < xMax;
-			boolean yInWall = yMin < dy && dy < yMax;
-			
-			if(xInWall && yInWall) return miner;
+			if(isWithinWall(miner.getLocation(), hqLocation)) return miner;
 		}
 
 		return null;
@@ -617,24 +608,11 @@ public class Drone extends Scout {
 	
 	private RobotInfo senseAttackLandscaper() throws GameActionException {
 		MapLocation hqLocation = droneData.getHqLocation();
-		
 		RobotInfo[] landscapers = senseAllUnitsOfType(RobotType.LANDSCAPER, rc.getTeam());
-		int xMin = droneData.getWallOffsetXMin();
-		int xMax = droneData.getWallOffsetYMax();
-		int yMin = droneData.getWallOffsetYMin();
-		int yMax = droneData.getWallOffsetYMax();
-		
 		for(RobotInfo landscaper : landscapers) {
-			MapLocation location = landscaper.getLocation();
-			int dx = location.x - hqLocation.x;
-			int dy = location.y - hqLocation.y;
-			
-			boolean xInWall = xMin < dx && dx < xMax;
-			boolean yInWall = yMin < dy && dy < yMax;
-			
-			if(xInWall && yInWall) return landscaper;
+			if(isWithinWall(landscaper.getLocation(), hqLocation)) return landscaper;
 		}
-
+		
 		return null;
 	}
 	
@@ -756,12 +734,17 @@ public class Drone extends Scout {
 	}
 	
 	private boolean pickUpUnit(RobotType targetType) throws GameActionException {
-		RobotInfo info = senseUnitType(targetType);
-		if(info != null) {
-			waitUntilReady();
-			
-			if(rc.canPickUpUnit(info.ID)) {
-				rc.pickUpUnit(info.ID);
+		return pickUpUnit(targetType, null);
+	}
+	
+	private boolean pickUpUnit(RobotType targetType, Team targetTeam) throws GameActionException {
+		RobotInfo[] units = senseAllUnitsOfType(targetType, targetTeam);
+		
+		waitUntilReady();
+		
+		for(RobotInfo unit : units) {
+			if(rc.canPickUpUnit(unit.ID)) {
+				rc.pickUpUnit(unit.ID);
 				droneData.setCargoType(targetType);
 				return true;
 			}
@@ -770,20 +753,20 @@ public class Drone extends Scout {
 		return false;
 	}
 	
-	private boolean pickUpUnit(RobotType targetType, Team targetTeam) throws GameActionException {
-		RobotInfo info = senseUnitType(targetType, targetTeam);
+	private void pickUpWallUnit() throws GameActionException {
+		MapLocation rcLocation = rc.getLocation();
+		MapLocation hqLocation = droneData.getHqLocation();
 		
-		if(info != null) {
-			waitUntilReady();
-			
-			if(rc.canPickUpUnit(info.ID)) {
-				rc.pickUpUnit(info.ID);
-				droneData.setCargoType(targetType);
-				return true;
+		for(Direction direction : directions) {
+			MapLocation targetLocation = rcLocation.add(direction);
+			if(rc.canSenseLocation(targetLocation) && isOnWall(targetLocation, hqLocation)) {
+				RobotInfo robotOnWall = rc.senseRobotAtLocation(targetLocation);
+				if(robotOnWall != null) {
+					pickUpUnit(robotOnWall);
+					return;
+				}
 			}
 		}
-		
-		return false;
 	}
 	
 	private boolean dropUnit(Direction dropDirection) throws GameActionException {
@@ -795,6 +778,16 @@ public class Drone extends Scout {
 			droneData.setHoldingCow(false);
 			droneData.setCargoType(null);
 			return true;
+		}
+		
+		return false;
+	}
+	
+	private boolean dropUnitAnywhereSafe() throws GameActionException {
+		for(Direction direction : directions) {
+			if(rc.canSenseLocation(rc.getLocation().add(direction)) && !rc.senseFlooding(rc.getLocation().add(direction))) {
+				if(dropUnit(direction)) return true;
+			}
 		}
 		
 		return false;

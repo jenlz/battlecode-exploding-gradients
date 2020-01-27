@@ -10,6 +10,7 @@ public class FulfillmentCenterData extends RobotData {
 	private boolean stableSoupIncomeConfirmed;
 		private int transactionRound;
 		private boolean searchedForVaporator;
+	private boolean waitingOnRefinery;
 	
 	private MapLocation hqLocation;
 	private boolean enemyHqLocated;
@@ -23,6 +24,8 @@ public class FulfillmentCenterData extends RobotData {
 		super(rc, spawnerLocation);
 		buildDirection = Direction.NORTH;
 		transactionRound = 1;
+		
+		waitingOnRefinery = true;
 	}
 	
 	public int getDronesBuilt() {
@@ -77,6 +80,14 @@ public class FulfillmentCenterData extends RobotData {
 		this.searchedForVaporator = searchedForVaporator;
 	}
 	
+	public boolean isWaitingOnRefinery() {
+		return waitingOnRefinery;
+	}
+
+	public void setWaitingOnRefinery(boolean waitingOnRefinery) {
+		this.waitingOnRefinery = waitingOnRefinery;
+	}
+
 	public MapLocation getHqLocation() {
 		return hqLocation;
 	}

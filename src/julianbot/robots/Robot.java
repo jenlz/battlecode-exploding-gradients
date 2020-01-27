@@ -40,7 +40,8 @@ public class Robot {
 		TRANSACTION_ATTACK_AT_LOC(-171),
 		TRANSACTION_KILL_ORDER(88),
 		TRANSACTION_PAUSE_LANDSCAPER_BUILDING(8482),
-		TRANSACTION_BUILD_SITE_BLOCKED(642);
+		TRANSACTION_BUILD_SITE_BLOCKED(642),
+		TRANSACTION_BLOCKED_BUILD_SITE_ADDRESSED(1533);
 		
 		private int val;
 		
@@ -139,6 +140,33 @@ public class Robot {
     	return dxInRange && dyInRange;
 	}
 	
+	public int getLowestWallElevation(MapLocation hqLocation) throws GameActionException {
+		if(!rc.canSenseLocation(hqLocation)) return Integer.MAX_VALUE;
+		int lowestElevation = Integer.MAX_VALUE;
+		
+    	int minDx = data.getWallOffsetXMin();
+    	int maxDx = data.getWallOffsetXMax();
+    	int minDy = data.getWallOffsetYMin();
+    	int maxDy = data.getWallOffsetYMax();
+    	
+    	System.out.println("Getting lowest wall elevation around " + hqLocation);
+    	System.out.println("Wall x-range: " + minDx + " - " + maxDx);
+    	System.out.println("Wall y-range: " + minDy + " - " + maxDy);
+    	
+    	for(int dx = minDx; dx <= maxDx; dx++) {
+    		for(int dy = minDy; dy <= maxDy; dy++) {
+    			MapLocation location = hqLocation.translate(dx, dy);
+    			if(rc.canSenseLocation(location) && !onMapEdge(location) && isOnWall(location, hqLocation)) {
+    				int elevation = rc.senseElevation(location);
+    				System.out.println(location + " is on the wall with elevation " + elevation);
+    				lowestElevation = elevation < lowestElevation ? elevation : lowestElevation;
+    			}
+    		}
+    	}
+    	
+    	return lowestElevation;
+	}
+	
 	/*
      * TODO: This function ignores tiles on the edge of the map, but there are map edges that should be part of the wall.
      * This is likely not a problem, as an estimate is sufficient for desired behavior, but this needs to be officially decided.
@@ -157,6 +185,26 @@ public class Robot {
     			MapLocation location = hqLocation.translate(dx, dy);
     			if(rc.canSenseLocation(location) && !onMapEdge(location) && isOnWall(location, hqLocation)) {
     				if(rc.senseElevation(location) - hqElevation <= GameConstants.MAX_DIRT_DIFFERENCE) return false;
+    			}
+    		}
+    	}
+    	
+    	return true;
+    }
+    
+    public boolean wallBarringFloodwaters(MapLocation hqLocation) throws GameActionException {
+    	if(!rc.canSenseLocation(hqLocation)) return false;
+    	
+    	int minDx = data.getWallOffsetXMin();
+    	int maxDx = data.getWallOffsetXMax();
+    	int minDy = data.getWallOffsetYMin();
+    	int maxDy = data.getWallOffsetYMax();
+    	
+    	for(int dx = minDx -1; dx <= maxDx + 1; dx++) {
+    		for(int dy = minDy - 1; dy <= maxDy + 1; dy++) {
+    			MapLocation location = hqLocation.translate(dx, dy);
+    			if(rc.canSenseLocation(location) && !isOnWall(location, hqLocation) && !isWithinWall(location, hqLocation)) {
+    				if(!rc.senseFlooding(location)) return false;
     			}
     		}
     	}

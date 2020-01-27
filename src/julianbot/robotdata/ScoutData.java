@@ -5,8 +5,8 @@ import battlecode.common.RobotController;
 
 public class ScoutData extends RobotData {
 
-    private MapLocation hqLocation;
-    private MapLocation enemyHqLocation;
+    protected MapLocation hqLocation;
+    protected MapLocation enemyHqLocation;
     private MapLocation[] searchDestinations;
     private int activeSearchDestinationIndex;
     
