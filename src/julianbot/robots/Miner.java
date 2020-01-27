@@ -196,7 +196,7 @@ public class Miner extends Scout {
 		RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
 		for(RobotInfo enemy : enemies) {
 			if(enemy.getType().canBePickedUp() || enemy.getType() == RobotType.DESIGN_SCHOOL) {
-				if(enemy.getLocation().isWithinDistanceSquared(minerData.getHqLocation(), 35) && !minerData.isFulfillmentCenterBuilt()) minerData.setCurrentRole(MinerData.ROLE_DEFENSE);
+//				if(enemy.getLocation().isWithinDistanceSquared(minerData.getHqLocation(), 35) && !minerData.isFulfillmentCenterBuilt()) minerData.setCurrentRole(MinerData.ROLE_DEFENSE);
 			}
 		}
 	}
