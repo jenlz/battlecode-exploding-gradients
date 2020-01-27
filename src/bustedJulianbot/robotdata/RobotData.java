@@ -1,11 +1,11 @@
-package julianbot.robotdata;
+package bustedJulianbot.robotdata;
 
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.Team;
-import julianbot.robots.Robot;
-import julianbot.utils.pathfinder.MapGraph;
+import bustedJulianbot.robots.Robot;
+import bustedJulianbot.utils.pathfinder.MapGraph;
 
 public class RobotData {
 
@@ -82,21 +82,21 @@ public class RobotData {
 				setFulfillmentCenterBuildSite(hqLocation.translate(1, 0));
 				setVaporatorBuildMinerLocation(hqLocation.translate(1, 1));
 				setVaporatorBuildSite(hqLocation.translate(0, 1));
-				setWallOffsetBounds(0, 2, 0, 3);
+				setWallOffsetBounds(0, 1, 0, 1);
 			} else if(topEdge) {
 				//Lucky us, the HQ is also next to the northern wall.
 				setDesignSchoolBuildSite(hqLocation.translate(0, -2));
 				setFulfillmentCenterBuildSite(hqLocation.translate(1, 0));
 				setVaporatorBuildMinerLocation(hqLocation.translate(1, -1));
 				setVaporatorBuildSite(hqLocation.translate(0, -1));
-				setWallOffsetBounds(0, 2, -3, 0);
+				setWallOffsetBounds(0, 1, -1, 0);
 			} else {
 				//The HQ is next to the western wall, but not cornered.
 				setDesignSchoolBuildSite(hqLocation.translate(0, 2));
 				setFulfillmentCenterBuildSite(hqLocation.translate(1, 0));
 				setVaporatorBuildMinerLocation(hqLocation.translate(1, 1));
 				setVaporatorBuildSite(hqLocation.translate(0, 1));
-				setWallOffsetBounds(0, 2, -1, 3);
+				setWallOffsetBounds(0, 1, -1, 1);
 			}
 		} else if(rightEdge) {
 			//The HQ is next to the eastern wall.
@@ -106,20 +106,20 @@ public class RobotData {
 				setFulfillmentCenterBuildSite(hqLocation.translate(-1, 0));
 				setVaporatorBuildMinerLocation(hqLocation.translate(-1, 1));
 				setVaporatorBuildSite(hqLocation.translate(0, 1));
-				setWallOffsetBounds(-2, 0, 0, 3);
+				setWallOffsetBounds(-1, 0, 0, 1);
 			} else if(topEdge) {
 				//Lucky us, the HQ is also next to the northern wall.
 				setDesignSchoolBuildSite(hqLocation.translate(0, -2));
 				setFulfillmentCenterBuildSite(hqLocation.translate(-1, 0));
 				setVaporatorBuildMinerLocation(hqLocation.translate(-1, -1));
 				setVaporatorBuildSite(hqLocation.translate(0, -1));
-				setWallOffsetBounds(-2, 0, -3, 0);
+				setWallOffsetBounds(-1, 0, -1, 0);
 			} else {
 				setDesignSchoolBuildSite(hqLocation.translate(0, -2));
 				setFulfillmentCenterBuildSite(hqLocation.translate(-1, 0));
 				setVaporatorBuildMinerLocation(hqLocation.translate(-1, -1));
 				setVaporatorBuildSite(hqLocation.translate(0, -1));
-				setWallOffsetBounds(-2, 0, -3, 1);
+				setWallOffsetBounds(-1, 0, -1, 1);
 			}
 		} else if(topEdge) {
 			//The HQ is next to the northern wall, but not cornered.
@@ -127,21 +127,20 @@ public class RobotData {
 			setFulfillmentCenterBuildSite(hqLocation.translate(0, -1));
 			setVaporatorBuildMinerLocation(hqLocation.translate(1, -1));
 			setVaporatorBuildSite(hqLocation.translate(1, 0));
-			setWallOffsetBounds(-1, 3, -2, 0);
+			setWallOffsetBounds(-1, 1, -1, 0);
 		} else if(bottomEdge) {
 			//The HQ is next to the southern wall, but not cornered.
 			setDesignSchoolBuildSite(hqLocation.translate(-2, 0));
 			setFulfillmentCenterBuildSite(hqLocation.translate(0, 1));
 			setVaporatorBuildMinerLocation(hqLocation.translate(-1, 1));
 			setVaporatorBuildSite(hqLocation.translate(-1, 0));
-			setWallOffsetBounds(-3, 1, 0, 2);
+			setWallOffsetBounds(-1, 1, 0, 1);
 		} else {
-			setDesignSchoolBuildSite(hqLocation.translate(-1, 0));
-			setFulfillmentCenterBuildSite(hqLocation.translate(1, 0));
-			setVaporatorBuildMinerLocation(hqLocation.translate(0, -1));
-			setVaporatorBuildSite(hqLocation.translate(1, -1));
-			setNetGunBuildSite(hqLocation.translate(-1, -1));
-			setWallOffsetBounds(-2, 2, -2, 2);
+			setDesignSchoolBuildSite(hqLocation.translate(-3, -1));
+			setFulfillmentCenterBuildSite(hqLocation.translate(3, 1));
+			setVaporatorBuildMinerLocation(hqLocation.translate(0, -2));
+			setVaporatorBuildSite(hqLocation.translate(1, -2));
+			setWallOffsetBounds(-1, 1, -1, 1);
 		}
 	}
 	
